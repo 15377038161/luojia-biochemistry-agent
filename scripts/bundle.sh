@@ -32,6 +32,8 @@ zip -r -q "${ARCHIVE}" . \
   -x "dist/*" \
   -x ".git/*" \
   -x "release/*" \
+  -x ".playwright-cli/*" \
+  -x "output/*" \
   -x ".env*" "*/.env*" \
   -x "*.log" \
   -x "*.tsbuildinfo" \

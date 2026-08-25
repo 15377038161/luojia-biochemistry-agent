@@ -1,0 +1,14 @@
+node_modules
+.git
+.next/cache
+release
+output
+.playwright-cli
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!/.env.example
+!/.env.production
+knowledge-base/raw-teacher-materials

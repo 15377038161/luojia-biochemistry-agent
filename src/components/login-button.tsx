@@ -39,9 +39,9 @@ export default function LoginButton({ configured, institutions }: LoginButtonPro
       <div className="flex flex-col items-center gap-2">
         <Button disabled>
           <LogIn className="size-4" />
-          使用超星账号登录
+          使用学习通身份进入
         </Button>
-        <p className="text-sm text-muted-foreground">超星登录未配置，登录不可用</p>
+        <p className="text-sm text-muted-foreground">校方学习通 OAuth 尚未配置，当前不可登录</p>
       </div>
     );
   }
@@ -50,7 +50,7 @@ export default function LoginButton({ configured, institutions }: LoginButtonPro
     return (
       <Button disabled={isPending} onClick={handleLogin}>
         <LogIn className="size-4" />
-        {isPending ? '正在跳转...' : '使用超星账号登录'}
+        {isPending ? '正在连接学习通…' : '使用学习通身份进入'}
       </Button>
     );
   }
@@ -71,7 +71,7 @@ export default function LoginButton({ configured, institutions }: LoginButtonPro
       </Select>
       <Button disabled={isPending || !fid} onClick={handleLogin}>
         <LogIn className="size-4" />
-        {isPending ? '正在跳转...' : '使用超星账号登录'}
+        {isPending ? '正在连接学习通…' : '使用学习通身份进入'}
       </Button>
     </div>
   );

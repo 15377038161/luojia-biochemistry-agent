@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-08-21T02:59:47.410Z",
+  "sources": [
+    {
+      "name": "01_课程范围与规则.docx",
+      "relativePath": "knowledge-base/raw-teacher-materials/提交的资料/01_课程范围与规则.docx",
+      "sha256": "90f9dca3896b7e03e3ae4a83d5f1ec18daa8652d9bba682f4d64efc107e38081"
+    },
+    {
+      "name": "03_八步SOP.docx",
+      "relativePath": "knowledge-base/raw-teacher-materials/提交的资料/03_八步SOP.docx",
+      "sha256": "06b28c96a5d340a3bc21d6e01a95c05ccad1d4ce983fa67aad97ec037c2032e6"
+    },
+    {
+      "name": "04_评分与题库.docx",
+      "relativePath": "knowledge-base/raw-teacher-materials/提交的资料/04_评分与题库.docx",
+      "sha256": "ff68a9b7446d2cbc7c8eee6821378cc27f5cee10597b647906791cc9041256b0"
+    },
+    {
+      "name": "05_序列与载体.docx",
+      "relativePath": "knowledge-base/raw-teacher-materials/提交的资料/05_序列与载体.docx",
+      "sha256": "1d38ca958d6e1353d6945fb497f5f73b4b5fee9188382dfaaf4c574b2ef58d0e"
+    },
+    {
+      "name": "06_试剂与仪器.docx",
+      "relativePath": "knowledge-base/raw-teacher-materials/提交的资料/06_试剂与仪器.docx",
+      "sha256": "9003f2dfdc2c54e5925abf30dbb9f8b5ae9bd145294bd910ee18ee48382e0304"
+    }
+  ]
+}

@@ -27,14 +27,20 @@ export function useSupabaseConfig() {
 
 interface SupabaseConfigProviderProps {
   children: ReactNode;
+  disabled?: boolean;
 }
 
-export function SupabaseConfigProvider({ children }: SupabaseConfigProviderProps) {
+export function SupabaseConfigProvider({ children, disabled = false }: SupabaseConfigProviderProps) {
   const [config, setConfig] = useState<SupabaseConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (disabled || window.location.pathname === '/' || window.location.pathname.startsWith('/preview/')) {
+      setIsLoading(false);
+      return;
+    }
+
     fetch('/api/supabase-config')
       .then((res) => {
         if (!res.ok) {
@@ -58,7 +64,7 @@ export function SupabaseConfigProvider({ children }: SupabaseConfigProviderProps
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [disabled]);
 
   return (
     <SupabaseConfigContext.Provider value={{ config, isLoading, error }}>

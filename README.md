@@ -1,144 +1,77 @@
-# 超星登录 + Supabase 模板
+# 武汉大学生物化学文字实验智能体
 
-基于 Next.js 16、React 19、TypeScript、shadcn/ui 和 Supabase Auth，实现超星 OAuth
-登录并建立标准 Supabase Session。
+短名称“珞珈生化智能体”。同一个智能体按学习通课程身份提供学生学习模式和教师教学模式。学生不执行真实实验，而是沿 EGFP 重组克隆主线完成理论检验、八步文字推演、案例图分析、AI 证据点评、Gate 修订和学习报告；教师查看班级证据、认定成绩、维护版本化内容，并可进入不计分的独立学习体验。
 
-## 登录流程
+这不是传统实验填报或课程管理系统。数据库、八步状态、Coze工作流、图片存储、超星表单和OAuth均是智能体的幕后能力。
 
-```text
-超星授权
-→ 服务端换取超星用户信息
-→ 创建或同步 Supabase auth.users
-→ 消费一次性 Magic Link
-→ 写入 Supabase Session Cookie
-```
+## 已实现
 
-认证接口：
+- 统一身份：`/login` 只有一个学习通入口，服务端使用稳定角色 ID 白名单或教师授权表计算权限；学生不能进入教师路由。
+- 学生智能体：普通提问、正式提交、`TextEvaluation.v2` 五维证据评阅、Gate 规则、修订、步骤推进和历史消息。
+- 图片学习：使用老师提供的仪器图和结果案例图完成观察与判断；既有媒体接口保留兼容，但不进入学生主流程。
+- 学习报告：`StudyReport.v2` 只读取真实步骤状态、文字回答与评阅证据；雷达图按 20/30/20/15/15 换算，解释定义、评分依据、场景、影响、成因边界、行动和检查标准。
+- 成绩：八步最终 Gate 等权形成 100 分过程成绩，按 10% 折算课程贡献分；学生仅可申请一次异议，教师结论作为最终成绩。
+- 教师智能体：班级概览、学生复核、成绩认定、八步内容草稿/校验/发布、素材上传和外部服务真实状态。
+- 数据层：新增 `session_mode`、教师授权、内容版本、成绩组件和异议表；教师学习体验不计成绩、不进班级统计和超星 outbox。
+- UI V6：珞珈蓝 `RGB(0,37,84)`、珞珈绿 `RGB(17,87,64)`为主色；首页和登录使用原创珞珈校园生化水彩，学生端保留轻量探险册，教师端使用专业工作台。
 
-| 接口 | 用途 |
-| --- | --- |
-| `/api/auth/chaoxing` | 发起登录 |
-| `/api/auth/callback/chaoxing` | 处理超星回调 |
-| `/api/auth/me` | 获取当前用户 |
-| `/api/auth/logout` | 退出登录 |
+## 产品边界
 
-## 本地开发
+- 学生提交的是实验方案和步骤描述，不是实验操作记录。
+- 图片任务分析老师提供的课程案例，不要求上传真实实验结果。
+- 学习报告只汇总文字推演、Gate状态与评阅，不生成或伪造正式实验数据。
+- `knowledge-base/raw-teacher-materials`中的其他生化实验课件只作为知识来源，不扩展为新的主流程。
 
-仅使用 pnpm：
+## 本地运行
 
-```bash
-pnpm install
-cp .env.example .env
-pnpm dev
-```
+1. 复制`.env.example`为`.env.local`并填写Supabase。
+2. 按文件名顺序执行 `supabase/migrations/202608140001_agent_core.sql`、`supabase/migrations/202608230001_unified_agent_v2.sql` 和 `supabase/migrations/202608240001_chaoxing_sync_contract.sql`。
+3. 执行`pnpm seed:content`导入八步、40个五维知识块、仪器和图片题。
+4. 开发联调可设置`ENABLE_DEMO_ACCESS=true`和`ENABLE_AI_FIXTURE=true`。
+5. 运行`pnpm dev`。
 
-默认访问地址：`http://127.0.0.1:5000`。
+仅做本地 UI 验收时设置 `ENABLE_UI_PREVIEW=true`，随后访问 `/`、`/login`、`/preview/student/map` 和 `/preview/teacher/dashboard`。预览身份只能由 `/preview/*` 开发地址进入，该开关不得用于正式环境。
 
-必须配置：
+学生端采用多页面层级：`/student/map` 为八步任务地图，`/student/step/[stepId]` 为分步文字推演，`/student/report` 为学习报告。教师端入口为 `/teacher/dashboard`。Next.js Link 与客户端预取会预加载已解锁步骤和报告资源，路由切换期间由 `loading.tsx` 提供轻量加载状态，避免白屏。
 
-```env
-CHAOXING_APPID=your-appid
-CHAOXING_SECRET=your-appkey
-CHAOXING_FIDS=your-fid
-CHAOXING_REDIRECT_URI=https://your-domain/api/auth/callback/chaoxing
-```
+非核心提示使用轻量抽屉/弹窗；移动端支持向下滑动关闭，桌面端支持点击遮罩、关闭按钮与 Esc。全局视觉变量、固定字号、48px 操作目标、底部安全区和低成本动效均集中在 `src/app/globals.css`，并遵循 `prefers-reduced-motion`。
 
-本地运行还需填写 `.env.example` 中的 Supabase 和 Coze 配置。
+V6 首页与登录使用 `public/illustrations/luojia-biochem-agent-bg-v1.webp` 及对应 8 秒 WebM/MP4 循环素材；它们是根据武大官方标识规范和本项目视觉方向原创生成的无文字素材，不拼贴官网照片。登录先显示静态 WebP，视频就绪后淡入；省流量、减少动画或加载失败时保持静态背景。视觉规范与验收见 `docs/UI-V6设计与验收记录.md`。
 
-`CHAOXING_FIDS` 是允许登录的机构 FID 列表，多个用英文逗号分隔，可带空格。
-它有两种写法，可混用，登录界面的形态由此决定：
+常用校验：
 
 ```bash
-# 只写 FID：登录界面只有一个按钮，机构靠静默轮询
-CHAOXING_FIDS=1385, 344402, 110
-
-# 写成 fid:机构名称：登录界面显示机构下拉框，登录严格限定在所选机构下
-CHAOXING_FIDS=1385:超星集团, 344402:课程项目, 110:测试
+pnpm test
+pnpm validate
+pnpm exec next build
+pnpm bundle
+pwsh -File scripts/package-delivery.ps1
 ```
 
-只有配了名称且不止一个机构时才显示下拉框——裸 FID 用户认不出是哪个学校，单个机构也没得选。
-混用时未配名称的项在下拉框里显示 FID 本身。两种写法的身份解析策略不同：
+## Coze配置
 
-| | 下拉框模式 | 按钮模式 |
-| --- | --- | --- |
-| 机构来源 | 用户在界面上选 | 用户不感知 |
-| 回调解析 | 只用所选机构调一次 `getUserByTokenFormMooc` | 按配置顺序逐个调，命中即停 |
-| 账号不在该机构 | 报错，提示换一个机构重试 | 继续试下一个，全不中才报错 |
+在Coze创建`WF-TEXT`、`WF-VISION`和`WF-REPORT`，按照`docs/coze/`中的输入输出契约配置，然后填写三个工作流ID和服务端Token。浏览器不会接触Token。
 
-用户所选的 FID 通过超星的 `state` 参数原样带回回调（超星把 OAuth `state` 定义为机构 FID），
-回调据此判定该走哪种策略。轮询过程中逐个 FID 的拒绝原因只记在服务端日志里，界面上不暴露。
+`WF-TEXT` 同时处理两种模式：
 
-## Coze 部署
+- `evaluate`：正式评阅并返回 `TextEvaluation.v2`，每个问题包含能力维度、原文证据/场景、影响、成因边界、修订动作和检查标准。
+- `tutor_question`：回答原理问题，但不改变步骤进度、不输出完整标准答案。
 
-Coze 实例化 Supabase 后会自动注入 `COZE_*` 变量，只需手动配置上述四个
-`CHAOXING_*` 变量。
+## 超星边界
 
-推荐流程：
+- OAuth通过`/api/auth/chaoxing`和`/api/auth/callback/chaoxing`建立同一套Supabase Session。
+- 教师身份只认 `CHAOXING_TEACHER_ROLE_IDS` 或数据库 `teacher_role_grants`，不使用角色名称猜测。
+- 完整业务状态只保存在Supabase。
+- 超星表单`3513491`只接收关键留痕字段；默认通过`CHAOXING_FORM_TRANSPORT=disabled`保留事件，不会误报已接通。
+- 取得已发布任务流或正式API契约后，设置`CHAOXING_FORM_TRANSPORT=taskflow|api`、写入URL、Token、限流和可选回查URL；写入仍由服务端Worker异步处理。
+- `GET /api/internal/chaoxing-health`仅允许同步Worker调用，用于检查配置和回查连通性，不执行写入；只有`TEST_`写入并回查一致后才可作为生产门禁通过。
+- 禁止使用浏览器抓取到的内部接口作为生产写入方式。
 
-1. 上传项目并实例化 Supabase。
-2. 首次部署，取得公网域名。
-3. 在超星后台登记：
-   `https://<公网域名>/api/auth/callback/chaoxing`。
-4. 在 Coze 配置四个 `CHAOXING_*` 变量，其中
-   `CHAOXING_REDIRECT_URI` 必须与超星后台完全一致。
-5. 重新部署并访问 `/api/auth/chaoxing` 验证登录。
+## 安全要求
 
-`pnpm gen:env` 只会把平台已有变量同步到本地 `.env`，不会把本地变量上传到平台，
-而且会覆盖现有 `.env`。如果压缩包已经包含配置好的 `.env`，不要在变量尚未写入平台前执行它。
+- 正式上线保持 `ENABLE_DEMO_ACCESS=false`、`ENABLE_UI_PREVIEW=false`、`ENABLE_AI_FIXTURE=false`；只有完成 OAuth 和表单回读校验后才设置 `ENABLE_CHAOXING_AUTH=true` 并启用正式写回。
+- Service Role、Coze Token、超星APPKEY和同步Worker Secret不得进入Git、日志、截图或发布包。
+- 学生端不返回内部rubric、数值评分和置信度；教师查询受课程授权和RLS限制。
+- 老师原始DOCX/PPT仅进入受控的内部完整交付包，不进入公开源码仓库或公开下载地址；公开发布只使用结构化内容和已授权教学图片。
 
-项目不包含业务表或数据库迁移，不要执行 `pnpm db:migrate`。
-
-## 获取当前用户
-
-```tsx
-import { cookies } from 'next/headers';
-import { getSessionUser } from '@/lib/supabase-auth';
-
-export default async function Page() {
-  const session = await getSessionUser(await cookies());
-  if (!session) return <div>请先登录</div>;
-  return <div>你好，{session.user.chaoxing.displayName}</div>;
-}
-```
-
-可信身份字段在 `session.user.chaoxing`，来自仅服务端可写的 `app_metadata.chaoxing`，
-键名与超星 `getUserByTokenFormMooc` 返回的 `userInfo` 保持一致：
-
-| 字段 | 含义 |
-| --- | --- |
-| `openid` | 用户在本应用下的唯一主键（来自 access_token 接口） |
-| `uid` | 超星用户唯一标识 |
-| `name` | 登录名，即**学工号**，不是姓名 |
-| `displayName` | 用户姓名 |
-| `fid` | 所在单位 FID |
-| `orgName` | 所在单位名称 |
-| `role` | 角色数组，元素为 `{ roleId, roleName }` |
-| `loginNames` | 该单位下的所有登录名（学工号）列表 |
-
-`session.user.profile` 里的 `displayName`、`avatar` 来自用户可修改的 `user_metadata`
-（对应 `full_name`、`avatar_url`），只能用于展示，不能用于鉴权。学工号只存在
-`app_metadata.chaoxing.name`，不再写入 `user_metadata`。
-头像不是超星返回的字段，是按 `uid` 拼出的 `https://photo.chaoxing.com/p/<uid>_80`，不保证存在。
-
-## 安全说明
-
-- `CHAOXING_SECRET` 和 `COZE_SUPABASE_SERVICE_ROLE_KEY` 只能在服务端使用。
-- Supabase 后台应关闭公开邮箱注册和未使用的登录 Provider。
-- 新增业务表必须启用 RLS 并配置访问策略。
-- Session Cookie 为兼容浏览器端 Supabase 客户端而没有启用 `httpOnly`，需严格防范 XSS。
-- 超星将 OAuth `state` 用作机构 FID，当前兼容直达回调，因此不具备标准 OAuth
-  随机 state 的完整 CSRF 防护。
-- 退出本应用不会退出超星 Passport，重新登录时可能无感授权。
-
-## 常用命令
-
-| 命令 | 用途 |
-| --- | --- |
-| `pnpm dev` | 启动开发服务器 |
-| `pnpm validate` | TypeScript 和 ESLint 检查 |
-| `pnpm build` | 生产构建 |
-| `pnpm gen:env` | 从 Coze 同步环境变量 |
-| `pnpm bundle` | 生成安全分享包 |
-
-`pnpm bundle` 默认排除 `.env`、依赖和构建产物，只保留 `.env.example`。如需把真实
-`.env` 放入压缩包，应将其视为敏感文件，禁止公开分享或提交到 Git。
+完整交付、部署、接口、权限、超星接入、迭代和维护说明见[docs/Coze平台交付与后续推进说明.md](docs/Coze平台交付与后续推进说明.md)。

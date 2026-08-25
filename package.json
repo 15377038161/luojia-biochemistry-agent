@@ -1,5 +1,5 @@
 {
-  "name": "projects",
+  "name": "luojia-biochemistry-agent",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,8 +11,11 @@
     "start": "bash ./scripts/start.sh",
     "ts-check": "tsc -p tsconfig.json",
     "gen:env": "node scripts/gen-env.js",
-    "validate": "pnpm run --parallel '/^(ts-check|lint:build)$/'",
-    "bundle": "bash ./scripts/bundle.sh"
+    "seed:content": "tsx scripts/seed-agent-content.ts",
+    "export:knowledge": "tsx scripts/export-knowledge.ts",
+    "test": "tsx --test tests/**/*.test.ts",
+    "validate": "pnpm run ts-check && pnpm run lint:build",
+    "bundle": "node ./scripts/bundle.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
@@ -23,6 +26,17 @@
     "dotenv": "^17.2.3",
     "lucide-react": "^0.468.0",
     "next": "16.1.1",
+    "pg": "8.17.2",
+    "pg-connection-string": "2.10.1",
+    "pg-int8": "1.0.1",
+    "pg-pool": "3.11.0",
+    "pg-protocol": "1.11.0",
+    "pg-types": "2.2.0",
+    "pgpass": "1.0.5",
+    "postgres-array": "2.0.0",
+    "postgres-bytea": "1.0.1",
+    "postgres-date": "1.0.7",
+    "postgres-interval": "1.2.0",
     "radix-ui": "^1.5.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

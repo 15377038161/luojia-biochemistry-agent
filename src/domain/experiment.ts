@@ -1,0 +1,156 @@
+import type { ExperimentStep } from '@/domain/agent';
+
+const sourceSop = '03_八步SOP.docx';
+const sourceRubric = '04_评分与题库.docx';
+
+export const experimentSteps: ExperimentStep[] = [
+  {
+    id: 1,
+    slug: 'gene-and-primers',
+    title: '目标基因获取与引物设计',
+    shortTitle: '基因与引物',
+    context: '从NCBI获取EGFP编码序列，并为重组克隆到pET-28a(+)设计带同源臂的PCR引物。',
+    goal: '说明序列来源、引物基础参数、同源臂设计、PCR验证和异常排查；双酶切仅作为备选策略比较。',
+    keyPoints: [
+      { id: 's1-k', dimension: 'knowledge', label: '序列来源与载体系统', hints: ['EGFP序列从哪里获取？', '能说明NCBI检索路径或GenBank编号吗？', '再联系pET-28a(+)的T7启动子、His标签和Kan抗性。'] },
+      { id: 's1-o', dimension: 'operation', label: '引物与同源臂设计', hints: ['引物长度、GC含量和Tm值如何控制？', '载体端同源臂应放在引物哪一端？', '说明15–25 bp同源区、退火区以及二聚体/发夹检查。'] },
+      { id: 's1-d', dimension: 'decision', label: '克隆策略选择', hints: ['为什么本课程主线选择重组克隆？', '双酶切何时可作为备选？', '比较同源重组的无缝特点与NdeI/XhoI方向性克隆的限制。'] },
+      { id: 's1-t', dimension: 'troubleshooting', label: 'PCR异常排查', hints: ['无条带或杂带可能是什么原因？', '从退火温度、模板、引物和酶活性考虑。', '请给出原因与对应改进。'] },
+      { id: 's1-a', dimension: 'analysis', label: 'PCR结果判断', hints: ['预期扩增片段多大？', '跑胶时用什么参照判断？', '说明目标条带大小、单一性和纯度判断。'] },
+    ],
+    gates: [
+      { id: 's1-g1', label: '序列来源根本错误', patterns: ['只用uniprot蛋白序列', '不需要核酸序列'], guidance: '需要区分蛋白序列与用于克隆的DNA编码序列。' },
+      { id: 's1-g2', label: 'Tm值严重错误', patterns: ['tm 30', 'tm值30', 'tm 80以上'], guidance: '引物Tm通常应在55–65°C附近，上下游差值不宜过大。' },
+      { id: 's1-g3', label: '遗漏同源臂', patterns: ['重组克隆不需要同源臂', '只设计普通引物就能重组'], guidance: '重组克隆引物必须包含与线性化载体末端匹配的同源序列。' },
+    ],
+    source: `${sourceRubric} 步骤1；${sourceSop} 步骤1`,
+  },
+  {
+    id: 2,
+    slug: 'pet28-construction',
+    title: '构建pET-28a(+)表达载体',
+    shortTitle: '载体构建',
+    context: '将EGFP扩增片段与线性化pET-28a(+)载体进行无缝重组，保持正确方向和读码框。',
+    goal: '说明载体线性化、重组反应、DH5α转化筛选及阳性克隆验证，并能比较双酶切备选路线。',
+    keyPoints: [
+      { id: 's2-k', dimension: 'knowledge', label: '方向性与读码框原理', hints: ['为什么要保证连接方向？', '读码框与His标签有什么关系？', '说明起始/终止密码子和融合表达关系。'] },
+      { id: 's2-o', dimension: 'operation', label: '线性化、重组与转化', hints: ['载体和插入片段怎样准备？', '重组产物进入哪种克隆菌株？', '补充载体线性化、片段纯化、重组反应、DH5α转化和卡那霉素筛选。'] },
+      { id: 's2-d', dimension: 'decision', label: '阳性克隆验证方法', hints: ['怎样确认插入片段存在？', '哪些方法能确认方向和序列？', '比较菌落PCR、诊断酶切和测序。'] },
+      { id: 's2-t', dimension: 'troubleshooting', label: '重组转化异常排查', hints: ['没有菌落或假阳性怎么办？', '考虑同源臂、片段比例、线性化完整性和感受态效率。', '给出阴性对照、阳性对照与逐项改进方法。'] },
+      { id: 's2-a', dimension: 'analysis', label: '构建结果判断', hints: ['什么证据才算构建成功？', '仅有菌落是否足够？', '最终应由方向性验证和测序共同确认。'] },
+    ],
+    gates: [{ id: 's2-g1', label: '读码框或方向性忽略', patterns: ['方向无所谓', '读码框无所谓'], guidance: '表达载体必须保持正确方向和读码框。' }],
+    source: `${sourceRubric} 步骤2；${sourceSop} 步骤2`,
+  },
+  {
+    id: 3,
+    slug: 'bl21-induction',
+    title: 'BL21转化与IPTG诱导表达',
+    shortTitle: '转化与诱导',
+    context: '将测序验证的重组质粒转入BL21(DE3)，并用IPTG诱导EGFP表达。',
+    goal: '说明表达菌株、诱导机制、关键参数、对照设置和表达失败排查。',
+    keyPoints: [
+      { id: 's3-k', dimension: 'knowledge', label: 'IPTG/T7诱导原理', hints: ['BL21(DE3)为什么适合表达？', 'IPTG解除什么调控？', '连接T7 RNA聚合酶与T7启动子。'] },
+      { id: 's3-o', dimension: 'operation', label: '诱导参数与取样', hints: ['何时加入IPTG？', '浓度、温度和时间如何记录？', '需要诱导前后样和空载体/未诱导对照。'] },
+      { id: 's3-d', dimension: 'decision', label: '可溶性表达优化', hints: ['高表达一定可溶吗？', '形成包涵体时如何调整？', '比较降低温度、IPTG浓度和延长时间。'] },
+      { id: 's3-t', dimension: 'troubleshooting', label: '表达失败排查', hints: ['没有目标蛋白可能查什么？', '从质粒、抗性、诱导条件和菌株考虑。', '说明逐项验证顺序。'] },
+      { id: 's3-a', dimension: 'analysis', label: '表达结果判断', hints: ['凭什么判断诱导成功？', '仅看菌液颜色够吗？', '结合诱导前后SDS-PAGE及EGFP荧光。'] },
+    ],
+    gates: [{ id: 's3-g1', label: '菌株用途混淆', patterns: ['用dh5α表达蛋白'], guidance: 'DH5α主要用于克隆，BL21(DE3)用于T7系统表达。' }],
+    source: `${sourceRubric} 步骤3；${sourceSop} 步骤3`,
+  },
+  {
+    id: 4,
+    slug: 'sds-page-solubility',
+    title: 'SDS-PAGE验证蛋白表达',
+    shortTitle: 'SDS-PAGE验证',
+    context: '裂解诱导后的菌体，分离上清和沉淀，通过SDS-PAGE判断表达及可溶性。',
+    goal: '说明裂解取样、电泳原理、样品对照、目标条带和可溶性判断。',
+    keyPoints: [
+      { id: 's4-k', dimension: 'knowledge', label: 'SDS-PAGE原理', hints: ['SDS和还原剂分别做什么？', '蛋白按什么性质分离？', '说明变性、统一电荷和分子量分离。'] },
+      { id: 's4-o', dimension: 'operation', label: '裂解与上样规范', hints: ['超声破碎时如何避免蛋白变性？', '为什么要分上清和沉淀？', '补充低温、间歇超声、离心和等量上样。'] },
+      { id: 's4-d', dimension: 'decision', label: '可溶性判断与路线', hints: ['目标条带在哪个组分说明可溶？', '沉淀为主时下一步怎么办？', '根据上清/沉淀分布决定天然或变性纯化。'] },
+      { id: 's4-t', dimension: 'troubleshooting', label: '异常条带排查', hints: ['拖尾、弥散或无条带怎么查？', '考虑样品降解、上样量和电泳条件。', '给出异常与对应改进。'] },
+      { id: 's4-a', dimension: 'analysis', label: '泳道证据解读', hints: ['需要哪些泳道和Marker？', '目标分子量附近如何比较？', '结合未诱导、诱导、上清和沉淀判断。'] },
+    ],
+    gates: [{ id: 's4-g1', label: '仅凭总蛋白判断可溶性', patterns: ['只跑全菌就能判断可溶'], guidance: '必须比较裂解上清和沉淀中的目标条带。' }],
+    source: `${sourceRubric} 步骤4；${sourceSop} 步骤4`,
+  },
+  {
+    id: 5,
+    slug: 'purification-choice',
+    title: '选择蛋白纯化方法',
+    shortTitle: '纯化选择',
+    context: '依据pET-28a(+)的His标签和上一步可溶性结果选择纯化策略。',
+    goal: '说明Ni-NTA原理、缓冲液体系、可溶/包涵体路线及选择依据。',
+    keyPoints: [
+      { id: 's5-k', dimension: 'knowledge', label: 'His标签亲和层析原理', hints: ['His标签如何与树脂结合？', '咪唑为什么能洗脱？', '说明Ni-NTA配位与竞争洗脱。'] },
+      { id: 's5-o', dimension: 'operation', label: 'Buffer与咪唑梯度', hints: ['裂解、洗涤和洗脱液有什么区别？', '咪唑浓度如何递增？', '还要注意pH、盐和低温。'] },
+      { id: 's5-d', dimension: 'decision', label: '纯化策略选择', hints: ['上清和沉淀结果如何影响选择？', '包涵体时还能直接天然纯化吗？', '给出天然Ni-NTA或变性纯化/复性的依据。'] },
+      { id: 's5-t', dimension: 'troubleshooting', label: '纯化风险预判', hints: ['非特异结合或蛋白不结合怎么办？', '考虑咪唑、pH和标签暴露。', '给出优化方向。'] },
+      { id: 's5-a', dimension: 'analysis', label: '预期纯化效果', hints: ['纯化后怎样判断效果？', '要保留哪些组分？', '比较流穿、洗涤和洗脱中的目标条带。'] },
+    ],
+    gates: [{ id: 's5-g1', label: '忽略可溶性结果', patterns: ['不管是否包涵体都直接天然纯化'], guidance: '纯化路线必须依据步骤4的可溶性判断。' }],
+    source: `${sourceRubric} 步骤5；${sourceSop} 步骤5`,
+  },
+  {
+    id: 6,
+    slug: 'protein-purification',
+    title: '蛋白纯化操作',
+    shortTitle: '蛋白纯化',
+    context: '按选定路线完成Ni-NTA亲和纯化，并保存各阶段样品用于质量判断。',
+    goal: '说明平衡、上样、洗涤、洗脱、组分收集和关键质量控制。',
+    keyPoints: [
+      { id: 's6-k', dimension: 'knowledge', label: 'Ni-NTA层析机制', hints: ['结合、洗涤和洗脱各发生什么？', 'His标签与镍离子如何作用？', '说明低/高咪唑的差异。'] },
+      { id: 's6-o', dimension: 'operation', label: '完整纯化流程', hints: ['树脂使用顺序是什么？', '哪些组分需要留样？', '平衡、上样、洗涤、洗脱、透析都要交代。'] },
+      { id: 's6-d', dimension: 'decision', label: '流速与条件优化', hints: ['上样过快有什么影响？', '洗涤强度如何选择？', '根据结合与杂蛋白情况调整流速和咪唑。'] },
+      { id: 's6-t', dimension: 'troubleshooting', label: '纯化问题排查', hints: ['目标蛋白在流穿或洗不下来怎么办？', '考虑标签、pH、咪唑和树脂状态。', '给出分步检查。'] },
+      { id: 's6-a', dimension: 'analysis', label: '各组分结果判断', hints: ['怎样判断损失发生在哪一步？', '要比较哪些样品？', '用SDS-PAGE比较上样、流穿、洗涤和洗脱。'] },
+    ],
+    gates: [{ id: 's6-g1', label: '省略关键组分留样', patterns: ['流穿和洗涤不用留样'], guidance: '应保留关键组分，才能定位蛋白损失和判断纯化效果。' }],
+    source: `${sourceRubric} 步骤6；${sourceSop} 步骤6`,
+  },
+  {
+    id: 7,
+    slug: 'purity-verification',
+    title: '验证蛋白纯化是否达标',
+    shortTitle: '纯度验证',
+    context: '使用SDS-PAGE为主、必要时结合Western Blot或密度分析评价纯度。',
+    goal: '说明验证方法、样品设置、纯度计算、合格标准和异常处理。',
+    keyPoints: [
+      { id: 's7-k', dimension: 'knowledge', label: '纯度验证方法原理', hints: ['SDS-PAGE和Western Blot分别说明什么？', 'ImageJ能计算什么？', '区分纯度、身份与相对灰度。'] },
+      { id: 's7-o', dimension: 'operation', label: '验证操作规范', hints: ['需要哪些对照和Marker？', '如何避免过载影响判断？', '说明等量上样、染色成像和背景处理。'] },
+      { id: 's7-d', dimension: 'decision', label: '方法组合选择', hints: ['只跑一块胶够不够？', '何时需要Western Blot？', '根据用途和证据需求组合方法。'] },
+      { id: 's7-t', dimension: 'troubleshooting', label: '验证异常排查', hints: ['杂带多、降解或条带弱怎么办？', '从纯化条件、蛋白酶和上样考虑。', '提出再纯化或保护策略。'] },
+      { id: 's7-a', dimension: 'analysis', label: '质量标准判断', hints: ['如何定义纯化达标？', '目标条带之外还要看什么？', '说明目标分子量、杂带比例和用途相关标准。'] },
+    ],
+    gates: [{ id: 's7-g1', label: '把单一目标条带等同绝对纯度', patterns: ['有目标条带就一定纯'], guidance: '目标条带存在只能说明检测到目标大小附近蛋白，纯度需评估杂带及身份。' }],
+    source: `${sourceRubric} 步骤7；${sourceSop} 步骤7`,
+  },
+  {
+    id: 8,
+    slug: 'concentration-and-review',
+    title: '蛋白浓度测定与完整回顾',
+    shortTitle: '浓度与回顾',
+    context: '测定纯化EGFP浓度，并把八步实验连接成完整因果链。',
+    goal: '说明测定原理、标准曲线、方法选择、异常排查和全流程联系。',
+    keyPoints: [
+      { id: 's8-k', dimension: 'knowledge', label: '浓度测定原理', hints: ['BCA、Bradford和A280原理有何区别？', '分别检测什么信号？', '至少准确说明所选方法的反应或吸收原理。'] },
+      { id: 's8-o', dimension: 'operation', label: '标准曲线与计算', hints: ['如何设置标准品和复孔？', '怎样从吸光度得到浓度？', '说明空白、线性拟合、R²和稀释倍数。'] },
+      { id: 's8-d', dimension: 'decision', label: '方法选择', hints: ['样品Buffer会干扰哪种方法？', '为什么选择当前方法？', '结合DTT、SDS、核酸污染或消光系数判断。'] },
+      { id: 's8-t', dimension: 'troubleshooting', label: '异常值排查', hints: ['标准曲线不好或两种方法差异大怎么办？', '检查标准品、气泡、线性范围和干扰物。', '给出重测与交叉验证方案。'] },
+      { id: 's8-a', dimension: 'analysis', label: '八步因果链回顾', hints: ['前一步错误如何影响后一步？', '从序列到定量串起来。', '至少说明三个连续因果关系。'] },
+    ],
+    gates: [
+      { id: 's8-g1', label: '无标准曲线目测定量', patterns: ['目测颜色就知道浓度', '不用标准曲线'], guidance: 'BCA/Bradford定量必须依赖有效标准曲线。' },
+      { id: 's8-g2', label: '接受明显不合格拟合', patterns: ['r²=0.6也可以', 'r2 0.6也可以'], guidance: '标准曲线线性应达到课程要求，材料给出的标准为R²≥0.99。' },
+    ],
+    source: `${sourceRubric} 步骤8；${sourceSop} 步骤8`,
+  },
+];
+
+export function getExperimentStep(stepId: number): ExperimentStep {
+  const step = experimentSteps.find((item) => item.id === stepId);
+  if (!step) throw new Error(`未知实验步骤：${stepId}`);
+  return step;
+}

@@ -1,27 +1,33 @@
 import type { User } from '@supabase/supabase-js';
 import type { ChaoxingRole, ChaoxingUserInfo } from '@/lib/chaoxing-client';
 import { createReadOnlySupabaseClient } from '@/lib/supabase-ssr';
+import type { AgentRole } from '@/domain/agent';
 
 interface CookieReader {
   getAll(): Array<{ name: string; value: string }>;
 }
 
-/** user_metadata 里的展示资料，键名沿用 Supabase 生态约定，值可被用户改写。 */
 export interface SessionProfile {
   displayName: string;
   avatar: string;
 }
 
+export interface WorkspaceCapabilities {
+  studentWorkspace: boolean;
+  teacherWorkspace: boolean;
+  teacherPractice: boolean;
+}
+
 export interface SessionUser {
-  /** 以下字段来自 Supabase Auth 账号本身。 */
   id: string;
   email: string | null;
   provider: string;
+  appRole: AgentRole;
+  capabilities: WorkspaceCapabilities;
+  defaultWorkspace: 'student' | 'teacher';
   createdAt: string;
   lastSignInAt: string;
-  /** 来自 app_metadata.chaoxing，字段名与超星返回一致，仅服务端可写，可用于鉴权。 */
   chaoxing: ChaoxingUserInfo;
-  /** 来自用户可改写的 user_metadata，仅供展示，禁止用于鉴权。 */
   profile: SessionProfile;
 }
 
@@ -47,9 +53,7 @@ function getString(sources: Array<Record<string, unknown>>, keys: string[]): str
 function getStringArray(source: Record<string, unknown>, key: string): string[] {
   const value = source[key];
   if (!Array.isArray(value)) return [];
-  return value
-    .map((item) => (typeof item === 'string' || typeof item === 'number' ? String(item).trim() : ''))
-    .filter(Boolean);
+  return value.map((item) => String(item).trim()).filter(Boolean);
 }
 
 function getRoles(source: Record<string, unknown>, key: string): ChaoxingRole[] {
@@ -59,26 +63,42 @@ function getRoles(source: Record<string, unknown>, key: string): ChaoxingRole[] 
     const role = asRecord(item);
     const roleId = getString([role], ['roleId']);
     const roleName = getString([role], ['roleName']);
-    if (!roleId && !roleName) return [];
-    return [{ roleId, roleName }];
+    return roleId || roleName ? [{ roleId, roleName }] : [];
   });
+}
+
+function resolveRole(app: Record<string, unknown>, chaoxing: Record<string, unknown>): AgentRole {
+  const configured = getString([app], ['role']);
+  if (configured === 'teacher') return 'teacher';
+  // 正式身份必须在 OAuth 入库时由稳定 roleId 白名单或教师授权表判定。
+  // 会话读取阶段不再用易变的 roleName 文本猜测权限。
+  void chaoxing;
+  return 'student';
 }
 
 function normalizeUser(user: User): SessionUser {
   const userMetadata = asRecord(user.user_metadata);
   const appMetadata = asRecord(user.app_metadata);
-  // 身份字段只认 app_metadata.chaoxing。user_metadata 是用户自己可写的，
-  // 一旦参与解析，登录用户就能把自己伪装成任意 uid / fid / 学工号。
   const chaoxing = asRecord(appMetadata.chaoxing);
-
+  const app = asRecord(appMetadata.app);
   const uid = getString([chaoxing], ['uid']);
   const name = getString([chaoxing], ['name']);
   const openid = getString([chaoxing], ['openid']);
 
+  const appRole = resolveRole(app, chaoxing);
+  const capabilities: WorkspaceCapabilities = {
+    studentWorkspace: true,
+    teacherWorkspace: appRole === 'teacher',
+    teacherPractice: appRole === 'teacher',
+  };
+
   return {
     id: user.id,
     email: user.email ?? null,
-    provider: getString([appMetadata], ['provider']) || 'chaoxing',
+    provider: getString([appMetadata], ['provider']) || (openid ? 'chaoxing' : 'demo'),
+    appRole,
+    capabilities,
+    defaultWorkspace: appRole === 'teacher' ? 'teacher' : 'student',
     createdAt: user.created_at,
     lastSignInAt: user.last_sign_in_at ?? '',
     chaoxing: {
@@ -92,15 +112,19 @@ function normalizeUser(user: User): SessionUser {
       loginNames: getStringArray(chaoxing, 'loginNames'),
     },
     profile: {
-      displayName: getString([userMetadata], ['full_name', 'display_name']) || name || uid || openid,
+      displayName: getString([userMetadata], ['full_name', 'display_name']) || name || uid || openid || '用户',
       avatar: getString([userMetadata], ['avatar_url', 'picture']),
     },
   };
 }
 
 export async function getSessionUser(cookies: CookieReader): Promise<SessionContext | null> {
-  const supabase = createReadOnlySupabaseClient(cookies);
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) return null;
-  return { user: normalizeUser(data.user) };
+  try {
+    const supabase = createReadOnlySupabaseClient(cookies);
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) return null;
+    return { user: normalizeUser(data.user) };
+  } catch {
+    return null;
+  }
 }

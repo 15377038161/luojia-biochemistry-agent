@@ -52,5 +52,25 @@ app.prepare().then(() => {
         dev ? 'development' : process.env.COZE_PROJECT_ENV
       }`,
     );
+    startSyncWorker();
   });
 });
+
+function startSyncWorker() {
+  const tick = async () => {
+    const secret = process.env.SYNC_WORKER_SECRET;
+    if (!secret) return;
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/api/internal/sync-chaoxing`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${secret}` },
+        signal: AbortSignal.timeout(55_000),
+      });
+      if (!res.ok && res.status !== 503) console.error('[sync-worker] status', res.status);
+    } catch (err) {
+      console.error('[sync-worker] error', err instanceof Error ? err.message : err);
+    }
+  };
+  setTimeout(tick, 30_000);
+  setInterval(tick, 5 * 60_000);
+}

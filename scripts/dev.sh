@@ -2,12 +2,14 @@
 set -Eeuo pipefail
 
 
-PORT=5000
-COZE_WORKSPACE_PATH="${COZE_WORKSPACE_PATH:-$(pwd)}"
-DEPLOY_RUN_PORT="${DEPLOY_RUN_PORT:-${PORT}}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 
-cd "${COZE_WORKSPACE_PATH}"
+cd "${PROJECT_DIR}"
+
+EXPOSE_PORT=$(awk -F '[ =]+' '/^expose_port/ {gsub(/[^0-9]/, "", $2); print $2; exit}' .preview 2>/dev/null || echo 5000)
+DEPLOY_RUN_PORT="${DEPLOY_RUN_PORT:-${EXPOSE_PORT}}"
 
 kill_port_if_listening() {
     local pids
@@ -31,4 +33,4 @@ echo "Clearing port ${DEPLOY_RUN_PORT} before start."
 kill_port_if_listening
 echo "Starting HTTP service on port ${DEPLOY_RUN_PORT} for dev..."
 
-PORT=${DEPLOY_RUN_PORT} pnpm tsx watch src/server.ts
+PORT=${DEPLOY_RUN_PORT} HOSTNAME=0.0.0.0 pnpm tsx watch src/server.ts

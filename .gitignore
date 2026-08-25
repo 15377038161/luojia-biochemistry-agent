@@ -13,6 +13,7 @@ __pycache__/
 /.env
 .env
 .cozeproj/reduction
+.preview
 
 # JS/TS bundlers & build outputs
 .next
@@ -159,3 +160,6 @@ Desktop.ini
 .coze-logs
 .preview
 .codegraph
+.playwright-cli/
+output/
+knowledge-base/raw-teacher-materials/

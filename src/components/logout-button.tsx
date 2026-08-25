@@ -3,33 +3,20 @@
 import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 
 export default function LogoutButton() {
   const router = useRouter();
-  const [isPending, setIsPending] = useState(false);
-
-  const handleLogout = async () => {
-    setIsPending(true);
-
+  const [pending, setPending] = useState(false);
+  async function logout() {
+    setPending(true);
     try {
       const response = await fetch('/api/auth/logout', { method: 'POST' });
-      if (!response.ok) {
-        throw new Error(`退出登录失败: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`退出失败：${response.status}`);
+      router.refresh();
     } catch (error) {
       console.error(error);
-    } finally {
-      // 服务端已通过 Set-Cookie 清除 Supabase Auth Session，刷新即可
-      router.refresh();
-      setIsPending(false);
+      setPending(false);
     }
-  };
-
-  return (
-    <Button disabled={isPending} variant="outline" onClick={handleLogout}>
-      <LogOut className="size-4" />
-      {isPending ? '正在退出...' : '退出登录'}
-    </Button>
-  );
+  }
+  return <button className="logout-button" disabled={pending} onClick={logout}><LogOut />{pending ? '退出中…' : '退出'}</button>;
 }

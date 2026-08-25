@@ -2,10 +2,6 @@ import { createHash } from 'crypto';
 import type { ChaoxingIdentity } from '@/lib/chaoxing-client';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
 
-/**
- * 0.1 版本把超星字段打平成 chaoxing_xxx 存在 app_metadata 里，现已改为 chaoxing 命名空间。
- * Supabase 的 metadata 是合并更新，把旧键显式置 null 才会被删除，否则会一直占用 JWT 体积。
- */
 const LEGACY_APP_METADATA_KEYS = {
   chaoxing_openid: null,
   chaoxing_uid: null,
@@ -16,39 +12,65 @@ const LEGACY_APP_METADATA_KEYS = {
   chaoxing_roles: null,
 };
 
-/** 学工号已不再写入 user_metadata，老用户下次登录时清掉这个残留键。 */
-const LEGACY_USER_METADATA_KEYS = {
-  preferred_username: null,
-};
-
 function virtualEmail(openid: string): string {
   const subjectHash = createHash('sha256').update(openid).digest('hex').slice(0, 48);
   return `chaoxing_${subjectHash}@oauth.invalid`;
 }
 
-/**
- * 将已验证的超星身份映射为 Supabase Auth 用户，并生成一次性登录 token。
- * 不创建或保存用户密码。
- */
-export async function createSupabaseLoginToken(
-  identity: ChaoxingIdentity,
-): Promise<string> {
+export function configuredTeacherRoleIds(raw = process.env.CHAOXING_TEACHER_ROLE_IDS ?? ''): Set<string> {
+  return new Set(
+    raw
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean),
+  );
+}
+
+export function hasConfiguredTeacherRole(returnedRoleIds: string[], configuredIds: Set<string>): boolean {
+  return returnedRoleIds.some((roleId) => configuredIds.has(roleId));
+}
+
+/** 将可信超星身份映射到Supabase用户，并同步双智能体业务角色。 */
+export async function createSupabaseLoginToken(identity: ChaoxingIdentity): Promise<string> {
   const admin = getSupabaseAdminClient();
   const { avatar, ...userInfo } = identity;
   const email = virtualEmail(userInfo.openid);
-  // user_metadata 可被用户自己用 supabase.auth.updateUser({ data }) 改写，
-  // 只放展示字段；任何用于鉴权的标识必须同时写入 app_metadata（仅 service role 可写）。
-  // 这里沿用 Supabase 生态约定的键名（Studio 和多数 UI 组件按它们取展示信息），
-  // 业务代码一律读 app_metadata.chaoxing。学工号属于身份标识，只存 app_metadata。
-  const userMetadata = {
-    ...LEGACY_USER_METADATA_KEYS,
-    full_name: userInfo.displayName,
-    avatar_url: avatar,
+  const teacherRoleIds = configuredTeacherRoleIds();
+  const returnedRoleIds = userInfo.role.map((item) => item.roleId).filter(Boolean);
+  let teacherGranted = hasConfiguredTeacherRole(returnedRoleIds, teacherRoleIds);
+  let roleSource = teacherGranted ? 'chaoxing_role_id' : 'student_default';
+
+  if (!teacherGranted && returnedRoleIds.length > 0) {
+    const { data: grant, error: grantError } = await admin
+      .from('teacher_role_grants')
+      .select('id')
+      .eq('provider', 'chaoxing')
+      .eq('fid', userInfo.fid)
+      .eq('active', true)
+      .in('external_role_id', returnedRoleIds)
+      .limit(1)
+      .maybeSingle();
+    if (grantError) {
+      console.warn('教师角色授权表暂不可用，将只使用 CHAOXING_TEACHER_ROLE_IDS：', grantError.message);
+    } else if (grant) {
+      teacherGranted = true;
+      roleSource = 'teacher_role_grant';
+    }
+  }
+
+  const role = teacherGranted ? 'teacher' : 'student';
+  // 只记录 roleId 与最终授权来源，roleName 仅供排查显示，不参与权限判断。
+  const rawRoles = userInfo.role.map((item) => `${item.roleId || '无ID'}:${item.roleName || '未命名'}`).join('、') || '（空）';
+  console.info(
+    `[角色判定] ${userInfo.displayName || userInfo.uid} uid=${userInfo.uid} fid=${userInfo.fid} 超星角色=[${rawRoles}] → ${role} (${roleSource})`,
+  );
+  const userMetadata = { preferred_username: null, full_name: userInfo.displayName, avatar_url: avatar };
+  const appMetadata = {
+    ...LEGACY_APP_METADATA_KEYS,
+    provider: 'chaoxing',
+    app: { role, roleSource },
+    chaoxing: userInfo,
   };
-  // 直接存超星返回的 userInfo 结构，键名不做二次翻译。
-  // 注意：app_metadata 会进入 JWT，与 Session 单 Cookie 大小限制竞争，
-  // 只放已解析的这几个字段，不要把响应里的其他内容原样塞进来。
-  const appMetadata = { ...LEGACY_APP_METADATA_KEYS, chaoxing: userInfo };
 
   const { data: created } = await admin.auth.admin.createUser({
     email,
@@ -56,21 +78,30 @@ export async function createSupabaseLoginToken(
     app_metadata: appMetadata,
     user_metadata: userMetadata,
   });
-
-  const { data: link, error: linkError } = await admin.auth.admin.generateLink({
-    type: 'magiclink',
-    email,
-  });
+  const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: 'magiclink', email });
   if (linkError || !link.properties?.hashed_token || !link.user?.id) {
-    throw new Error(`无法为超星用户生成 Supabase 登录凭据：${linkError?.message || '未知错误'}`);
+    throw new Error(`无法为超星用户生成Supabase登录凭据：${linkError?.message || '未知错误'}`);
   }
-
   const userId = created.user?.id || link.user.id;
   const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
     app_metadata: { ...link.user.app_metadata, ...appMetadata },
     user_metadata: { ...link.user.user_metadata, ...userMetadata },
   });
   if (updateError) throw new Error(`无法同步超星用户资料：${updateError.message}`);
+
+  const { error: profileError } = await admin.from('profiles').upsert({
+    id: userId,
+    display_name: userInfo.displayName || userInfo.name || userInfo.uid,
+    role,
+    student_no: role === 'student' ? userInfo.name : null,
+  }, { onConflict: 'id' });
+  if (profileError) throw new Error(`无法同步业务用户资料：${profileError.message}`);
+  const { error: enrollmentError } = await admin.from('enrollments').upsert({
+    class_id: '10000000-0000-4000-8000-000000000002',
+    user_id: userId,
+    role,
+  }, { onConflict: 'class_id,user_id' });
+  if (enrollmentError) throw new Error(`无法同步课程身份：${enrollmentError.message}`);
 
   return link.properties.hashed_token;
 }
