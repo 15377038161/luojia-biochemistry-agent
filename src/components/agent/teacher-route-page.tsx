@@ -10,7 +10,7 @@ export default async function TeacherRoutePage({ preview = false }: { preview?: 
   }
 
   const session = await getSessionUser(await cookies());
-  if (!session) redirect('/login');
+  if (!session) redirect('/');
   if (!session.user.capabilities.teacherWorkspace) redirect('/student/map');
   return <TeacherAgent displayName={session.user.profile.displayName} demo={session.user.provider === 'demo'} />;
 }

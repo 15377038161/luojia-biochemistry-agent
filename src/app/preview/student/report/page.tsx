@@ -1,7 +1,8 @@
-import StudentRoutePage from '@/components/agent/student-route-page';
+import { notFound, redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 export default function PreviewStudentReportPage() {
-  return <StudentRoutePage preview reportPage />;
+  if (process.env.ENABLE_UI_PREVIEW !== 'true') notFound();
+  redirect('/student/report?preview=1');
 }

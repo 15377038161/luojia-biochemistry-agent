@@ -28,6 +28,10 @@ const ERROR_COPY: Record<LoginErrorReason, { title: string; description: string 
     title: '登录服务未正确配置',
     description: '应用缺少学习通登录所需的校方配置项，用户侧无法自行解决，请联系管理员。',
   },
+  forbidden: {
+    title: '当前身份没有访问权限',
+    description: '你的学习通身份已完成验证，但没有开通对应的学生或教师工作区。请返回首页进入可用工作区，或联系课程管理员。',
+  },
 };
 
 /** 登录页有下拉框时，institution_mismatch 是"选错了"，用户自己就能补救。 */
@@ -64,7 +68,7 @@ export default async function LoginErrorPage({ searchParams }: LoginErrorPagePro
           <p className="text-sm leading-relaxed text-muted-foreground">{copy.description}</p>
         </div>
         <Button asChild className="w-full">
-          <Link href="/login"><ArrowLeft aria-hidden />返回登录页</Link>
+          <Link href="/"><ArrowLeft aria-hidden />返回登录页</Link>
         </Button>
       </main>
     </div>

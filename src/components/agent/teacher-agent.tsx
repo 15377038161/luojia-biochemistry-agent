@@ -297,7 +297,7 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
           <div className="px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
             <div><h1 className="font-extrabold text-base">文字实验教学工作台</h1><p className="text-xs text-muted-foreground"><span className="hidden sm:inline">{displayName} · </span>{dateText}</p></div>
             <div className="flex items-center gap-2">
-              <Link href={preview ? '/preview/student/map' : '/student/map'} className="teacher-mode-switch"><FlaskConical className="w-4 h-4" /><span>学习体验</span></Link>
+              <Link href={preview ? '/student/map?preview=1' : '/student/map'} className="teacher-mode-switch"><FlaskConical className="w-4 h-4" /><span>学习体验</span></Link>
               <Link href="/" aria-label="返回首页" className="min-w-12 min-h-12 inline-flex items-center justify-center rounded-xl border border-border bg-card text-primary"><Home className="w-4 h-4" /></Link>
               {demo && <span className="px-3 py-2 rounded-lg bg-warning/10 text-warning text-xs font-bold">演示环境</span>}
               <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-muted text-xs font-bold"><Users className="w-3.5 h-3.5 text-primary" /> 生物技术 2023 级 1 班</span>

@@ -1,0 +1,239 @@
+/* 唯一活动视觉系统：珞珈数字实验笔记。 */
+:root {
+  --ui-blue:#123f70;
+  --ui-blue-strong:#082f5d;
+  --ui-green:#236f5b;
+  --ui-coral:#e87561;
+  --ui-paper:#fffdf8;
+  --ui-canvas:#f7f4ed;
+  --ui-line:#dfe5e4;
+  --ui-muted:#667887;
+  --ui-radius-sm:10px;
+  --ui-radius:16px;
+  --ui-radius-lg:22px;
+  --ui-shadow:0 10px 30px rgba(18,63,112,.08);
+  --ui-shadow-hover:0 16px 36px rgba(18,63,112,.13);
+  --font-body:14px;
+  --font-support:12px;
+}
+
+html,body { overflow-x:hidden; color:var(--ui-blue-strong); background:var(--ui-canvas); }
+body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","PingFang SC",sans-serif; font-size:var(--font-body); }
+.student-agent-app,.teacher-app,.workstation-shell,.report-page-shell { animation:none; }
+
+/* 唯一入口：根路由同时承担产品说明与统一身份登录。 */
+.unified-entry { position:relative; min-height:100svh; padding:0 max(22px,calc((100vw - 1280px)/2)); display:grid; grid-template-rows:auto 1fr auto; overflow:hidden; background:#fff9f0; isolation:isolate; }
+.unified-entry-art { position:absolute; inset:0; z-index:-3; background:url('/illustrations/luojia-biochem-agent-bg-v1.webp') center/cover no-repeat; }
+.unified-entry-wash { position:absolute; inset:0; z-index:-2; background:linear-gradient(90deg,rgba(255,252,245,.93) 0%,rgba(255,252,245,.84) 48%,rgba(255,252,245,.40) 75%,rgba(255,252,245,.22)); }
+.unified-entry-nav { min-height:76px; display:flex; align-items:center; justify-content:space-between; gap:24px; border-bottom:1px solid rgba(18,63,112,.10); }
+.unified-entry-brand { min-width:0; display:flex; align-items:center; gap:12px; }
+.unified-entry-brand>span { width:42px; height:42px; display:grid; place-items:center; flex:0 0 auto; color:#fff; border-radius:12px; background:linear-gradient(145deg,var(--ui-blue),var(--ui-green)); }
+.unified-entry-brand svg { width:22px; }
+.unified-entry-brand>div { min-width:0; display:grid; gap:2px; }
+.unified-entry-brand strong { color:var(--ui-blue-strong); font-size:15px; letter-spacing:.02em; }
+.unified-entry-brand small { color:var(--ui-muted); font-size:11px; }
+.unified-entry-course { min-height:36px; padding:0 12px; display:inline-flex; align-items:center; color:var(--ui-green); border:1px solid rgba(35,111,91,.18); border-radius:10px; background:rgba(255,255,255,.60); font-size:11px; font-weight:900; }
+.unified-entry-stage { min-height:0; padding:clamp(38px,7vh,82px) 0; display:flex; align-items:center; }
+.unified-entry-copy { width:min(640px,100%); min-width:0; }
+.unified-entry-eyebrow { width:fit-content; margin:0 0 18px; display:inline-flex; align-items:center; gap:8px; color:var(--ui-green); font-size:12px; font-weight:900; letter-spacing:.08em; }
+.unified-entry-eyebrow svg { width:18px; }
+.unified-entry-welcome { margin:0 0 8px; color:var(--ui-coral); font-size:14px; font-weight:900; }
+.unified-entry h1 { margin:0; color:var(--ui-blue-strong); font-size:clamp(44px,5.4vw,76px); line-height:1.08; letter-spacing:-.045em; }
+.unified-entry-lead { max-width:620px; margin:22px 0 0; color:#4f6678; font-size:16px; line-height:1.85; }
+.unified-entry-action { width:min(360px,100%); margin-top:28px; }
+.unified-entry-action>.flex,.unified-entry-action .flex.w-72 { width:100%; align-items:stretch; }
+.unified-entry-action [data-slot="select-trigger"] { min-height:50px; border-color:var(--ui-line); border-radius:11px; background:rgba(255,255,255,.90); }
+.unified-entry-action button,.unified-entry-primary { width:100%; min-height:52px; padding:0 20px; display:inline-flex; align-items:center; justify-content:center; gap:8px; color:#fff; border:0; border-radius:12px; background:var(--ui-blue); box-shadow:0 14px 30px rgba(18,63,112,.18); text-decoration:none; font-size:14px; font-weight:900; transition:background .18s ease,transform .18s ease; }
+.unified-entry-action button:hover,.unified-entry-primary:hover { background:var(--ui-blue-strong); transform:translateY(-1px); }
+.unified-entry-action button:disabled { color:#73808b; background:#e2e8ea; box-shadow:none; }
+.unified-entry-action .text-muted-foreground { color:var(--ui-muted); font-size:12px; text-align:left; }
+.unified-entry-primary svg { width:18px; }
+.unified-entry-note { margin:12px 0 0; color:var(--ui-muted); font-size:11px; line-height:1.6; }
+.unified-entry-footer { min-height:48px; display:flex; align-items:center; color:#718392; border-top:1px solid rgba(18,63,112,.10); font-size:10px; }
+
+.student-topbar { border-color:rgba(18,63,112,.10); background:rgba(255,253,248,.94); box-shadow:0 1px 0 rgba(255,255,255,.8); backdrop-filter:blur(16px); }
+.student-topbar-brand>span { border-radius:12px; background:linear-gradient(145deg,var(--ui-blue),var(--ui-green)); box-shadow:none; }
+
+/* 学生端唯一页头。 */
+.student-topbar { position:sticky; top:0; z-index:70; min-height:64px; border-bottom:1px solid rgba(18,63,112,.10); }
+.student-topbar-inner { width:min(1180px,calc(100% - 32px)); min-height:64px; margin:0 auto; display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; align-items:center; gap:10px; }
+.student-topbar-brand { min-width:0; display:inline-flex; align-items:center; gap:9px; color:var(--ui-blue-strong); text-decoration:none; }
+.student-topbar-brand>span { width:38px; height:38px; display:grid; place-items:center; color:#fff; flex:0 0 auto; }
+.student-topbar-brand svg { width:19px; }
+.student-topbar-brand b { font-size:13px; white-space:nowrap; }
+.student-topbar-back,.student-topbar-actions button { min-height:44px; padding:0 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; color:var(--ui-blue); border:1px solid var(--ui-line); border-radius:11px; background:#fff; font-size:12px; font-weight:800; cursor:pointer; }
+.student-topbar-back svg,.student-topbar-actions svg { width:16px; }
+.student-topbar-title { min-width:0; display:grid; gap:2px; text-align:center; }
+.student-topbar-title strong,.student-topbar-title small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.student-topbar-title strong { color:var(--ui-blue-strong); font-size:14px; }
+.student-topbar-title small { color:var(--ui-muted); font-size:11px; }
+.student-topbar-actions { display:flex; gap:8px; }
+.student-topbar-actions button.is-active { color:#fff; border-color:var(--ui-blue); background:var(--ui-blue); }
+
+/* 八步地图：外层命中区域静止，反馈只发生在内部插画。 */
+.lab-map-page,.workstation-shell,.report-page-shell { position:relative; isolation:isolate; background:linear-gradient(180deg,rgba(255,253,248,.80),rgba(247,244,237,.88)); }
+.lab-map-page::before,.workstation-shell::after,.report-page-shell::after { content:""; position:fixed; inset:64px 0 0; z-index:-1; pointer-events:none; background:url('/illustrations/biochem-notebook-watercolor.webp') center/cover no-repeat; opacity:.58; }
+.student-map-hero { min-height:190px; padding:28px 30px; display:flex; flex-direction:column; justify-content:center; border:1px solid var(--ui-line); border-radius:var(--ui-radius-lg); background:rgba(255,253,248,.91); box-shadow:var(--ui-shadow); }
+.student-map-hero::after { right:24px; top:14px; width:180px; height:150px; opacity:.10; }
+.student-map-heading { position:relative; z-index:1; max-width:700px; }
+.student-map-heading>p { margin:0; color:var(--ui-green); font-size:11px; font-weight:900; letter-spacing:.12em; }
+.student-map-heading h1 { margin:8px 0 0; color:var(--ui-blue-strong); font-size:clamp(26px,3.3vw,42px); line-height:1.22; letter-spacing:-.025em; }
+.student-map-heading>span { display:block; margin-top:10px; color:var(--ui-muted); font-size:13px; line-height:1.75; }
+.student-map-progress { position:relative; z-index:1; width:max-content; max-width:100%; margin:16px 0 0; padding:8px 11px; display:flex; flex-wrap:wrap; align-items:center; gap:7px; border:1px solid var(--ui-line); border-radius:10px; background:rgba(255,255,255,.78); font-size:11px; font-weight:800; }
+.student-preview-badge,.student-map-teacher-return { position:absolute; right:28px; top:24px; z-index:2; min-height:36px; padding:0 10px; display:inline-flex; align-items:center; color:var(--ui-blue); border:1px solid var(--ui-line); border-radius:10px; background:#fff; font-size:11px; font-weight:800; text-decoration:none; }
+.student-map-teacher-return { top:68px; }
+.desktop-route-board { min-height:570px!important; overflow:hidden; border-color:rgba(18,63,112,.14)!important; border-radius:var(--ui-radius-lg)!important; background:linear-gradient(rgba(255,253,248,.60),rgba(255,253,248,.80)),url('/illustrations/biochem-notebook-watercolor.webp') center/cover!important; box-shadow:var(--ui-shadow)!important; }
+.production-route-shadow { fill:none; stroke:rgba(8,47,93,.16); stroke-width:32; }
+.production-route-main { fill:none; stroke:#3d6fe0; stroke-width:20; }
+.production-route-flow { fill:none; stroke:rgba(255,255,255,.94); stroke-width:4; stroke-dasharray:16 20; animation:production-route-flow 1.2s linear infinite; }
+.lab-map-page .map-node { width:198px!important; min-width:198px!important; grid-template-columns:68px 1fr!important; gap:10px!important; padding:11px!important; transform:translate(-50%,-50%)!important; border:1px solid rgba(18,63,112,.14)!important; border-radius:var(--ui-radius)!important; background:rgba(255,255,255,.92)!important; box-shadow:0 7px 18px rgba(18,63,112,.09)!important; backdrop-filter:blur(7px); transition:border-color .18s ease,box-shadow .18s ease,filter .18s ease!important; }
+.lab-map-page .map-node:hover,.lab-map-page .map-node:focus-visible { transform:translate(-50%,-50%)!important; box-shadow:var(--ui-shadow-hover)!important; }
+.lab-map-page .map-node-visual { width:66px!important; height:62px!important; border-radius:12px!important; background:#f0f7fa!important; transition:transform .18s ease!important; }
+.lab-map-page .map-node:hover .map-node-visual,.lab-map-page .map-node:focus-visible .map-node-visual { transform:translateY(-2px) scale(1.025); }
+.lab-map-page .map-node-copy strong { color:var(--ui-blue-strong); font-family:inherit!important; font-size:12px; line-height:1.45; }
+.lab-map-page .map-node-copy small { margin-top:5px; color:var(--ui-muted); font-size:10px; }
+.lab-map-page .map-node-cur { border-color:rgba(232,117,97,.72)!important; box-shadow:0 0 0 3px rgba(232,117,97,.12)!important; }
+.lab-map-page .map-node-revise { border-color:#e8b36f!important; background:#fffaf1!important; }
+.lab-map-page .map-node-done { border-color:#abd1c2!important; }
+.lab-map-page .map-node-lock { opacity:.62; filter:saturate(.45); }
+.map-node-status { position:absolute; right:-5px; top:-5px; width:21px; height:21px; display:grid; place-items:center; border:2px solid #fff; border-radius:50%; }
+.map-node-status svg { width:11px; }
+.map-node-status.is-done { color:#fff; background:var(--ui-green); }
+.map-node-status.is-locked { color:#586b79; background:#e6eaeb; }
+.map-current-ring { position:absolute; inset:-4px; border:2px solid rgba(232,117,97,.60); border-radius:14px; pointer-events:none; animation:production-current-ring 1.6s ease-out infinite; }
+.mobile-step-list { padding:8px 0 28px 48px; gap:12px; }
+.mobile-step-list::before { display:none; }
+.mobile-route-line { position:absolute; left:21px; top:18px; bottom:46px; width:4px; display:block!important; border-radius:999px; background:repeating-linear-gradient(to bottom,#3d6fe0 0 12px,transparent 12px 21px); animation:production-route-y 1.1s linear infinite; opacity:.9; }
+.lab-map-page .mobile-route-card,.lab-map-page .mobile-step-list button:nth-child(even),.lab-map-page .mobile-step-list button:nth-child(odd) { width:100%!important; min-height:82px!important; align-self:stretch!important; transform:none!important; }
+.lab-map-page .mobile-route-card { padding:10px 12px; border:1px solid rgba(18,63,112,.14)!important; border-radius:var(--ui-radius)!important; background:rgba(255,255,255,.91)!important; box-shadow:0 6px 18px rgba(18,63,112,.08)!important; backdrop-filter:blur(6px); }
+.lab-map-page .mobile-step-list { border:1px solid rgba(61,111,224,.15); border-radius:22px; background:linear-gradient(rgba(255,253,249,.66),rgba(255,253,249,.82)),url('/illustrations/biochem-notebook-watercolor.webp') center/cover; }
+.lab-map-page .mobile-route-card:hover,.lab-map-page .mobile-route-card:focus-visible { transform:none!important; border-color:#b7cbd6!important; box-shadow:var(--ui-shadow)!important; }
+.lab-map-page .mobile-route-icon { width:58px!important; height:58px!important; border-radius:12px!important; background:#eff7fa!important; }
+.lab-map-page .mobile-route-icon .step-illustration { width:54px!important; height:47px!important; }
+.lab-map-page .mobile-route-copy>span:first-child { color:var(--ui-blue-strong)!important; font-family:inherit!important; font-size:13px!important; }
+.mobile-route-lock { position:absolute; right:-3px; bottom:-3px; width:18px; height:18px; display:grid; place-items:center; color:#586b79; border:2px solid #fff; border-radius:50%; background:#e6eaeb; }
+.mobile-route-lock svg { width:9px; }
+
+/* 分步任务：桌面双栏，移动端单列。 */
+.workstation-shell { min-height:100svh; padding-bottom:82px; }
+.workstation-shell::before { display:none; }
+.workstation-step-heading { min-height:74px; padding:14px 16px; border:1px solid var(--ui-line)!important; border-radius:var(--ui-radius)!important; background:rgba(255,253,248,.92)!important; box-shadow:none!important; }
+.step-heading-copy { min-width:0; flex:1; }
+.workstation-step-heading h1 { margin:3px 0 0; color:var(--ui-blue-strong); font-size:16px; line-height:1.45; }
+.workstation-step-heading p { margin:0; color:var(--ui-green); font-size:10px; font-weight:900; letter-spacing:.1em; }
+.step-gate-state { margin-left:auto; min-height:34px; padding:0 10px; display:inline-flex; align-items:center; gap:5px; border:1px solid; border-radius:10px; font-size:11px; font-weight:900; }
+.step-gate-state svg { width:14px; }
+.step-gate-state.is-passed { color:var(--ui-green); border-color:#b9d9ce; background:#edf7f3; }
+.step-gate-state.is-pending { color:#9b6423; border-color:#ead0a9; background:#fff7e9; }
+.workstation-card,.workstation-shell main>section,.workstation-feedback-rail>div { border:1px solid var(--ui-line)!important; border-radius:var(--ui-radius)!important; background:rgba(255,253,248,.94)!important; box-shadow:0 7px 22px rgba(18,63,112,.055)!important; }
+.workstation-card { padding:8px!important; }
+.stage-strip { display:grid!important; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px!important; overflow:visible!important; }
+.stage-strip button { min-width:0!important; min-height:44px!important; padding:0 8px!important; justify-content:center; border-radius:10px!important; font-size:11px!important; }
+.workstation-shell textarea,.workstation-shell input { border:1px solid var(--ui-line)!important; border-radius:10px!important; background:#fff!important; font-family:inherit!important; font-size:14px!important; }
+.workstation-footer { border-color:var(--ui-line)!important; background:rgba(255,253,248,.97)!important; }
+.workstation-footer button { min-height:48px; min-width:116px; border-radius:11px!important; }
+.workstation-feedback-rail { top:84px!important; }
+.workstation-feedback-rail>div { box-shadow:none!important; }
+
+/* 报告与教师端沿用同一纸张、线条和控件尺度。 */
+.report-page-card,.report-sheet { border-color:var(--ui-line)!important; border-radius:var(--ui-radius-lg)!important; background:rgba(255,253,248,.96)!important; box-shadow:var(--ui-shadow)!important; }
+.report-page-card::before { display:none!important; }
+.report-page-card .rounded-2xl,.report-page-card .rounded-xl { border-color:var(--ui-line)!important; border-radius:var(--ui-radius)!important; box-shadow:none!important; }
+.report-page-card { background:linear-gradient(rgba(255,253,248,.90),rgba(255,253,248,.96)),url('/illustrations/biochem-notebook-watercolor.webp') center/cover!important; }
+.report-page-card>div,.report-page-card>section { position:relative; }
+.grade-summary-panel { padding:18px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:14px; border:1px solid rgba(61,111,224,.16); border-radius:var(--ui-radius); background:rgba(232,241,255,.72); }
+.grade-state { min-height:32px; padding:0 10px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; color:var(--ui-blue); background:rgba(255,255,255,.82); font-size:11px; font-weight:900; white-space:nowrap; }
+.grade-appeal-form { grid-column:1/-1; display:grid; gap:9px; }
+.grade-appeal-form label { color:var(--ui-blue-strong); font-size:12px; font-weight:800; line-height:1.6; }
+.grade-appeal-form textarea { width:100%; min-height:92px; padding:11px 13px; resize:vertical; border:1px solid rgba(18,63,112,.16)!important; border-radius:12px!important; background:rgba(255,255,255,.92)!important; font-size:13px!important; line-height:1.6; }
+.grade-appeal-form button { justify-self:start; min-height:44px; padding:0 16px; border:0; border-radius:999px!important; color:#fff; background:var(--ui-blue); font-size:12px; font-weight:900; }
+.grade-appeal-form button:disabled { color:var(--ui-muted); background:rgba(255,255,255,.72); }
+.grade-review-result { grid-column:1/-1; margin:0; color:var(--ui-muted); font-size:12px; line-height:1.65; }
+.teacher-app { position:relative; isolation:isolate; color:var(--ui-blue-strong); background:linear-gradient(rgba(247,244,237,.88),rgba(247,244,237,.94)),url('/bg-texture.jpg') center/cover fixed!important; }
+.teacher-app .science-background { display:none; }
+.teacher-app>aside,.teacher-app header { border-color:rgba(18,63,112,.12)!important; background:rgba(255,253,248,.92)!important; }
+.teacher-app main>section>div,.teacher-app main>div,.teacher-work-panel,.teacher-metric-grid article { border-color:rgba(18,63,112,.13)!important; border-radius:var(--ui-radius)!important; background:rgba(255,255,255,.90)!important; box-shadow:0 7px 22px rgba(18,63,112,.06)!important; backdrop-filter:blur(7px); }
+.teacher-app>aside nav button:first-child { background:var(--ui-blue)!important; color:#fff!important; box-shadow:0 4px 0 var(--ui-blue-strong)!important; }
+.teacher-app>aside nav button:not(:first-child):hover { background:var(--ui-paper)!important; }
+.teacher-mobile-nav { border:1px solid rgba(18,63,112,.13)!important; background:rgba(255,253,248,.94)!important; box-shadow:var(--ui-shadow); }
+.teacher-mobile-nav button { color:var(--ui-blue)!important; background:var(--ui-paper)!important; }
+.teacher-metric-grid article { min-height:108px; }
+.teacher-app button,.teacher-app input,.teacher-app textarea { border-radius:10px!important; }
+
+.agent-auth-error { min-height:100svh; padding:24px; display:grid; place-items:center; background:linear-gradient(rgba(255,247,232,.72),rgba(255,247,232,.88)),url('/illustrations/login-luojia-poster-v1.webp') center/cover; }
+.agent-auth-error main { width:min(440px,100%); padding:30px; display:grid; justify-items:center; gap:16px; text-align:center; border:1px solid rgba(18,63,112,.14); border-radius:var(--ui-radius-lg); background:rgba(255,253,248,.93); box-shadow:var(--ui-shadow); backdrop-filter:blur(9px); }
+.agent-auth-error-brand { width:56px; height:56px; display:grid; place-items:center; color:#fff; border-radius:var(--ui-radius); background:var(--ui-blue); box-shadow:0 4px 0 var(--ui-blue-strong); }
+.agent-auth-error-brand svg { width:28px; }
+.agent-auth-error-icon { width:38px; height:38px; color:var(--ui-coral); }
+.agent-auth-error main>a,.agent-auth-error main button { min-height:50px; border-radius:999px; font-weight:900; box-shadow:0 4px 0 var(--ui-blue-strong); }
+
+@media (max-width:767px) {
+  .unified-entry { min-height:100svh; padding:0 14px; }
+  .unified-entry-art { background-position:58% center; }
+  .unified-entry-wash { background:linear-gradient(180deg,rgba(255,252,245,.98) 0%,rgba(255,252,245,.93) 58%,rgba(255,252,245,.72)); }
+  .unified-entry-nav { min-height:64px; }
+  .unified-entry-brand>span { width:40px; height:40px; }
+  .unified-entry-brand strong { font-size:13px; }
+  .unified-entry-brand small { display:none; }
+  .unified-entry-course { min-height:34px; padding:0 9px; font-size:9px; }
+  .unified-entry-stage { padding:24px 0 18px; display:flex; flex-direction:column; justify-content:center; align-items:stretch; }
+  .unified-entry-eyebrow { margin-bottom:12px; font-size:10px; }
+  .unified-entry h1 { font-size:clamp(36px,11vw,46px); line-height:1.14; }
+  .unified-entry-lead { margin-top:16px; font-size:14px; line-height:1.72; }
+  .unified-entry-action { width:100%; margin-top:22px; }
+  .unified-entry-action button,.unified-entry-primary { min-height:50px; }
+  .unified-entry-note { margin-top:10px; }
+  .unified-entry-footer { min-height:40px; font-size:9px; }
+  .student-topbar-inner { width:calc(100% - 20px); gap:6px; }
+  .student-topbar-brand b { display:none; }
+  .student-topbar-back { width:44px; padding:0; }
+  .student-topbar-back span,.student-topbar-actions button span { display:none; }
+  .student-topbar-actions button { width:44px; padding:0; }
+  .student-topbar-title strong { font-size:13px; }
+  .student-topbar-title small { font-size:10px; }
+  .lab-map-page main { padding-inline:12px; }
+  .student-map-hero { min-height:178px; margin-top:12px; padding:20px 16px; border-radius:16px; }
+  .student-map-hero::after { right:-15px; top:16px; width:120px; height:100px; }
+  .student-map-heading { max-width:78%; }
+  .student-map-heading>p { font-size:10px; }
+  .student-map-heading h1 { margin-top:6px; font-size:23px; }
+  .student-map-heading>span { margin-top:7px; font-size:12px; line-height:1.6; }
+  .student-map-progress { width:100%; margin-top:13px; font-size:10px; }
+  .student-preview-badge,.student-map-teacher-return { right:13px; top:14px; min-height:30px; font-size:9px; }
+  .student-map-teacher-return { top:50px; }
+  .mobile-step-list { padding-left:43px; gap:10px; }
+  .mobile-route-line { left:18px; }
+  .workstation-shell { padding-bottom:78px!important; }
+  .workstation-shell .workstation-layout { display:block; padding:10px 12px 0!important; }
+  .workstation-step-heading { position:static!important; min-height:68px; margin:0!important; padding:11px 12px!important; backdrop-filter:none!important; }
+  .workstation-step-heading h1 { font-size:14px!important; }
+  .workstation-step-heading p { display:block; }
+  .step-gate-state { margin-left:auto; padding:0 8px; font-size:10px; }
+  .workstation-card { margin-top:10px!important; }
+  .stage-strip { gap:4px!important; }
+  .stage-strip button { min-height:42px!important; padding:0 5px!important; }
+  .stage-strip button svg { display:none; }
+  .workstation-shell main>section:not(.workstation-card) { margin-top:10px!important; padding:15px!important; border-radius:14px!important; }
+  .workstation-shell main>section h2 { font-size:19px!important; }
+  .workstation-footer { padding:8px 12px calc(8px + env(safe-area-inset-bottom))!important; }
+  .workstation-footer button { min-width:0; flex:1; }
+  .report-page-card { width:calc(100% - 20px)!important; margin:10px auto!important; padding:16px 13px!important; border-radius:14px!important; }
+  .teacher-app main { padding-inline:12px; }
+  .teacher-metric-grid { grid-template-columns:1fr 1fr; gap:10px; }
+  .teacher-metric-grid article { min-height:92px; padding:13px; }
+  .grade-summary-panel { grid-template-columns:1fr; padding:14px; gap:12px; }
+  .grade-state { justify-self:start; }
+  .grade-appeal-form { grid-column:1; }
+  .grade-appeal-form button { width:100%; }
+  .agent-auth-error { padding:14px; }
+  .agent-auth-error main { padding:24px 18px; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .lab-map-page .map-node-visual { transition:none!important; }
+  .production-route-flow,.map-current-ring,.mobile-route-line { animation:none!important; }
+}
+
+@keyframes production-route-flow { to { stroke-dashoffset:-36; } }
+@keyframes production-route-y { to { background-position-y:21px; } }
+@keyframes production-current-ring { from { opacity:.75; transform:scale(1); } to { opacity:0; transform:scale(1.16); } }

@@ -59,6 +59,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
   const [reportBusy, setReportBusy] = useState(false);
   const [reportError, setReportError] = useState('');
   const [courseContent, setCourseContent] = useState<CourseContentPayload>(defaultCourseContent());
+  const routeHref = useCallback((path: string) => `${routeBase}/${path}${preview ? '?preview=1' : ''}`, [preview, routeBase]);
 
   const loadSession = useCallback(async () => {
     setLoading(true);
@@ -121,19 +122,19 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
 
   useEffect(() => {
     if (!routeBase || !session) return;
-    router.prefetch(`${routeBase}/map`);
-    router.prefetch(`${routeBase}/report`);
-    session.steps.filter((step) => step.status !== 'locked').forEach((step) => router.prefetch(`${routeBase}/step/${step.stepId}`));
-  }, [routeBase, router, session]);
+    router.prefetch(routeHref('map'));
+    router.prefetch(routeHref('report'));
+    session.steps.filter((step) => step.status !== 'locked').forEach((step) => router.prefetch(routeHref(`step/${step.stepId}`)));
+  }, [routeBase, routeHref, router, session]);
 
-  const goToMap = () => routeBase ? router.push(`${routeBase}/map`) : setActiveStep(null);
-  const goToStep = (stepId: number) => routeBase ? router.push(`${routeBase}/step/${stepId}`) : setActiveStep(stepId);
+  const goToMap = () => routeBase ? router.push(routeHref('map')) : setActiveStep(null);
+  const goToStep = (stepId: number) => routeBase ? router.push(routeHref(`step/${stepId}`)) : setActiveStep(stepId);
   const openReport = () => {
-    if (routeBase) router.push(`${routeBase}/report`);
+    if (routeBase) router.push(routeHref('report'));
     else setReportOpen(true);
   };
   const closeReport = () => {
-    if (routeBase) router.push(`${routeBase}/map`);
+    if (routeBase) router.push(routeHref('map'));
     else setReportOpen(false);
   };
 

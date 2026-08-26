@@ -164,6 +164,10 @@ function institutionLabel({ fid, name }: ChaoxingInstitution): string {
 }
 
 function getChaoxingConfig(): ChaoxingConfig {
+  if (process.env.ENABLE_CHAOXING_AUTH !== 'true') {
+    throw new ChaoxingLoginError('config_missing', '学习通身份认证未启用');
+  }
+
   const appid = process.env.CHAOXING_APPID?.trim() ?? '';
   const secret = process.env.CHAOXING_SECRET?.trim() ?? '';
   const redirectUri = process.env.CHAOXING_REDIRECT_URI?.trim() ?? '';
@@ -199,8 +203,8 @@ export function getChaoxingLoginOptions(): ChaoxingLoginOptions {
       configured: true,
       institutions: requiresInstitutionChoice(institutions) ? institutions : [],
     };
-  } catch (error) {
-    console.error('超星登录配置不可用:', error);
+  } catch {
+    // 配置缺失是部署状态，不是页面运行错误；真实状态由登录页和集成状态面板呈现。
     return { configured: false, institutions: [] };
   }
 }

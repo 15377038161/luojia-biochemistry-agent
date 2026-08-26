@@ -4,6 +4,10 @@ import { updateSupabaseSession } from '@/lib/supabase-ssr';
 export async function proxy(request: NextRequest) {
   const previewEnabled = process.env.ENABLE_UI_PREVIEW === 'true';
 
+  if (request.nextUrl.pathname === '/api/supabase-config') {
+    return NextResponse.next({ request });
+  }
+
   if (previewEnabled) {
     return NextResponse.next({ request });
   }

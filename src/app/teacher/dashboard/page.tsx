@@ -1,5 +1,6 @@
 import TeacherRoutePage from '@/components/agent/teacher-route-page';
 
-export default function TeacherDashboardPage() {
-  return <TeacherRoutePage />;
+export default async function TeacherDashboardPage({ searchParams }: { searchParams: Promise<{ preview?: string }> }) {
+  const preview = (await searchParams).preview === '1';
+  return <TeacherRoutePage preview={preview} />;
 }

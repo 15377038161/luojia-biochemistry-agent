@@ -6,13 +6,14 @@ import { ChaoxingLoginError, type ChaoxingLoginErrorReason } from '@/lib/chaoxin
  * 在超星侧的三类失败之外，再加一类只可能发生在本应用内的：
  * - session_failed：超星已验证通过，但建立 Supabase 会话时出错
  */
-export type LoginErrorReason = ChaoxingLoginErrorReason | 'session_failed';
+export type LoginErrorReason = ChaoxingLoginErrorReason | 'session_failed' | 'forbidden';
 
 const LOGIN_ERROR_REASONS = new Set<string>([
   'config_missing',
   'institution_mismatch',
   'oauth_failed',
   'session_failed',
+  'forbidden',
 ]);
 
 /** 错误页的 reason 来自查询参数，必须收敛到已知取值，避免把任意文本渲染出去。 */

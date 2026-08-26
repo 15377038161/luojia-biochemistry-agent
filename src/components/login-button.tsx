@@ -1,6 +1,6 @@
 'use client';
 
-import { LogIn } from 'lucide-react';
+import Image from 'next/image';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,8 +38,8 @@ export default function LoginButton({ configured, institutions }: LoginButtonPro
     return (
       <div className="flex flex-col items-center gap-2">
         <Button disabled>
-          <LogIn className="size-4" />
-          使用学习通身份进入
+          <Image src="/brand/xuexitong-icon.jpg" alt="" width={24} height={24} className="rounded-md" />
+          通过超星学习通登录
         </Button>
         <p className="text-sm text-muted-foreground">校方学习通 OAuth 尚未配置，当前不可登录</p>
       </div>
@@ -49,8 +49,8 @@ export default function LoginButton({ configured, institutions }: LoginButtonPro
   if (institutions.length === 0) {
     return (
       <Button disabled={isPending} onClick={handleLogin}>
-        <LogIn className="size-4" />
-        {isPending ? '正在连接学习通…' : '使用学习通身份进入'}
+        <Image src="/brand/xuexitong-icon.jpg" alt="" width={24} height={24} className="rounded-md" />
+        {isPending ? '正在连接学习通…' : '通过超星学习通登录'}
       </Button>
     );
   }
@@ -70,8 +70,8 @@ export default function LoginButton({ configured, institutions }: LoginButtonPro
         </SelectContent>
       </Select>
       <Button disabled={isPending || !fid} onClick={handleLogin}>
-        <LogIn className="size-4" />
-        {isPending ? '正在连接学习通…' : '使用学习通身份进入'}
+        <Image src="/brand/xuexitong-icon.jpg" alt="" width={24} height={24} className="rounded-md" />
+        {isPending ? '正在连接学习通…' : '通过超星学习通登录'}
       </Button>
     </div>
   );

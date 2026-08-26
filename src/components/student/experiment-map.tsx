@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { Check, Flag, Lock, LogOut, Map, Play, Radar, Home } from 'lucide-react';
+import { Check, Flag, Lock, Play } from 'lucide-react';
 import type { ExperimentStep, StepProgress } from '@/domain/agent';
 import { experimentSteps } from '@/domain/experiment';
+import StudentTopbar from '@/components/student/student-topbar';
 
 const NODE_LABELS = ['获取目标基因与设计引物', '构建pET28表达载体', '质粒转化与IPTG诱导表达', 'PAGE验证蛋白表达', '选择纯化方法', '蛋白纯化操作', '验证纯化是否达标', '测量蛋白质浓度'];
 const NODE_POSITIONS = [
@@ -82,9 +83,9 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
         <span className="map-node-visual">
           <StepIllustration stepId={stepId} />
           <span className="map-node-number">{stepId}</span>
-          {state === 'done' && <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-success text-primary-foreground flex items-center justify-center"><Check className="w-3 h-3" /></span>}
-          {state === 'lock' && <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-border text-foreground flex items-center justify-center"><Lock className="w-3 h-3" /></span>}
-          {state === 'cur' && <span className="absolute -inset-1.5 rounded-full border-2 border-primary/40 animate-pulse" aria-hidden />}
+          {state === 'done' && <span className="map-node-status is-done"><Check aria-hidden /></span>}
+          {state === 'lock' && <span className="map-node-status is-locked"><Lock aria-hidden /></span>}
+          {state === 'cur' && <span className="map-current-ring" aria-hidden />}
         </span>
         <span className="map-node-copy"><strong>{catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]}</strong><small>{state === 'done' ? '已通过 · 可回看' : state === 'revise' ? '待修订 · 查看点评' : state === 'cur' ? '当前任务 · 点击进入' : '完成上一关后解锁'}</small></span>
       </button>
@@ -92,42 +93,30 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
   }
 
   return (
-    <div className="notebook-map-page watercolor-student-map min-h-screen flex flex-col text-foreground font-sans">
-      <header className="student-map-header sticky top-0 z-50 border-b border-border/60">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 min-h-16 flex items-center justify-between gap-3">
-          <Link href="/" aria-label="返回首页" className="flex items-center gap-1.5 min-w-11 min-h-11 px-3 rounded-xl bg-card border border-border text-xs font-bold text-muted-foreground shadow-card hover:bg-muted transition-colors shrink-0"><Home className="w-4 h-4" /><span className="hidden sm:inline">返回首页</span></Link>
-          <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
-            <span className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0"><Map className="w-4.5 h-4.5" /></span>
-            <div className="header-copy min-w-0"><h1 className="text-base sm:text-lg font-black leading-none truncate">八步文字推演</h1><p className="text-xs text-muted-foreground mt-1 truncate">一条主线 · 逐步描述 · Gate 把关</p></div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {practiceMode && <Link href="/teacher/dashboard" className="map-mode-switch">返回教学分析</Link>}
-            {demo && <span className="hidden sm:inline-flex text-xs font-bold px-2 py-1 rounded-full bg-primary-container text-primary border border-primary/30">演示模式</span>}
-            <button type="button" aria-label="打开学习报告" onClick={onOpenReport} className="flex items-center gap-1.5 min-w-11 min-h-11 px-3 rounded-xl bg-card border border-border text-xs font-bold text-muted-foreground shadow-card hover:bg-muted transition-colors shrink-0 cursor-pointer"><Radar className="w-4 h-4" /><span className="hidden sm:inline">学习报告</span></button>
-            {onLogout && <button type="button" aria-label="退出登录" onClick={onLogout} className="flex items-center gap-1.5 min-w-11 min-h-11 px-3 rounded-xl bg-card border border-border text-xs font-bold text-muted-foreground shadow-card hover:bg-muted transition-colors shrink-0 cursor-pointer"><LogOut className="w-4 h-4" /><span className="hidden sm:inline">退出</span></button>}
-          </div>
-        </div>
-      </header>
+    <div className="lab-map-page min-h-screen flex flex-col text-foreground font-sans">
+      <StudentTopbar title="八步文字推演" subtitle="重组蛋白表达与纯化" onOpenReport={onOpenReport} onLogout={onLogout} />
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-12">
         <section className="student-map-hero mt-5 sm:mt-7 text-left">
-          <p className="relative z-[1] text-xs font-black text-secondary tracking-[.08em]">实验探险路线 · 8 STEP ROUTE</p>
-          <h1 className="relative z-[1] mt-2 text-2xl sm:text-4xl font-black tracking-tight">重组蛋白表达与纯化<br className="sm:hidden" /> <span className="text-secondary">8 步文字实验</span></h1>
-          <p className="relative z-[1] mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">观察课程案例、设计方案并逐步写清操作逻辑。这里训练的是实验思维，不要求真实动手或提交真实结果。</p>
-          <p className="relative z-[1] mt-4 inline-flex flex-wrap items-center gap-2 text-xs font-bold px-3 py-2 rounded-full bg-card border border-border shadow-card">
+          <div className="student-map-heading">
+            <p>实验探险路线 · 8 STEP ROUTE</p>
+            <h1>从实验问题出发，<br className="sm:hidden" />完成八步文字推演</h1>
+            <span>观察课程案例、设计方案、接受 AI 点评并修订。这里只训练实验思维，不要求真实动手。</span>
+          </div>
+          <p className="student-map-progress">
             {practiceMode && <><span className="text-secondary">教师独立体验</span><span className="text-border">·</span></>}
             <span className="text-success">已完成 {doneCount} 步</span><span className="text-border">·</span><span className="text-primary">{completed ? '全部完成' : `当前：步骤${currentStep} ${currentMeta?.shortTitle || ''}`}</span><span className="text-border">·</span><span className="text-muted-foreground">待解锁 {lockCount} 步</span>
           </p>
+          {demo && <span className="student-preview-badge">开发预览</span>}
+          {practiceMode && <Link href="/teacher/dashboard" className="student-map-teacher-return">返回教学分析</Link>}
         </section>
 
         <section className="desktop-route-board relative mt-6 hidden md:block p-4">
-          <svg className="absolute -top-2 -left-2 w-24 h-24 text-primary opacity-20 pointer-events-none" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden><path d="M30 5c0 25 40 25 40 50s-40 25-40 50" /><path d="M70 5c0 25-40 25-40 50s40 25 40 50" /><path d="M34 20h32M34 50h32M34 80h32" /></svg>
-          <svg className="absolute bottom-0 -right-1 w-20 h-20 text-secondary opacity-20 pointer-events-none" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden><path d="M40 10h20M45 10v25L20 80a8 8 0 0 0 7 12h46a8 8 0 0 0 7-12L55 35V10" /><path d="M30 65h40" /></svg>
-          <svg className="absolute top-1/3 -right-2 w-14 h-14 text-primary opacity-15 pointer-events-none" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="4" aria-hidden><circle cx="30" cy="30" r="10" /><circle cx="70" cy="45" r="8" /><circle cx="40" cy="75" r="7" /><path d="M39 35l24 8M64 52l-18 16" /></svg>
           <div className="relative w-full" style={{ aspectRatio: '1200/560' }}>
             <svg viewBox="0 0 1200 560" className="absolute inset-0 w-full h-full" fill="none" aria-hidden>
-              <path d="M 60 140 C 250 80 410 198 585 140 S 890 82 970 160 C 1040 238 1000 390 890 420 C 690 470 460 352 285 420 C 185 456 125 432 60 420" stroke="#c7e2f1" strokeWidth="24" strokeLinecap="round" />
-              <path d="M 60 140 C 250 80 410 198 585 140 S 890 82 970 160 C 1040 238 1000 390 890 420 C 690 470 460 352 285 420 C 185 456 125 432 60 420" stroke="#fffdf8" strokeWidth="3" strokeDasharray="8 13" strokeLinecap="round" />
+              <path className="production-route-shadow" d="M 60 140 C 250 80 410 198 585 140 S 890 82 970 160 C 1040 238 1000 390 890 420 C 690 470 460 352 285 420 C 185 456 125 432 60 420" strokeLinecap="round" />
+              <path className="production-route-main" d="M 60 140 C 250 80 410 198 585 140 S 890 82 970 160 C 1040 238 1000 390 890 420 C 690 470 460 352 285 420 C 185 456 125 432 60 420" strokeLinecap="round" />
+              <path className="production-route-flow" d="M 60 140 C 250 80 410 198 585 140 S 890 82 970 160 C 1040 238 1000 390 890 420 C 690 470 460 352 285 420 C 185 456 125 432 60 420" strokeLinecap="round" />
             </svg>
             <div className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ left: '5%', top: '25%' }}>
               <span className="w-10 h-10 rounded-full bg-secondary text-primary-foreground flex items-center justify-center shadow-card"><Play className="w-4 h-4" /></span>
@@ -142,8 +131,8 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
         </section>
 
         <section className="relative mt-5 md:hidden">
-          <div className="mobile-step-list relative flex flex-col pl-10">
-            <div className="absolute left-4 top-4 bottom-4 w-1 rounded-full bg-card border border-border" aria-hidden />
+          <div className="mobile-step-list relative flex flex-col">
+            <div className="mobile-route-line" aria-hidden />
             {[1, 2, 3, 4, 5, 6, 7, 8].map((stepId) => {
               const state = nodeState(stepId);
               return (
@@ -151,7 +140,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
                   <span className="mobile-route-icon">
                     <StepIllustration stepId={stepId} />
                     <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center ${state === 'lock' ? 'bg-border text-foreground' : state === 'done' ? 'bg-success text-primary-foreground' : 'bg-primary text-primary-foreground'}`}>{stepId}</span>
-                    {state === 'lock' && <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-border text-foreground flex items-center justify-center"><Lock className="w-2.5 h-2.5" /></span>}
+                    {state === 'lock' && <span className="mobile-route-lock"><Lock aria-hidden /></span>}
                   </span>
                   <span className="mobile-route-copy">
                     <span className="block text-xs font-bold leading-tight">{catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]}</span>

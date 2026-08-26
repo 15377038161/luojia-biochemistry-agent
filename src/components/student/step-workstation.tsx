@@ -1,13 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, BarChart3, BookOpen, Check, CircleAlert, CircleHelp, FileText, Flag, FlaskConical, Home, LoaderCircle, Map as MapIcon, PenLine, Save, Send } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BarChart3, BookOpen, Check, CircleAlert, CircleHelp, Flag, LoaderCircle, PenLine, Save, Send } from 'lucide-react';
 import type { AgentMessage, ApiResult, DimensionScores, StudentSessionView, TextEvaluation } from '@/domain/agent';
 import type { ExperimentStep } from '@/domain/agent';
 import { experimentSteps } from '@/domain/experiment';
 import { getStepQuiz } from '@/domain/quiz';
 import PageBackground from '@/components/page-background';
+import StudentTopbar from '@/components/student/student-topbar';
 
 const STAGE_LABELS = ['任务与原理', '知识检验', '分步文字推演', '提交与点评', 'Gate 检查点'];
 const STAGE_MOBILE_LABELS = ['任务', '检验', '推演', '点评', 'Gate'];
@@ -209,31 +209,12 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
   return (
     <div className="workstation-shell watercolor-student-task text-foreground font-sans">
       <PageBackground />
-      <div className="workstation-layout mx-auto max-w-[1500px] px-4 sm:px-6 py-5 pb-16 grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)_300px] items-start">
-        <aside className="hidden lg:flex flex-col gap-4 sticky top-6">
-          <div className="rounded-2xl bg-card border border-border shadow-card p-4 flex items-center gap-3">
-            <span className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0"><FlaskConical className="w-5 h-5 text-primary-foreground" /></span>
-            <span className="text-sm font-extrabold leading-tight">珞珈生化<br /><span className="text-xs font-semibold text-muted-foreground">文字实验智能体</span></span>
-          </div>
-          <nav className="rounded-2xl bg-card border border-border shadow-card p-2 flex flex-col gap-1 text-sm">
-            <Link href="/" className="flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground font-semibold hover:bg-muted transition-colors"><Home className="w-4 h-4" /> 首页</Link>
-            <button type="button" onClick={onBack} className="flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground font-semibold hover:bg-muted transition-colors cursor-pointer text-left"><MapIcon className="w-4 h-4" /> 实验地图</button>
-            <button type="button" onClick={onOpenReport} className="flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground font-semibold hover:bg-muted transition-colors cursor-pointer text-left"><FileText className="w-4 h-4" /> 学习报告</button>
-          </nav>
-          <div className="mt-auto rounded-xl border border-primary/30 bg-primary-container/40 p-3">
-            <p className="text-[11px] font-semibold text-foreground flex items-center gap-1.5"><FlaskConical className="w-3.5 h-3.5 text-primary shrink-0" /> 防呆提示</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">本平台只训练文字推演。先完成当前阶段的描述与评阅，再进入下一步。</p>
-          </div>
-        </aside>
+      <StudentTopbar title={`步骤 ${stepId} · ${step.shortTitle}`} subtitle={`阶段 ${stage + 1} / ${STAGE_LABELS.length} · ${STAGE_LABELS[stage]}`} onBack={onBack} backLabel="实验地图" onOpenReport={onOpenReport} />
+      <div className="workstation-layout mx-auto max-w-[1260px] px-4 sm:px-6 py-5 pb-16 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
         <main className="min-w-0 max-w-4xl">
-        <header className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-card border border-border text-sm font-bold shadow-card hover:bg-muted transition-colors cursor-pointer"><ArrowLeft className="w-4 h-4" /> 返回地图</button>
-          <Link href="/" aria-label="返回首页" className="min-w-12 min-h-12 inline-flex items-center justify-center rounded-xl bg-card border border-border text-primary shadow-card"><Home className="w-4 h-4" /></Link>
-          <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-full bg-secondary text-primary-foreground font-black flex items-center justify-center text-sm">{STEP_BADGES[stepId - 1]}</span>
-            <div><h1 className="text-lg font-extrabold leading-tight">步骤{STEP_BADGES[stepId - 1]} · {step.title}</h1><p className="text-xs text-muted-foreground">文字推演目标：{step.goal}</p></div>
-          </div>
-          <span className={`ml-auto px-3 py-1.5 rounded-full text-xs font-bold border inline-flex items-center gap-1 ${gatePassed ? 'bg-success/10 text-success border-success/30' : 'bg-warning/10 text-warning border-warning/30'}`}><Flag className="w-3.5 h-3.5" />Gate {stepId} · {gatePassed ? '已通过' : '待通过'}</span>
+        <header className="workstation-step-heading flex flex-wrap items-center gap-3">
+          <div className="step-heading-copy"><p>当前学习任务</p><h1>{step.goal}</h1></div>
+          <span className={`step-gate-state ${gatePassed ? 'is-passed' : 'is-pending'}`}><Flag aria-hidden />Gate {stepId} · {gatePassed ? '已通过' : '待通过'}</span>
         </header>
 
         <section className="workstation-card mt-4 rounded-2xl p-3">

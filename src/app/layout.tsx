@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inspector } from 'react-dev-inspector';
 import { SupabaseConfigProvider } from '@/lib/supabase-config-inject';
 import './globals.css';
+import './ui-system.css';
 
 export const metadata: Metadata = {
   title: { default: '珞珈生化智能体', template: '%s｜珞珈生化智能体' },
@@ -14,7 +15,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   const isDev = process.env.COZE_PROJECT_ENV === 'DEV';
   const isUiPreview = process.env.ENABLE_UI_PREVIEW === 'true';
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html lang="zh-CN" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         <SupabaseConfigProvider disabled={isUiPreview}>
           {isDev && <Inspector />}
