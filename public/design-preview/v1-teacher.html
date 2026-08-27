@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案V1 · 装订实验志 — 教师端</title>
+<!-- Tailwind v4 browser build 本地化自 https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js （内部CDN在公网浏览器不可达，故本地引用） -->
+<script src="./vendor/lucide.min.js"></script>
+<script src="./vendor/jquery.min.js"></script>
+<link rel="stylesheet" href="./vendor/v1-teacher.css">
+</head>
+<body class="paper-bg">
+
+<!-- ═══ 顶栏 ═══ -->
+<header class="sticky top-0 z-30 bg-[#F2ECDD]/94 backdrop-blur border-b-[1.5px] border-[#C9BC9C]">
+  <div class="max-w-[1440px] mx-auto px-3 lg:px-5 h-[52px] flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-none ic1">
+      <i data-lucide="flask-conical" class="w-4 h-4 text-[#E8CE8C]"></i>
+    </div>
+    <span class="serif font-black text-[14px] text-[#2F4156] hidden sm:block">珞珈生化智能体 · 教师端</span>
+    <span class="chip chip-i ml-1 hidden md:inline-flex"><i data-lucide="graduation-cap" class="w-3 h-3"></i>生化实验 IB · 3 班（42 人）</span>
+    <div class="ml-auto flex items-center gap-2">
+      <button class="w-9 h-9 rounded-lg border-[1.5px] border-[#C9BC9C] bg-[#FBF7EC] flex items-center justify-center text-[#6B5A3E] hover:text-[#5B7C99] max-[1200px]:flex" onclick="$('.detail-aside').addClass('open')" style="display:none"><i data-lucide="clipboard-list" class="w-4 h-4"></i></button>
+      <span class="chip chip-r"><i data-lucide="bell-ring" class="w-3 h-3"></i>5 份待复核</span>
+      <div class="w-8 h-8 rounded-lg bg-[#2F4156] text-[#E8CE8C] flex items-center justify-center serif font-bold text-xs">陈</div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1440px] mx-auto px-3 lg:px-5 py-5 space-y-4">
+
+  <!-- ═══ 统计条（4 卡） ═══ -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 stats-grid fade-up">
+    <div class="stat st-g">
+      <div class="flex items-center justify-between"><span class="text-[11px] text-[#8A7A5C] font-bold">班级平均分</span><i data-lucide="gauge" class="w-4 h-4 text-[#2D6A4F]"></i></div>
+      <div class="flex items-end gap-2 mt-1"><span class="serif text-[26px] font-black text-[#33261A] leading-none">88.4</span><span class="chip chip-g mb-0.5">↑ 2.1</span></div>
+      <div class="text-[10px] text-[#A08F6E] mt-1.5">高于年级均值 3.6 分</div>
+    </div>
+    <div class="stat st-i">
+      <div class="flex items-center justify-between"><span class="text-[11px] text-[#8A7A5C] font-bold">Gate 完成率</span><i data-lucide="milestone" class="w-4 h-4 text-[#5B7C99]"></i></div>
+      <div class="flex items-end gap-2 mt-1"><span class="serif text-[26px] font-black text-[#33261A] leading-none">67%</span><span class="chip chip-i mb-0.5">28/42</span></div>
+      <div class="mini-track mt-2"><span class="ic7"></span></div>
+    </div>
+    <div class="stat st-m">
+      <div class="flex items-center justify-between"><span class="text-[11px] text-[#8A7A5C] font-bold">待复核</span><i data-lucide="stamp" class="w-4 h-4 text-[#96702A]"></i></div>
+      <div class="flex items-end gap-2 mt-1"><span class="serif text-[26px] font-black text-[#33261A] leading-none">5</span><span class="chip chip-m mb-0.5">最久等 6h</span></div>
+      <div class="text-[10px] text-[#A08F6E] mt-1.5">承诺 24h 内签章</div>
+    </div>
+    <div class="stat st-r">
+      <div class="flex items-center justify-between"><span class="text-[11px] text-[#8A7A5C] font-bold">本周预警</span><i data-lucide="triangle-alert" class="w-4 h-4 text-[#C0392B]"></i></div>
+      <div class="flex items-end gap-2 mt-1"><span class="serif text-[26px] font-black text-[#33261A] leading-none">3</span><span class="chip chip-r mb-0.5">需关怀</span></div>
+      <div class="text-[10px] text-[#A08F6E] mt-1.5">2 人连续未提交 · 1 人三改未过</div>
+    </div>
+  </div>
+
+  <div class="grid gap-4 main-grid" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)">
+
+    <!-- ═══ 左：班级名册 ═══ -->
+    <section class="panel p-4 fade-up d1">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <h2 class="serif text-[16px] font-black text-[#33261A] flex items-center gap-1.5"><i data-lucide="users-round" class="w-4 h-4 text-[#2F4156]"></i>班级名册 · 第 3 周</h2>
+        <div class="flex gap-1.5">
+          <button class="chip chip-i cursor-pointer" onclick="filterRoll('all')"><i data-lucide="layout-list" class="w-3 h-3"></i>全部 42</button>
+          <button class="chip chip-g cursor-pointer" onclick="filterRoll('run')"><i data-lucide="loader" class="w-3 h-3"></i>进行中 19</button>
+          <button class="chip chip-m cursor-pointer" onclick="filterRoll('done')"><i data-lucide="check-check" class="w-3 h-3"></i>已完成 12</button>
+          <button class="chip chip-r cursor-pointer" onclick="filterRoll('warn')"><i data-lucide="triangle-alert" class="w-3 h-3"></i>预警 3</button>
+        </div>
+      </div>
+
+      <div class="roll-head mt-3"><span></span><span>学生 / 学号</span><span class="hide-sm">Gate 进度</span><span class="hide-sm">条带·得分</span><span>状态</span></div>
+
+      <div class="space-y-0.5 mt-1" id="roll-list">
+        <!-- JS 渲染 -->
+      </div>
+
+      <div class="flex items-center justify-between mt-3 pt-3 border-t border-dashed border-[#C9BC9C] text-[10.5px] text-[#8A7A5C]">
+        <span>条带亮度 = 最近一次 Gate 得分（越亮越高）</span>
+        <button class="font-bold text-[#5B7C99] hover:underline" onclick="toast('导出班级成绩册 → /api/teacher/export','download')">导出成绩册 CSV</button>
+      </div>
+    </section>
+
+    <!-- ═══ 右：复核台（常驻） ═══ -->
+    <aside class="detail-aside space-y-4 fade-up d2">
+      <div class="flex items-center justify-between">
+        <h3 class="serif text-[15px] font-black text-[#33261A] flex items-center gap-1.5"><i data-lucide="clipboard-check" class="w-4 h-4 text-[#2D6A4F]"></i>复核工作台</h3>
+        <button class="max-[1200px]:flex w-8 h-8 rounded-lg border-[1.5px] border-[#C9BC9C] items-center justify-center text-[#6B5A3E]" onclick="$('.detail-aside').removeClass('open')" style="display:none"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <!-- 学生详情 -->
+      <div class="panel p-4">
+        <div class="flex items-center gap-3">
+          <div class="avatar serif ic2">王</div>
+          <div class="min-w-0">
+            <div class="font-bold text-[14px] text-[#33261A]" id="d-name">王雨桐 <span class="chip chip-g ml-1" style="font-size:9.5px">进行中</span></div>
+            <div class="text-[10.5px] text-[#8A7A5C] mt-0.5" id="d-meta">2023301015 · Gate 3 诱导表达 · 均分 87</div>
+          </div>
+        </div>
+        <!-- 得分轨迹 -->
+        <div class="mt-3">
+          <div class="text-[11px] font-bold text-[#6B5A3E] mb-1">Gate 得分轨迹</div>
+          <svg viewBox="0 0 300 90" class="w-full">
+            <line x1="10" y1="70" x2="290" y2="70" stroke="#DCD2B8" stroke-width="1"/>
+            <line x1="10" y1="20" x2="290" y2="20" stroke="#EDE6D2" stroke-width="1" stroke-dasharray="3 3"/>
+            <polyline points="30,52 90,40 150,44 210,30 270,24" fill="none" stroke="#2D6A4F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="#FBF7EC" stroke="#2D6A4F" stroke-width="2">
+              <circle cx="30" cy="52" r="4"/><circle cx="90" cy="40" r="4"/><circle cx="150" cy="44" r="4"/><circle cx="210" cy="30" r="4"/>
+            </g>
+            <circle cx="270" cy="24" r="5" fill="#D97B4A"/>
+            <text x="14" y="16" font-size="8.5" fill="#8A9CB4">95</text><text x="14" y="66" font-size="8.5" fill="#8A9CB4">60</text>
+            <text x="24" y="84" font-size="8" fill="#8A7A5C">G1</text><text x="84" y="84" font-size="8" fill="#8A7A5C">G2</text><text x="144" y="84" font-size="8" fill="#8A7A5C">G3改1</text><text x="204" y="84" font-size="8" fill="#8A7A5C">G3改2</text><text x="262" y="84" font-size="8" fill="#B85C2F">G4待</text>
+          </svg>
+        </div>
+        <!-- 记录摘录 -->
+        <div class="mt-2 rounded-lg p-3 text-[11.5px] text-[#4A3D2B] leading-relaxed" style="background:rgba(91,124,153,.07);border:1.5px solid rgba(91,124,153,.25)">
+          <b class="text-[#41637F]">记录摘录：</b>「4h 取样时菌体明显更浓，与 OD600 曲线一致；低温诱导下生长放缓，猜测是代谢负担…」
+          <div class="flex gap-1.5 mt-2 flex-wrap">
+            <span class="chip chip-c" style="font-size:9.5px">遗漏 1</span><span class="chip chip-i" style="font-size:9.5px">参数 2</span><span class="chip chip-m" style="font-size:9.5px">安全 0</span>
+          </div>
+        </div>
+        <!-- 签章操作 -->
+        <div class="flex items-center gap-3 mt-3.5 pt-3 border-t border-dashed border-[#C9BC9C]">
+          <div class="seal-sm" id="t-seal"><span class="serif text-[11px] font-black">待签章</span><span class="text-[7px] mt-0.5">GATE·03</span></div>
+          <div class="flex-1 space-y-2">
+            <button class="btn-approve w-full" id="btn-sign" onclick="signGate()"><i data-lucide="check-check" class="w-4 h-4 inline mr-1"></i>签章通过</button>
+            <button class="btn-ghost w-full" onclick="toast('退回修改意见已发送给学生','undo-2')">退回 · 附修改意见</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 批注便签墙 -->
+      <div class="panel p-4">
+        <h4 class="serif text-[13.5px] font-black text-[#33261A] mb-2.5 flex items-center gap-1.5"><i data-lucide="sticky-note" class="w-4 h-4 text-[#96702A]"></i>我的批注墙（3 条待发）</h4>
+        <div class="space-y-2.5">
+          <div class="sticky p-3 rounded-lg rotate-[-1.2deg] ic3">
+            <p class="text-[11px] text-[#4A3D2B] leading-relaxed">Amp 浓度推导记得写清楚：母液 100 mg/mL × 稀释 1000 倍。</p>
+            <div class="flex justify-between items-center mt-1.5"><span class="text-[9.5px] text-[#A08F6E]">→ 王雨桐 · G3</span><button class="chip chip-c cursor-pointer" style="font-size:9.5px" onclick="toast('批注已送达 → POST /api/teacher/annotate','send')">发送</button></div>
+          </div>
+          <div class="sticky p-3 rounded-lg rotate-[1deg] ic4">
+            <p class="text-[11px] text-[#4A3D2B] leading-relaxed">三次修订未过，建议约面谈过一遍热激原理。</p>
+            <div class="flex justify-between items-center mt-1.5"><span class="text-[9.5px] text-[#A08F6E]">→ 李明轩 · G2</span><button class="chip chip-c cursor-pointer" style="font-size:9.5px" onclick="toast('批注已送达 → POST /api/teacher/annotate','send')">发送</button></div>
+          </div>
+          <div class="sticky p-3 rounded-lg rotate-[-0.8deg] ic5">
+            <p class="text-[11px] text-[#4A3D2B] leading-relaxed">生长曲线标注规范，已置为班级示范样本。</p>
+            <div class="flex justify-between items-center mt-1.5"><span class="text-[9.5px] text-[#A08F6E]">→ 张一诺 · G4</span><button class="chip chip-c cursor-pointer" style="font-size:9.5px" onclick="toast('批注已送达 → POST /api/teacher/annotate','send')">发送</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 设计说明 -->
+      <div class="p-4 rounded-xl ic6">
+        <h4 class="text-[12.5px] font-bold text-[#2F4156] flex items-center gap-1.5"><i data-lucide="drafting-compass" class="w-3.5 h-3.5"></i>V1 教师端 · 规格标注</h4>
+        <ul class="mt-2 space-y-1 list-disc list-inside text-[11px] leading-relaxed text-[#6B5A3E]">
+          <li><b class="text-[#2D6A4F]">新增核心元素：</b>4 色侧标统计卡（含环比/迷你进度条）、42 行分组名册（头像+Gate 迷你轨道+「电泳条带」式得分亮度+状态章）、学生详情面板（SVG 得分轨迹+记录摘录+批注计数）、签章操作台、3 张待发批注便签墙、CSV 导出。</li>
+          <li><b class="text-[#2D6A4F]">层级逻辑：</b>统计条（全局概览）→ 名册（一屏纵览全班）→ 复核台（单人深查），遵循「总-分-点」三层钻取；便签墙置于最右作轻量待办。</li>
+          <li><b class="text-[#2D6A4F]">配色优化：</b>名册条带亮度用墨绿深浅映射得分（暗→亮=低→高），预警只用一处红章与红色侧标，与参考图印章红呼应但面积更克制。</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div id="toast-box"></div>
+<nav class="switcher">
+  <a href="index.html" class="font-bold">总览</a>
+  <a href="v1-login.html">V1登录</a><a href="v1-student.html">V1学生</a><a href="v1-teacher.html">V1教师</a>
+  <a href="v2-login.html">V2登录</a><a href="v2-student.html">V2学生</a><a href="v2-teacher.html">V2教师</a>
+  <a href="v3-login.html">V3登录</a><a href="v3-student.html">V3学生</a><a href="v3-teacher.html">V3教师</a>
+</nav>
+
+<script>
+  lucide.createIcons();
+  function toast(msg, icon){ $('#toast-box').append(`<div class="toast"><i data-lucide="${icon||'info'}"></i>${msg}</div>`); lucide.createIcons(); setTimeout(()=>{ $('.toast').first().fadeOut(260, function(){ $(this).remove(); }); }, 2600); }
+
+  // 名册数据（42 人抽样展示 9 行 + 计数）
+  const roll = [
+    {n:'王雨桐', id:'2023301015', g:4, pct:50, score:87, st:'run',  warn:false, c:'#5B7C99'},
+    {n:'李明轩', id:'2023301022', g:2, pct:25, score:62, st:'warn', warn:true,  c:'#C0392B'},
+    {n:'张一诺', id:'2023301008', g:5, pct:62, score:94, st:'run',  warn:false, c:'#2D6A4F'},
+    {n:'赵子墨', id:'2023301019', g:3, pct:37, score:78, st:'run',  warn:false, c:'#5B7C99'},
+    {n:'刘思远', id:'2023301026', g:8, pct:100,score:91, st:'done', warn:false, c:'#2D6A4F'},
+    {n:'陈嘉禾', id:'2023301031', g:6, pct:75, score:89, st:'run',  warn:false, c:'#5B7C99'},
+    {n:'杨明溪', id:'2023301044', g:8, pct:100,score:96, st:'done', warn:false, c:'#2D6A4F'},
+    {n:'周子航', id:'2023301047', g:1, pct:12, score:58, st:'warn', warn:true,  c:'#C0392B'},
+    {n:'吴一凡', id:'2023301052', g:4, pct:50, score:0,  st:'warn', warn:true,  c:'#D97B4A'},
+  ];
+  function bandColor(s){ if(!s) return '#EDE6D2'; if(s>=90) return '#22301E'; if(s>=80) return '#384A33'; if(s>=70) return '#55684F'; return '#7E8F7C'; }
+  function renderRoll(filter){
+    $('#roll-list').empty();
+    let shown = 0;
+    roll.forEach((r,i)=>{
+      if(filter==='run' && r.st!=='run') return;
+      if(filter==='done' && r.st!=='done') return;
+      if(filter==='warn' && !r.warn) return;
+      shown++;
+      const stChip = r.st==='done' ? '<span class="chip chip-g">已通过</span>' : (r.warn ? '<span class="chip chip-r">预警</span>' : '<span class="chip chip-i">进行中</span>');
+      $('#roll-list').append(`
+        <div class="roll-row ${i===0?'on':''}" data-i="${i}" onclick="pickStudent(${i})">
+          <div class="avatar serif" style="background:${r.c}">${r.n[0]}</div>
+          <div class="min-w-0"><div class="text-[12.5px] font-bold text-[#33261A] truncate">${r.n}${r.warn?'<span class="text-[#C0392B] ml-1">●</span>':''}</div><div class="text-[10px] text-[#8A7A5C]">${r.id}</div></div>
+          <div class="hide-sm"><div class="mini-track"><span class="ic8"></span></div><div class="text-[9.5px] text-[#A08F6E] mt-1">Gate ${r.g}/8</div></div>
+          <div class="hide-sm lanes">${[1,2,3,4,5].map(k=>`<b style="height:${8+k*2.5}px;background:${bandColor(k<=Math.ceil(r.score/20)?r.score:0)};opacity:${k<=Math.ceil(r.score/20)?1:.25}"></b>`).join('')}</div>
+          <div>${stChip}</div>
+        </div>`);
+    });
+    if(!shown) $('#roll-list').append('<div class="text-center text-[11.5px] text-[#A08F6E] py-8">该分类下暂无学生</div>');
+    $('#roll-list').append(`<div class="text-center text-[10.5px] text-[#A08F6E] py-2.5">… 其余 ${42-roll.length} 名学生按同样式滚动展示 …</div>`);
+  }
+  let curIdx = 0;
+  function pickStudent(i){
+    curIdx = i; const r = roll[i];
+    $('.roll-row').removeClass('on'); $(`.roll-row[data-i="${i}"]`).addClass('on');
+    $('#d-avatar').text(r.n[0]).css('background', r.c);
+    $('#d-name').html(`${r.n} <span class="chip ${r.st==='done'?'chip-g':(r.warn?'chip-r':'chip-g')}" style="font-size:9.5px">${r.st==='done'?'已完成':(r.warn?'需关怀':'进行中')}</span>`);
+    $('#d-meta').text(`${r.id} · Gate ${r.g} · 均分 ${r.score||'—'}`);
+    toast('加载学生档案 → GET /api/teacher/student/${r.id}','file-search');
+  }
+  function filterRoll(f){ renderRoll(f); toast('已按「'+({all:'全部',run:'进行中',done:'已完成',warn:'预警'})[f]+'」筛选','filter'); }
+  function signGate(){
+    const r = roll[curIdx];
+    $('#t-seal').addClass('stamp-in').css({'border-color':'#2D6A4F','color':'#2D6A4F'}).html('<span class="serif text-[11px] font-black">已通过</span><span class="text-[7px] mt-0.5">陈老师签</span>');
+    $('#btn-sign').prop('disabled', true).text('已签章 · 成绩将回流超星');
+    toast(`已签章 → POST /api/teacher/sign（${r.n} · Gate ${r.g}）`,'stamp');
+    setTimeout(()=>{ toast('成绩已写入 sync_outbox，等待回流超星表单 3513491','repeat'); }, 1600);
+  }
+  renderRoll('all');
+</script>
+</body>
+</html>

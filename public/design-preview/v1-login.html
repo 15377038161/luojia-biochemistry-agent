@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案V1 · 装订实验志 — 登录页</title>
+<!-- Tailwind v4 browser build 本地化自 https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js （内部CDN在公网浏览器不可达，故本地引用） -->
+<script src="./vendor/lucide.min.js"></script>
+<script src="./vendor/jquery.min.js"></script>
+<link rel="stylesheet" href="./vendor/v1-login.css">
+</head>
+<body class="paper-bg aged-edge">
+
+<!-- ═══ 顶栏：4 元素密度 ═══ -->
+<header class="sticky top-0 z-30 bg-[#F2ECDD]/92 backdrop-blur border-b-[1.5px] border-[#C9BC9C]">
+  <div class="max-w-7xl mx-auto px-4 lg:px-6 h-14 flex items-center gap-3">
+    <div class="w-9 h-9 rounded-lg leather-card flex items-center justify-center flex-none">
+      <i data-lucide="flask-conical" class="w-4.5 h-4.5 w-5 h-5 text-[#E8CE8C]"></i>
+    </div>
+    <div class="leading-tight">
+      <div class="serif font-black text-[15.5px] text-[#2F4156]">珞珈生化智能体</div>
+      <div class="text-[10.5px] text-[#8A7A5C]">Luojia BioChem Lab Journal</div>
+    </div>
+    <div class="hidden md:flex items-center gap-2 ml-4">
+      <span class="chip chip-m"><i data-lucide="calendar-days" class="w-3 h-3"></i>2026 秋季学期 · 第 3 周</span>
+      <span class="chip chip-i"><i data-lucide="book-open" class="w-3 h-3"></i>生化实验 IB · 周四 3-4 节</span>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <button class="w-9 h-9 rounded-lg border-[1.5px] border-[#C9BC9C] bg-[#FBF7EC] flex items-center justify-center text-[#6B5A3E] hover:border-[#5B7C99] hover:text-[#5B7C99] transition-all" onclick="toast('打开帮助中心','circle-help')">
+        <i data-lucide="circle-help" class="w-4 h-4"></i>
+      </button>
+      <div class="w-9 h-9 rounded-lg bg-[#5B7C99] text-[#F6F1E3] flex items-center justify-center serif font-bold text-sm">珞</div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 lg:px-6 py-8 lg:py-12">
+  <div class="grid lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-14 items-start">
+
+    <!-- ═══ 左：皮封面叙事区（密度：封面卡+3迷你卡+2浮贴+印章） ═══ -->
+    <section class="flex gap-3 fade-up">
+      <div class="rings flex-none pt-6" aria-hidden="true">
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div>
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="ring"></div>
+      </div>
+      <div class="flex-1 min-w-0">
+        <!-- 封面大卡 -->
+        <div class="leather-card rounded-xl p-7 lg:p-9 text-center relative fade-up d1">
+          <div class="tape"></div>
+          <div class="chip chip-m mx-auto ic1">
+            <i data-lucide="award" class="w-3 h-3"></i>国家级一流课程配套 · 2026 版
+          </div>
+          <h1 class="serif foil text-[30px] lg:text-[40px] font-black mt-4 tracking-wide">生化实验志</h1>
+          <p class="serif text-[#AEBBD1] text-[13px] mt-2 tracking-[0.35em]">质粒转化 · IPTG 诱导 · 蛋白表达</p>
+          <!-- 封面内嵌记录纸 -->
+          <div class="mt-6 bg-[#F2ECDD] rounded-lg p-4 text-left rotate-[0.6deg] shadow-[0_6px_18px_rgba(0,0,0,.35)] relative">
+            <div class="flex items-center justify-between text-[10.5px] text-[#8A7A5C] border-b border-dashed border-[#C9BC9C] pb-2 mb-2.5">
+              <span>实验记录 No.03</span><span>2026-08-18 · 阴 26℃</span>
+            </div>
+            <div class="space-y-1.5 text-[12px] text-[#4A3D2B] leading-relaxed">
+              <p class="flex gap-2"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-[#2D6A4F] flex-none mt-0.5"></i>感受态细胞制备完成，冰浴 30min 记录齐全</p>
+              <p class="flex gap-2"><i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-[#2D6A4F] flex-none mt-0.5"></i>42℃ 热激 90s 精准计时，复苏 1h 涂板</p>
+              <p class="flex gap-2"><i data-lucide="pen-line" class="w-3.5 h-3.5 text-[#D97B4A] flex-none mt-0.5"></i>待补：Amp 终浓度计算过程（导师批注）</p>
+            </div>
+            <div class="flex items-center justify-between mt-3 pt-2 border-t border-dashed border-[#C9BC9C]">
+              <span class="text-[10px] text-[#8A7A5C]">指导教师：陈老师</span>
+              <span class="chip chip-c" style="font-size:10px"><i data-lucide="stamp" class="w-3 h-3"></i>Gate 3 待复核</span>
+            </div>
+          </div>
+          <!-- 浮动烧瓶线描 -->
+          <svg class="absolute -left-5 -bottom-6 w-20 h-24 opacity-70 float-a" viewBox="0 0 80 96" fill="none" aria-hidden="true">
+            <path d="M32 12h16M38 12v18L16 72a10 10 0 009 15h30a10 10 0 009-15L42 30V12" stroke="#8FA6C8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M24 66h32l7 13a7 7 0 01-6 10H23a7 7 0 01-6-10z" fill="rgba(143,166,200,.28)"/>
+            <circle cx="34" cy="80" r="2.2" fill="#8FA6C8"/><circle cx="46" cy="84" r="1.7" fill="#8FA6C8"/>
+            <circle cx="41" cy="74" r="1.4" fill="#8FA6C8"/>
+          </svg>
+          <div class="absolute -right-3 top-14 seal-stamp float-b" style="--r:10deg">
+            <div class="text-center leading-tight">
+              <div class="serif text-[11px] font-black">待通过</div>
+              <div class="text-[7.5px] mt-0.5">GATE·03</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 三张迷你信息卡 -->
+        <div class="grid sm:grid-cols-3 gap-3 mt-5 fade-up d2">
+          <div class="mini-card p-3.5">
+            <div class="flex items-center gap-1.5 text-[11px] font-bold text-[#5B7C99] mb-2"><i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>今日课表</div>
+            <div class="text-[11.5px] space-y-1.5 text-[#4A3D2B]">
+              <p class="flex justify-between"><span class="text-[#8A7A5C]">3-4 节</span><b>质粒转化</b></p>
+              <p class="flex justify-between"><span class="text-[#8A7A5C]">6-7 节</span><b>诱导表达</b></p>
+              <p class="flex justify-between text-[#B85C2F]"><span>截止</span><b>记录 03</b></p>
+            </div>
+          </div>
+          <div class="mini-card p-3.5">
+            <div class="flex items-center gap-1.5 text-[11px] font-bold text-[#2D6A4F] mb-2"><i data-lucide="message-square-quote" class="w-3.5 h-3.5"></i>最近批注</div>
+            <div class="text-[11px] text-[#4A3D2B] leading-relaxed">
+              「热激时间把控得很好，补上 Amp 浓度推导即可通过。」
+              <div class="text-[10px] text-[#8A7A5C] mt-1.5">— 陈老师 · 2 小时前</div>
+            </div>
+          </div>
+          <div class="mini-card p-3.5">
+            <div class="flex items-center gap-1.5 text-[11px] font-bold text-[#B85C2F] mb-2"><i data-lucide="trophy" class="w-3.5 h-3.5"></i>实验排行</div>
+            <div class="text-[11px] space-y-1 text-[#4A3D2B]">
+              <p class="flex justify-between"><span>1. 李同学</span><b class="text-[#2D6A4F]">96</b></p>
+              <p class="flex justify-between"><span>2. 王同学</span><b class="text-[#2D6A4F]">93</b></p>
+              <p class="flex justify-between"><span class="text-[#8A7A5C]">9. 你</span><b class="text-[#D97B4A]">87↑</b></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 便签浮贴 -->
+        <div class="sticky sticky-2 p-3.5 w-60 mt-5 fade-up d3 relative hidden sm:block">
+          <div class="flex items-center gap-1.5 text-[11px] font-bold text-[#2D6A4F] mb-1.5"><i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>珞珈的观察笔记</div>
+          <p class="text-[11px] text-[#4A3D2B] leading-relaxed">对照组平板长出 42 个菌落，梯度稀释倍数记录清晰——这正是科学记录的力量。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 右：登录卡（密度：标题+课程码+2按钮+分隔+3信任条+小字） ═══ -->
+    <section class="fade-up d2">
+      <div class="login-card p-6 lg:p-8 relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-28 h-28 pointer-events-none opacity-[.55]" aria-hidden="true">
+          <svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="34" stroke="#DCD2B8" stroke-width="1.5"/><circle cx="50" cy="50" r="22" stroke="#DCD2B8" stroke-width="1.5"/><circle cx="50" cy="50" r="10" stroke="#DCD2B8" stroke-width="1.5"/></svg>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="chip chip-g"><i data-lucide="shield-check" class="w-3 h-3"></i>校园统一认证</span>
+          <span class="chip chip-i"><i data-lucide="users" class="w-3 h-3"></i>本周 312 人在线记录</span>
+        </div>
+        <h2 class="serif text-[25px] font-black text-[#33261A] mt-4">翻开你的实验志</h2>
+        <p class="text-[12.5px] text-[#8A7A5C] mt-1.5 leading-relaxed">每一步操作都被认真批阅，每一次思考都留下痕迹。今天从第 3 次实验继续。</p>
+
+        <div class="mt-6 space-y-3">
+          <button class="btn-chaoxing w-full rounded-xl py-3.5 px-5 flex items-center justify-center gap-2.5 font-bold text-[15px]" onclick="toast('跳转超星统一认证 → /api/auth/chaoxing','log-in')">
+            <i data-lucide="log-in" class="w-5 h-5"></i>使用超星账号登录
+          </button>
+          <div class="flex items-center gap-3 text-[11px] text-[#A08F6E]">
+            <span class="flex-1 border-t border-dashed border-[#C9BC9C]"></span>或<span class="flex-1 border-t border-dashed border-[#C9BC9C]"></span>
+          </div>
+          <button class="btn-ghost w-full rounded-xl py-3 px-5 flex items-center justify-center gap-2 font-bold text-[13.5px]" onclick="openGuest()">
+            <i data-lucide="compass" class="w-4.5 h-4.5 w-5 h-5"></i>游客模式 · 先翻两页看看
+          </button>
+        </div>
+
+        <div class="mt-6 space-y-2">
+          <div class="trust-row"><i data-lucide="lock" class="w-4 h-4 text-[#5B7C99] flex-none"></i>成绩经超星表单回流，与学号绑定、不可篡改</div>
+          <div class="trust-row"><i data-lucide="file-check-2" class="w-4 h-4 text-[#2D6A4F] flex-none"></i>八步 Gate 审核制：AI 批阅 + 导师复核双签</div>
+          <div class="trust-row"><i data-lucide="clock-4" class="w-4 h-4 text-[#D97B4A] flex-none"></i>记录截止周四 22:00，逾期需预约补写</div>
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-dashed border-[#C9BC9C] flex items-center justify-between text-[10.5px] text-[#A08F6E]">
+          <span>武汉大学 · 生化实验教学中心</span><span>课程码 BIO-C311</span>
+        </div>
+      </div>
+
+      <!-- 设计说明（第 5 点要求：明确标注） -->
+      <div class="spec p-4 mt-4 fade-up d3">
+        <h4><i data-lucide="drafting-compass" class="w-3.5 h-3.5"></i>方案 V1「装订实验志」· 设计规格标注</h4>
+        <ul class="mt-2 space-y-1 list-disc list-inside">
+          <li><b>新增核心元素：</b>活页环装订结构、皮封面嵌套记录纸、双层旋转印章、票根式课程卡、批注便签浮贴、今日课表/最近批注/实验排行三联卡、底部课程动态跑马灯（登录页可见模块 14+）。</li>
+          <li><b>层级划分逻辑：</b>背景（米黄纸纹+做旧暗角）→ 中景（皮封面卡、登录卡、三联卡：描边+1px 落影）→ 前景（便签、胶带、印章：投影叠压+混合模式 multiply），三层叠压模拟实体笔记本翻阅感。</li>
+          <li><b>配色优化细节：</b>在参考图基础上把五个功能色压到同一明度带（L≈60-66%）：墨绿 #2D6A4F / 陶土 #D97B4A / 靛青 #5B7C99 / 芥末 #D9A441 / 印章红 #C0392B，统一暖纸底 #F2ECDD；强调红只出现在印章一处，克制且聚焦。</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ═══ 底部跑马灯 ═══ -->
+<div class="ticker-wrap fade-up d4">
+  <div class="ticker serif">
+    <span>李同学完成了「SDS-PAGE 电泳分析」Gate 6 复核</span><span>陈老师发布了新批注：注意 IPTG 终浓度 0.5 mmol/L</span><span>本周实验志平均分 88.4，较上周 +2.1</span><span>3 班王同学的菌落照片被选为示范样本</span>
+    <span>李同学完成了「SDS-PAGE 电泳分析」Gate 6 复核</span><span>陈老师发布了新批注：注意 IPTG 终浓度 0.5 mmol/L</span><span>本周实验志平均分 88.4，较上周 +2.1</span><span>3 班王同学的菌落照片被选为示范样本</span>
+  </div>
+</div>
+<footer class="bg-[#2F4156] text-[#8FA0BC] text-center text-[11px] py-4">珞珈生化智能体 · 装订实验志设计方案 V1 · 高保真原型</footer>
+
+<!-- ═══ 游客弹窗 ═══ -->
+<div class="modal-mask" id="guest-modal">
+  <div class="modal-card p-6 relative">
+    <div class="tape" style="left:50%;margin-left:-43px"></div>
+    <h3 class="serif text-[19px] font-black text-[#33261A] mt-1">以哪种身份翻阅？</h3>
+    <p class="text-[12px] text-[#8A7A5C] mt-1">游客模式仅作界面演示，数据不会写入课程记录。</p>
+    <div class="mt-5 space-y-3">
+      <a class="role-btn" href="v1-student.html">
+        <span class="w-11 h-11 rounded-xl bg-[#2D6A4F]/10 border-[1.5px] border-[#2D6A4F]/30 flex items-center justify-center flex-none"><i data-lucide="flask-round-bottom" class="w-5 h-5 text-[#2D6A4F]"></i></span>
+        <span><b class="serif text-[15px] text-[#2D6A4F]">学生端</b><span class="block text-[11.5px] text-[#8A7A5C] mt-0.5">写实验记录 · AI 批阅 · 八步 Gate 闯关</span></span>
+        <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-[#C9BC9C]"></i>
+      </a>
+      <a class="role-btn" href="v1-teacher.html">
+        <span class="w-11 h-11 rounded-xl bg-[#5B7C99]/10 border-[1.5px] border-[#5B7C99]/30 flex items-center justify-center flex-none"><i data-lucide="clipboard-check" class="w-5 h-5 text-[#5B7C99]"></i></span>
+        <span><b class="serif text-[15px] text-[#41637F]">教师端</b><span class="block text-[11.5px] text-[#8A7A5C] mt-0.5">班级名册 · 批注签章 · Gate 复核队列</span></span>
+        <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-[#C9BC9C]"></i>
+      </a>
+    </div>
+    <button class="w-full mt-5 py-2.5 rounded-xl text-[12.5px] font-bold text-[#8A7A5C] hover:text-[#B85C2F] transition-colors" onclick="closeGuest()">合上笔记，返回封面</button>
+  </div>
+</div>
+
+<div id="toast-box"></div>
+
+<!-- 切换器 -->
+<nav class="switcher">
+  <a href="index.html" class="font-bold">总览</a>
+  <a href="v1-login.html">V1登录</a><a href="v1-student.html">V1学生</a><a href="v1-teacher.html">V1教师</a>
+  <a href="v2-login.html">V2登录</a><a href="v2-student.html">V2学生</a><a href="v2-teacher.html">V2教师</a>
+  <a href="v3-login.html">V3登录</a><a href="v3-student.html">V3学生</a><a href="v3-teacher.html">V3教师</a>
+</nav>
+
+<script>
+  lucide.createIcons();
+  function toast(msg, icon){ $('#toast-box').append(`<div class="toast"><i data-lucide="${icon||'info'}"></i>${msg}</div>`); lucide.createIcons(); setTimeout(()=>{ $('.toast').first().fadeOut(260, function(){ $(this).remove(); }); }, 2600); }
+  function openGuest(){ $('#guest-modal').addClass('open'); }
+  function closeGuest(){ $('#guest-modal').removeClass('open'); }
+  $('#guest-modal').on('click', function(e){ if(e.target === this) closeGuest(); });
+</script>
+</body>
+</html>

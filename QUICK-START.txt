@@ -1,0 +1,12 @@
+﻿Biochemistry Text Experiment Dual-Agent Delivery
+
+1. Main guide: project/docs/Coze platform delivery and follow-up guide (Chinese filename).
+2. Configuration template: project/.env.example
+3. Source install: run pnpm install --frozen-lockfile in project.
+4. Compiled artifact: compiled-build.tar.gz (.next and dist/server.js).
+5. Production start: install locked dependencies in project, extract compiled-build.tar.gz into project, then run pnpm start.
+6. Database migrations: project/supabase/migrations/
+7. Coze workflows: project/docs/coze/
+8. Teacher materials: project/knowledge-base/raw-teacher-materials/
+
+No real secret is included. Chaoxing OAuth and form writes still require formal credentials and permissions.

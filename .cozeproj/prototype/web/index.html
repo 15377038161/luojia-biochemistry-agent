@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI 设计方案总览 · V1/V2/V3</title>
+<!-- Tailwind v4 browser build 本地化自 https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js （内部CDN在公网浏览器不可达，故本地引用） -->
+<script src="./vendor/lucide.min.js"></script>
+<script src="./vendor/jquery.min.js"></script>
+<link rel="stylesheet" href="./vendor/index.css">
+</head>
+<body class="paper-grain min-h-screen">
+
+<header class="px-5 lg:px-8 pt-8 pb-5">
+  <div class="mono text-[10px] tracking-[.22em] text-[#8C8271]">LUOJIA BIOCHEM · UI REDESIGN ROUND 3</div>
+  <h1 class="serif font-black text-[24px] lg:text-[28px] mt-2">三版高密度方案 · 全部对标参考图丰富度</h1>
+  <p class="text-[12.5px] text-[#6B6557] leading-relaxed mt-2 max-w-[52em]">按参考图「实验笔记本」的信息密度标准重做：每版都补齐了步骤进度、功能侧栏、大文本记录、可视化佐证、批注模块、审核签章六层结构，配色延续上一轮反馈的优势（低饱和纸感 + 功能色区分），元素数量对标参考图，不再空、不再白。每版下方标注了新增核心元素与层级逻辑。</p>
+  <div class="flex flex-wrap gap-2 mt-3">
+    <span class="tag" style="background:rgba(44,110,90,.1);color:var(--moss)"><i data-lucide="layers" class="w-3 h-3"></i>六层信息结构</span>
+    <span class="tag ic1"><i data-lucide="layout-grid" class="w-3 h-3"></i>密度对标参考图</span>
+    <span class="tag ic2"><i data-lucide="smartphone" class="w-3 h-3"></i>每版含登录/学生/教师三页</span>
+    <span class="tag ic3"><i data-lucide="mouse-pointer-click" class="w-3 h-3"></i>全部按钮可点击体验</span>
+  </div>
+</header>
+
+<main class="px-5 lg:px-8 pb-10 grid gap-6 lg:grid-cols-3">
+
+  <!-- V1 -->
+  <section class="card flex flex-col">
+    <div class="hero-v1 h-[104px] relative p-4 flex flex-col justify-between">
+      <div class="flex items-center gap-2"><i data-lucide="notebook-pen" class="w-5 h-5 text-[#F0C987]"></i><b class="serif text-[#F5EFE0] text-[15px]">V1 · 装订实验志</b><span class="ml-auto mono text-[8.5px] text-[#9DB4D0] border border-[rgba(157,180,208,.4)] rounded-full px-2 py-1">CLOTH-BOUND LOG</span></div>
+      <p class="text-[10.5px] text-[#C7D3E4] leading-snug">最贴近参考图的一版：深蓝布面装订脊 + 米白内页 + 活页环 + 红色审核印章，教室里的实体记录册数字化。</p>
+    </div>
+    <div class="p-4 flex-1 flex flex-col gap-3">
+      <div class="flex gap-1"><div class="sw sw-l ic4"></div><div class="sw ic5"></div><div class="sw ic6"></div><div class="sw ic7"></div><div class="sw ic8"></div><div class="sw sw-r ic9"></div></div>
+      <div class="space-y-1.5 text-[11px] text-[#5C574A] leading-relaxed">
+        <div><b class="text-[var(--ink)]">新增核心元素：</b>装订活页环、Gate 红印章、线索卡（菌落/曲线/电泳 SVG）、批注便利贴、档口标签、边栏五功能入口、8 节点进度轨、红笔修订痕迹</div>
+        <div><b class="text-[var(--ink)]">层级划分：</b>布脊侧栏(0) → 纸面底(1) → 记录大卡+线索卡(2) → 便利贴/印章(3 浮起投影)</div>
+        <div><b class="text-[var(--ink)]">配色优化：</b>深蓝布面 #26406B 压住全局，朱砂红只给「审核与警示」，纸色提亮至 #F3EDE2，对比参考图更清爽</div>
+      </div>
+      <div class="mt-auto grid grid-cols-3 gap-2 pt-1">
+        <a class="btn btn-p justify-center" href="v1-login.html">登录</a>
+        <a class="btn btn-s justify-center" href="v1-student.html">学生端</a>
+        <a class="btn btn-s justify-center" href="v1-teacher.html">教师端</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- V2 -->
+  <section class="card flex flex-col">
+    <div class="hero-v2 h-[104px] relative p-4 flex flex-col justify-between">
+      <div class="flex items-center gap-2"><i data-lucide="file-spreadsheet" class="w-5 h-5 text-[#F0C987]"></i><b class="serif text-[#F5EFE0] text-[15px]">V2 · 数字实验台账</b><span class="ml-auto mono text-[8.5px] text-[#A9C4B4] border border-[rgba(169,196,180,.4)] rounded-full px-2 py-1">GRADED LEDGER</span></div>
+      <p class="text-[10.5px] text-[#C4D6CB] leading-snug">严谨的「教学台账」风：暖绿档案色 + 每个模块都是一张可归档的表格卡，数据、签核、回流全部表格化，适合喜欢规整的课堂。</p>
+    </div>
+    <div class="p-4 flex-1 flex flex-col gap-3">
+      <div class="flex gap-1"><div class="sw sw-l ic10"></div><div class="sw ic11"></div><div class="sw ic12"></div><div class="sw ic13"></div><div class="sw ic14"></div><div class="sw sw-r ic15"></div></div>
+      <div class="space-y-1.5 text-[11px] text-[#5C574A] leading-relaxed">
+        <div><b class="text-[var(--ink)]">新增核心元素：</b>双层页眉（课次+工位）、左侧功能柜、台账表格卡（角标/行列/操作列）、状态徽标体系、留痕时间线、签核栏、统计四宫格</div>
+        <div><b class="text-[var(--ink)]">层级划分：</b>功能柜(0) → 台账纸(1) → 表格卡+统计宫格(2) → 行内操作/签核章(3)</div>
+        <div><b class="text-[var(--ink)]">配色优化：</b>暖绿 #3F7A5C 替换冷绿，纸色更暖 #FBF8F1，表头用浅绿灰压层，行斑马纹极淡 4%，长时间盯不累</div>
+      </div>
+      <div class="mt-auto grid grid-cols-3 gap-2 pt-1">
+        <a class="btn btn-p justify-center" href="v2-login.html">登录</a>
+        <a class="btn btn-s justify-center" href="v2-student.html">学生端</a>
+        <a class="btn btn-s justify-center" href="v2-teacher.html">教师端</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- V3 -->
+  <section class="card flex flex-col">
+    <div class="hero-v3 h-[104px] relative p-4 flex flex-col justify-between">
+      <div class="flex items-center gap-2"><i data-lucide="book-marked" class="w-5 h-5 text-[#F0C987]"></i><b class="serif text-[#F5EFE0] text-[15px]">V3 · 分子图鉴册</b><span class="ml-auto mono text-[8.5px] text-[#9CCBAC] border border-[rgba(156,203,172,.4)] rounded-full px-2 py-1">FIELD CODEX</span></div>
+      <p class="text-[10.5px] text-[#B8D2C2] leading-snug">最有游戏感的一版：每步实验是图鉴里的一页「标本卡」，通过 Gate 即盖章收录，集齐 42 页解锁「分子侦探」，收集欲拉满。</p>
+    </div>
+    <div class="p-4 flex-1 flex flex-col gap-3">
+      <div class="flex gap-1"><div class="sw sw-l ic16"></div><div class="sw ic17"></div><div class="sw ic18"></div><div class="sw ic19"></div><div class="sw ic20"></div><div class="sw sw-r ic21"></div></div>
+      <div class="space-y-1.5 text-[11px] text-[#5C574A] leading-relaxed">
+        <div><b class="text-[var(--ink)]">新增核心元素：</b>标本卡墙（8 卡陈列）、章节页眉收集环、盖章大印、草稿史、成就徽章 9 枚、册边便条、教师签章页堆、卡册预警</div>
+        <div><b class="text-[var(--ink)]">层级划分：</b>墨绿皮面区(0) → 点阵纸(1) → 标本卡/便签(2 微旋转) → 盖章/徽标(3 上浮角标)</div>
+        <div><b class="text-[var(--ink)]">配色优化：</b>墨绿 #173B33 沉底 + 丛绿 #2C6E5A 主操作，金 #E8A23D 只给「收集与成就」，浆果红只给「缺漏」，暖而不燥</div>
+      </div>
+      <div class="mt-auto grid grid-cols-3 gap-2 pt-1">
+        <a class="btn btn-p justify-center" href="v3-login.html">登录</a>
+        <a class="btn btn-s justify-center" href="v3-student.html">学生端</a>
+        <a class="btn btn-s justify-center" href="v3-teacher.html">教师端</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="px-5 lg:px-8 pb-10">
+  <div class="rounded-[14px] p-4 flex flex-wrap items-center gap-3" style="background:rgba(44,110,90,.07);border:1.5px dashed rgba(44,110,90,.35)">
+    <i data-lucide="git-compare-arrows" class="w-5 h-5 text-[var(--moss)]"></i>
+    <p class="text-[12px] text-[#5C574A] flex-1 min-w-[240px]">三版可混搭，例如「V1 的布面装订 + V3 的盖章收集机制」。确认方向后即落地生产代码（Next.js 全端 + 响应式 + 交互测试报告）。</p>
+    <a class="btn btn-p" href="v1-login.html">从头开始看 →</a>
+  </div>
+</footer>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

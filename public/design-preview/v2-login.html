@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案V2 · 数字实验台 — 登录页</title>
+<!-- Tailwind v4 browser build 本地化自 https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js （内部CDN在公网浏览器不可达，故本地引用） -->
+<script src="./vendor/lucide.min.js"></script>
+<script src="./vendor/jquery.min.js"></script>
+<link rel="stylesheet" href="./vendor/v2-login.css">
+</head>
+<body class="grid-bg min-h-screen">
+
+<div class="min-h-screen grid login-wrap" style="grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)">
+
+  <!-- ═══ 左：中控台 hero ═══ -->
+  <div class="hero relative overflow-hidden flex flex-col ic1">
+    <!-- 顶部品牌行 -->
+    <div class="px-6 lg:px-10 pt-7 pb-5 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(237,242,238,.12);border:1.5px solid rgba(237,242,238,.25)">
+        <i data-lucide="flask-conical" class="w-5 h-5 text-[#9FD3B3]"></i>
+      </div>
+      <div>
+        <div class="serif text-white font-black text-[16px] leading-tight">珞珈生化智能体</div>
+        <div class="mono text-[9.5px] tracking-[.22em] text-[#8FA8C4] mt-0.5">LUOJIA BIO-LAB CONSOLE · v3.2</div>
+      </div>
+      <span class="ml-auto mono text-[10px] text-[#9FD3B3] border border-[#3E7C59] rounded-md px-2.5 py-1 flex items-center gap-1.5"><span class="led led-g"></span>SYSTEM ONLINE</span>
+    </div>
+
+    <!-- 大标语 -->
+    <div class="px-6 lg:px-10">
+      <h1 class="text-white font-black text-[24px] lg:text-[29px] leading-snug max-w-[24em]">让每一次实验操作<br>都被准确记录、即时批阅。</h1>
+      <p class="text-[#A9BCCF] text-[12.5px] leading-relaxed mt-2.5 max-w-[40em]">生化实验 IB · 八步骤流程 · Gate 审核制 · 数据回流超星学习通——覆盖 42 名学生的完整教学闭环。</p>
+    </div>
+
+    <!-- 4 仪表卡 -->
+    <div class="px-6 lg:px-10 mt-6 grid grid-cols-2 xl:grid-cols-4 gap-3 fade-up">
+      <div class="gauge !bg-[rgba(255,255,255,.07)] !border-[rgba(255,255,255,.16)] !shadow-none">
+        <div class="tag !text-[#8FA8C4]">今日实验记录</div>
+        <div class="flex items-end justify-between mt-1.5"><span class="mono text-white font-bold text-[22px] leading-none">127</span><svg viewBox="0 0 60 24" class="w-[60px] h-6"><polyline points="2,18 12,14 22,16 32,10 42,12 52,6 58,8" fill="none" stroke="#9FD3B3" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <div class="mono text-[9.5px] text-[#7E95AD] mt-1.5">▲ 12.4% vs 昨日</div>
+      </div>
+      <div class="gauge !bg-[rgba(255,255,255,.07)] !border-[rgba(255,255,255,.16)] !shadow-none">
+        <div class="tag !text-[#8FA8C4]">在线学生</div>
+        <div class="flex items-end justify-between mt-1.5"><span class="mono text-white font-bold text-[22px] leading-none">31<span class="text-[12px] text-[#7E95AD]">/42</span></span><span class="mono text-[9.5px] text-[#9FD3B3]">73.8%</span></div>
+        <div class="mt-2 h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,.12)"><span class="ic6"></span></div>
+      </div>
+      <div class="gauge !bg-[rgba(255,255,255,.07)] !border-[rgba(255,255,255,.16)] !shadow-none">
+        <div class="tag !text-[#8FA8C4]">待批阅队列</div>
+        <div class="flex items-end justify-between mt-1.5"><span class="mono text-white font-bold text-[22px] leading-none">23</span><span class="led led-a ml-1 mb-1"></span></div>
+        <div class="mono text-[9.5px] text-[#7E95AD] mt-1.5">AI 预批完成 · 待导师签章</div>
+      </div>
+      <div class="gauge !bg-[rgba(255,255,255,.07)] !border-[rgba(255,255,255,.16)] !shadow-none">
+        <div class="tag !text-[#8FA8C4]">超星回流</div>
+        <div class="flex items-end justify-between mt-1.5"><span class="mono text-white font-bold text-[22px] leading-none">26</span><span class="mono text-[9.5px] text-[#E8B96A]">排队</span></div>
+        <div class="mono text-[9.5px] text-[#7E95AD] mt-1.5">SYNC · 每 5min 一轮</div>
+      </div>
+    </div>
+
+    <!-- 24h 活动时间线 -->
+    <div class="px-6 lg:px-10 mt-6 fade-up d1">
+      <div class="flex items-center justify-between mb-3">
+        <div class="tag !text-[#8FA8C4] flex items-center gap-2"><i data-lucide="activity" class="w-3.5 h-3.5"></i>24H 教学活动流</div>
+        <span class="mono text-[9.5px] text-[#7E95AD]">REALTIME FEED</span>
+      </div>
+      <div class="space-y-0">
+        <div class="tl-item"><span class="tl-dot ic2"></span><div class="flex-1 min-w-0"><div class="text-[12px] text-[#E6EDF3] leading-snug">王雨桐 提交 Gate 3《诱导表达》记录 · <span class="mono text-[#9FD3B3]">88 分</span></div><div class="mono text-[9.5px] text-[#7E95AD] mt-0.5">14:32 · STUDENT_SUBMIT</div></div></div>
+        <div class="tl-item"><span class="tl-dot ic3"></span><div class="flex-1 min-w-0"><div class="text-[12px] text-[#E6EDF3] leading-snug">AI 珞珈批阅 张一诺《蛋白纯化》照片 · 检出 2 处参数遗漏</div><div class="mono text-[9.5px] text-[#7E95AD] mt-0.5">13:58 · VISION_CHECK</div></div></div>
+        <div class="tl-item"><span class="tl-dot ic4"></span><div class="flex-1 min-w-0"><div class="text-[12px] text-[#E6EDF3] leading-snug">李明轩 第 3 次修订未过 Gate 2 · 已触发预警通知</div><div class="mono text-[9.5px] text-[#7E95AD] mt-0.5">11:21 · GATE_RETRY_WARN</div></div></div>
+        <div class="tl-item !pb-0"><span class="tl-dot ic5"></span><div class="flex-1 min-w-0"><div class="text-[12px] text-[#E6EDF3] leading-snug">陈老师签章 赵子墨 Gate 2 · 成绩已入回流队列</div><div class="mono text-[9.5px] text-[#7E95AD] mt-0.5">09:47 · TEACHER_SIGN</div></div></div>
+      </div>
+    </div>
+
+    <!-- 8 功能格 -->
+    <div class="px-6 lg:px-10 mt-auto pb-7 pt-6 fade-up d2">
+      <div class="grid grid-cols-4 gap-2.5 max-w-[560px]">
+        <button class="quick" onclick="toast('演示功能：实验流程总览','workflow')"><span class="q-ic"><i data-lucide="workflow" class="w-4 h-4"></i></span><span class="text-[10.5px] font-bold">流程总览</span></button>
+        <button class="quick" onclick="toast('演示功能：AI 批阅引擎','bot')"><span class="q-ic"><i data-lucide="bot" class="w-4 h-4"></i></span><span class="text-[10.5px] font-bold">AI 批阅</span></button>
+        <button class="quick" onclick="toast('演示功能：图像证据比对','scan-eye')"><span class="q-ic"><i data-lucide="scan-eye" class="w-4 h-4"></i></span><span class="text-[10.5px] font-bold">证据比对</span></button>
+        <button class="quick" onclick="toast('演示功能：成绩回流队列','refresh-cw')"><span class="q-ic"><i data-lucide="refresh-cw" class="w-4 h-4"></i></span><span class="text-[10.5px] font-bold">回流队列</span></button>
+        <button class="quick" onclick="toast('演示功能：安全合规检查','shield-check')"><span class="q-ic"><i data-lucide="shield-check" class="w-4 h-4"></i></span><span class="text-[10.5px] font-bold">安全检查</span></button>
+        <button class="quick" onclick="toast('演示功能：班级数据面板','bar-chart-3')"><span class="q-ic"><i data-lucide="bar-chart-3" class="w-4 h-4"></i></span><span class="text-[10.5px] font-bold">数据面板</span></button>
+        <button class="quick" onclick="toast('演示功能：实验指南库','library')"><span class="q-ic"><i data-lucide="library" class="w-4 h-4"></i></span><span class="text-[10.5px] font-bold">指南库</span></button>
+        <button class="quick" onclick="toast('演示功能：超星对接状态','plug-zap')"><span class="q-ic"><i data-lucide="plug-zap" class="w-4 h-4"></i></span><span class="text-[10.5px] font-bold">超星对接</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 右：登录面板 ═══ -->
+  <div class="flex items-center justify-center p-5 lg:p-8" style="background:var(--bench)">
+    <div class="w-full max-w-[380px]">
+      <div class="login-card p-6 fade-up">
+        <div class="flex items-center justify-between">
+          <h2 class="serif font-black text-[18px] text-[#26313F]">登录控制台</h2>
+          <span class="mono text-[9px] tracking-[.15em] text-[#9AA5AF] border border-[var(--line)] rounded px-2 py-1">SECURE · TLS</span>
+        </div>
+        <div class="seg mt-4">
+          <button class="on" id="tab-s" onclick="switchTab('s')">学生入口</button>
+          <button id="tab-t" onclick="switchTab('t')">教师入口</button>
+        </div>
+
+        <div class="mt-4 space-y-3">
+          <div>
+            <div class="text-[11px] font-bold text-[#5A6570] mb-1.5">学号 / 工号</div>
+            <input class="in-field" id="f-id" placeholder="20233010xx" oninput="updateHint()">
+          </div>
+          <div>
+            <div class="text-[11px] font-bold text-[#5A6570] mb-1.5">密码</div>
+            <input class="in-field" type="password" placeholder="••••••••" oninput="updateHint()">
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-[#7C8896]">
+            <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" class="accent-[#3E7C59]" checked>记住此设备</label>
+            <span class="mono hover:text-[#4A7BA6] cursor-pointer" onclick="toast('联系实验室管理员重置','life-buoy')">忘记密码?</span>
+          </div>
+          <div class="mono text-[9.5px] text-[#9AA5AF] bg-[var(--bench)] border border-[var(--line)] rounded-md px-2.5 py-1.5" id="login-hint">AUTH PROVIDER · CHAOXING SSO</div>
+
+          <button class="btn-primary mt-1" onclick="toast('跳转超星统一认证 → GET /api/auth/chaoxing','log-in')">
+            <i data-lucide="log-in" class="w-4 h-4"></i>通过超星账号登录
+          </button>
+          <div class="flex items-center gap-2.5 text-[10.5px] text-[#9AA5AF]"><span class="flex-1 border-t border-[var(--line)]"></span>OR<span class="flex-1 border-t border-[var(--line)]"></span></div>
+          <button class="btn-ghost" onclick="openGuest()"><i data-lucide="eye" class="w-4 h-4 inline mr-1 align-[-2px]"></i>先逛逛看（游客模式）</button>
+        </div>
+
+        <div class="mt-4 pt-3.5 border-t border-[var(--line)] flex items-center justify-between mono text-[9.5px] text-[#9AA5AF]">
+          <span>WHITELIST · 1385</span><span>SUPABASE · <span class="led led-g inline-block align-middle mr-0.5"></span>PG15</span><span>© WHU BIO</span>
+        </div>
+      </div>
+
+      <!-- 底部 3 徽章 -->
+      <div class="grid grid-cols-3 gap-2 mt-3 fade-up d1">
+        <div class="gauge !p-2.5 text-center"><i data-lucide="timer" class="w-4 h-4 text-[#3E7C59] mx-auto"></div><div class="text-[9.5px] font-bold mt-1">24h 内签章</div></div>
+        <div class="gauge !p-2.5 text-center"><i data-lucide="git-branch" class="w-4 h-4 text-[#4A7BA6] mx-auto"></div><div class="text-[9.5px] font-bold mt-1">8 步骤流程</div></div>
+        <div class="gauge !p-2.5 text-center"><i data-lucide="refresh-cw" class="w-4 h-4 text-[#D9982F] mx-auto"></div><div class="text-[9.5px] font-bold mt-1">成绩回流超星</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 游客弹窗 -->
+<div class="modal-mask" id="guest-modal">
+  <div class="login-card p-6 w-full max-w-[360px] text-center">
+    <div class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style="background:rgba(62,124,89,.1);border:1.5px solid rgba(62,124,89,.3)"><i data-lucide="eye" class="w-7 h-7 text-[#3E7C59]"></i></div>
+    <h3 class="serif font-black text-[16px] mt-3">选择参观身份</h3>
+    <p class="text-[11.5px] text-[#7C8896] mt-1.5">游客数据为演示样本，不影响真实成绩。</p>
+    <div class="space-y-2.5 mt-4">
+      <a href="v2-student.html" class="block rounded-xl p-3.5 text-left transition-all hover:translate-x-1" style="background:rgba(62,124,89,.06);border:1.5px solid rgba(62,124,89,.3)" onclick="closeGuest()">
+        <div class="flex items-center gap-2 font-bold text-[13.5px] text-[#3E7C59]"><i data-lucide="graduation-cap" class="w-4 h-4"></i>学生实验台<span class="mono text-[9px] text-[#7C8896] ml-auto">STUDENT</span></div>
+        <div class="text-[11px] text-[#5A6570] mt-1">八步骤记录 · AI 批阅 · 证据拍照</div>
+      </a>
+      <a href="v2-teacher.html" class="block rounded-xl p-3.5 text-left transition-all hover:translate-x-1" style="background:rgba(74,123,166,.06);border:1.5px solid rgba(74,123,166,.3)" onclick="closeGuest()">
+        <div class="flex items-center gap-2 font-bold text-[13.5px] text-[#4A7BA6]"><i data-lucide="presentation" class="w-4 h-4"></i>教师中控台<span class="mono text-[9px] text-[#7C8896] ml-auto">TEACHER</span></div>
+        <div class="text-[11px] text-[#5A6570] mt-1">班级名册 · Gate 签章 · 回流队列</div>
+      </a>
+    </div>
+    <button class="mt-4 text-[11.5px] text-[#9AA5AF] hover:text-[#26313F] font-bold" onclick="closeGuest()">返回登录</button>
+  </div>
+</div>
+
+<div id="toast-box"></div>
+<nav class="switcher">
+  <a href="index.html" class="font-bold">总览</a>
+  <a href="v1-login.html">V1登录</a><a href="v1-student.html">V1学生</a><a href="v1-teacher.html">V1教师</a>
+  <a href="v2-login.html">V2登录</a><a href="v2-student.html">V2学生</a><a href="v2-teacher.html">V2教师</a>
+  <a href="v3-login.html">V3登录</a><a href="v3-student.html">V3学生</a><a href="v3-teacher.html">V3教师</a>
+</nav>
+
+<script>
+  lucide.createIcons();
+  function toast(msg, icon){ $('#toast-box').append(`<div class="toast"><i data-lucide="${icon||'info'}"></i>${msg}</div>`); lucide.createIcons(); setTimeout(()=>{ $('.toast').first().fadeOut(260, function(){ $(this).remove(); }); }, 2600); }
+  function openGuest(){ $('#guest-modal').addClass('open'); }
+  function closeGuest(){ $('#guest-modal').removeClass('open'); }
+  function switchTab(t){
+    $('#tab-s').toggleClass('on', t==='s'); $('#tab-t').toggleClass('on', t==='t');
+    $('#login-hint').text(t==='s' ? 'AUTH PROVIDER · CHAOXING SSO · STUDENT' : 'AUTH PROVIDER · CHAOXING SSO · TEACHER');
+    toast('切换至' + (t==='s'?'学生':'教师') + '入口','user-round-cog');
+  }
+  function updateHint(){ const v = $('#f-id').val(); if(v) $('#login-hint').text('UID · ' + v + ' · READY'); }
+  $('#guest-modal').on('click', function(e){ if(e.target === this) closeGuest(); });
+</script>
+</body>
+</html>

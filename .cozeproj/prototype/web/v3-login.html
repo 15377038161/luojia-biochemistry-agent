@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案V3 · 分子图鉴册 — 登录页</title>
+<!-- Tailwind v4 browser build 本地化自 https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js （内部CDN在公网浏览器不可达，故本地引用） -->
+<script src="./vendor/lucide.min.js"></script>
+<script src="./vendor/jquery.min.js"></script>
+<link rel="stylesheet" href="./vendor/v3-login.css">
+</head>
+<body class="paper-grain min-h-screen">
+
+<div class="min-h-screen main-grid grid" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)">
+
+  <!-- ═══ 左：图鉴册陈列墙 ═══ -->
+  <div class="hero-left relative overflow-hidden ic1">
+    <!-- 装饰分子 -->
+    <svg class="absolute opacity-[.13]" style="top:4%;right:6%" width="150" height="150" viewBox="0 0 150 150"><g stroke="#7CB08F" stroke-width="2" fill="none"><circle cx="75" cy="30" r="10" fill="#2C6E5A"/><circle cx="30" cy="75" r="10" fill="#E8A23D"/><circle cx="120" cy="75" r="10" fill="#7CB08F"/><circle cx="75" cy="120" r="10" fill="#C25E5E"/><path d="M75 40 L38 68 M75 40 L112 68 M38 82 L68 112 M112 82 L82 112"/></g></svg>
+    <svg class="absolute opacity-[.1] float" style="bottom:20%;left:4%" width="110" height="110" viewBox="0 0 110 110"><g stroke="#7CB08F" stroke-width="2" fill="none"><path d="M55 15 C75 15 85 35 85 55 C85 75 75 92 55 92 C35 92 25 75 25 55 C25 35 35 15 55 15 Z"/><path d="M55 15 L55 92 M25 55 L85 55" stroke-dasharray="4 4"/></g></svg>
+
+    <!-- 页眉 -->
+    <div class="px-6 lg:px-9 pt-7 pb-4 flex items-center gap-3 relative z-10">
+      <div class="w-11 h-11 rounded-2xl flex items-center justify-center float2" style="background:rgba(124,176,143,.16);border:2px solid rgba(124,176,143,.4)"><i data-lucide="book-marked" class="w-5.5 h-5.5 w-6 h-6 text-[#9CCBAC]"></i></div>
+      <div>
+        <div class="serif text-[#F0EDE2] font-black text-[17px] leading-tight">珞珈生化图鉴</div>
+        <div class="mono text-[9px] tracking-[.24em] text-[#7CB08F] mt-0.5">BIOCHEMISTRY FIELD CODEX · VOL.1</div>
+      </div>
+      <span class="ml-auto serif text-[11px] text-[#E8A23D] border border-[rgba(232,162,61,.5)] rounded-full px-3 py-1.5">武汉大学 · 生化实验 IB</span>
+    </div>
+
+    <!-- 大标题 -->
+    <div class="px-6 lg:px-9 relative z-10">
+      <h1 class="text-[#F0EDE2] font-black text-[26px] lg:text-[31px] leading-snug max-w-[22em] serif">收集你的<br>八枚实验徽章</h1>
+      <p class="text-[#9CCBAC] text-[12.5px] leading-relaxed mt-2.5 max-w-[38em]">每个实验步骤都是图鉴中的一页：写下记录 → 通过 Gate → 盖章收录。集齐八章，获得「分子侦探」称号，成绩自动回流超星学习通。</p>
+    </div>
+
+    <!-- 图鉴卡陈列墙 -->
+    <div class="px-6 lg:px-9 mt-6 relative z-10">
+      <div class="flex items-center justify-between mb-3">
+        <div class="mono text-[9.5px] tracking-[.18em] text-[#7CB08F]">SPECIMEN WALL · 本周收录</div>
+        <div class="mono text-[9.5px] text-[#7CB08F]">COLLECTED <b class="text-[#E8A23D] text-[12px]">7</b>/42</div>
+      </div>
+      <div class="grid grid-cols-4 gap-2.5 max-w-[620px]">
+        <!-- 已收录 4 -->
+        <div class="card cursor-pointer" onclick="toast('图鉴卡「水」· 已收录于第 1 章','check-circle-2')">
+          <span class="badge ic2">CH.01</span>
+          <div class="illust ic3"><i data-lucide="droplets" class="w-9 h-9 text-[#2C6E5A]"></i></div>
+          <div class="card-b p-2"><div class="flex items-center justify-between"><b class="text-[10.5px]">水 · 缓冲液</b><span class="no">H₂O</span></div><div class="flex items-center gap-1.5 mt-1.5"><span class="lvl"><i style="width:95%"></i></span><span class="mono text-[8.5px] text-[#2C6E5A] font-bold">95</span></div></div>
+          <div class="collected-stamp"><span>已收录</span></div>
+        </div>
+        <div class="card cursor-pointer" onclick="toast('图鉴卡「葡萄糖」· 已收录于第 3 章','check-circle-2')">
+          <span class="badge ic4">CH.03</span>
+          <div class="illust ic5"><i data-lucide="hexagon" class="w-9 h-9 text-[#B57A22]"></i></div>
+          <div class="card-b p-2"><div class="flex items-center justify-between"><b class="text-[10.5px]">葡萄糖</b><span class="no">C₆H₁₂O₆</span></div><div class="flex items-center gap-1.5 mt-1.5"><span class="lvl"><i style="width:91%"></i></span><span class="mono text-[8.5px] text-[#2C6E5A] font-bold">91</span></div></div>
+          <div class="collected-stamp"><span>已收录</span></div>
+        </div>
+        <div class="card cursor-pointer" onclick="toast('图鉴卡「质粒 pET-28a」· 已收录','check-circle-2')">
+          <span class="badge ic6">CH.05</span>
+          <div class="illust ic7"><i data-lucide="circle-dashed" class="w-9 h-9 text-[#41678A]"></i></div>
+          <div class="card-b p-2"><div class="flex items-center justify-between"><b class="text-[10.5px]">质粒 pET</b><span class="no">5369 bp</span></div><div class="flex items-center gap-1.5 mt-1.5"><span class="lvl"><i style="width:86%"></i></span><span class="mono text-[8.5px] text-[#2C6E5A] font-bold">86</span></div></div>
+          <div class="collected-stamp"><span>已收录</span></div>
+        </div>
+        <div class="card cursor-pointer" onclick="toast('图鉴卡「IPTG 诱导」· 已收录','check-circle-2')">
+          <span class="badge ic8">CH.07</span>
+          <div class="illust ic9"><i data-lucide="zap" class="w-9 h-9 text-[#A34444]"></i></div>
+          <div class="card-b p-2"><div class="flex items-center justify-between"><b class="text-[10.5px]">IPTG 诱导</b><span class="no">0.5 mM</span></div><div class="flex items-center gap-1.5 mt-1.5"><span class="lvl"><i style="width:90%"></i></span><span class="mono text-[8.5px] text-[#2C6E5A] font-bold">90</span></div></div>
+          <div class="collected-stamp"><span>已收录</span></div>
+        </div>
+        <!-- 进行中 2 -->
+        <div class="card cursor-pointer" onclick="toast('「BCA 定量」待补数据 · Gate 5 进行中','loader')">
+          <span class="badge ic10">CH.09</span>
+          <div class="illust ic11"><i data-lucide="test-tube-2" class="w-9 h-9 text-[#8F6218]"></i></div>
+          <div class="card-b p-2"><div class="flex items-center justify-between"><b class="text-[10.5px]">BCA 定量</b><span class="no">A562</span></div><div class="flex items-center gap-1.5 mt-1.5"><span class="lvl"><i style="width:78%;background:var(--sun)"></i></span><span class="mono text-[8.5px] text-[#B57A22] font-bold">78</span></div></div>
+          <span class="stamp-mini">待补数据</span>
+        </div>
+        <div class="card cursor-pointer" onclick="toast('「蛋白条带」拍照评审中','camera')">
+          <span class="badge ic12">CH.11</span>
+          <div class="illust ic13"><i data-lucide="align-horizontal-justify-center" class="w-9 h-9 text-[#3F7A5C]"></i></div>
+          <div class="card-b p-2"><div class="flex items-center justify-between"><b class="text-[10.5px]">蛋白条带</b><span class="no">66 kDa</span></div><div class="flex items-center gap-1.5 mt-1.5"><span class="lvl"><i style="width:60%;background:var(--sun)"></i></span><span class="mono text-[8.5px] text-[#B57A22] font-bold">审中</span></div></div>
+          <span class="stamp-mini">AI 审中</span>
+        </div>
+        <!-- 锁定 2 -->
+        <div class="card locked cursor-pointer" onclick="toast('通过 Gate 5 后解锁此页','lock')">
+          <span class="badge ic14">CH.13</span>
+          <div class="illust ic15"><i data-lucide="flask-round" class="w-9 h-9 text-[#6B6557]"></i></div>
+          <div class="card-b p-2"><div class="flex items-center justify-between"><b class="text-[10.5px]">纯化层析</b><span class="no">??? </span></div><div class="flex items-center gap-1.5 mt-1.5"><span class="lvl"></span><span class="mono text-[8.5px] text-[#9A917E]">—</span></div></div>
+        </div>
+        <div class="card locked cursor-pointer" onclick="toast('终章 · 集齐前七章解锁','lock')">
+          <span class="badge ic16">CH.15</span>
+          <div class="illust ic17"><i data-lucide="dna" class="w-9 h-9 text-[#6B6557]"></i></div>
+          <div class="card-b p-2"><div class="flex items-center justify-between"><b class="text-[10.5px]">终章 · 图谱</b><span class="no">???</span></div><div class="flex items-center gap-1.5 mt-1.5"><span class="lvl"></span><span class="mono text-[8.5px] text-[#9A917E]">—</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 三特性 -->
+    <div class="px-6 lg:px-9 mt-6 pb-7 flex flex-wrap gap-2.5 relative z-10 fade-up d2">
+      <span class="serif text-[11px] text-[#F0EDE2] rounded-full px-3.5 py-2 flex items-center gap-1.5" style="background:rgba(124,176,143,.13);border:1.5px solid rgba(124,176,143,.35)"><i data-lucide="stamp" class="w-3.5 h-3.5 text-[#9CCBAC]"></i>Gate 盖章制</span>
+      <span class="serif text-[11px] text-[#F0EDE2] rounded-full px-3.5 py-2 flex items-center gap-1.5" style="background:rgba(232,162,61,.12);border:1.5px solid rgba(232,162,61,.35)"><i data-lucide="bot" class="w-3.5 h-3.5 text-[#E8A23D]"></i>AI 助教珞珈</span>
+      <span class="serif text-[11px] text-[#F0EDE2] rounded-full px-3.5 py-2 flex items-center gap-1.5" style="background:rgba(194,94,94,.12);border:1.5px solid rgba(194,94,94,.35)"><i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[#D98F8F]"></i>成绩回流超星</span>
+    </div>
+  </div>
+
+  <!-- ═══ 右：登录面板 ═══ -->
+  <div class="flex items-center justify-center p-5 lg:p-8" style="background:var(--paper)">
+    <div class="w-full max-w-[386px]">
+      <div class="login-card p-6 fade-up">
+        <div class="serif font-black text-[19px] mt-1">翻开你的图鉴册</div>
+        <p class="text-[11.5px] text-[#7A7466] mt-1.5">用超星账号登录，收录属于你的实验标本。</p>
+
+        <div class="mt-4 space-y-3">
+          <div><div class="text-[11px] font-bold text-[#5C574A] mb-1.5">学号 / 工号</div><input class="in-field" placeholder="20233010xx"></div>
+          <div><div class="text-[11px] font-bold text-[#5C574A] mb-1.5">密码</div><input class="in-field" type="password" placeholder="••••••••"></div>
+          <div class="flex items-center justify-between text-[11px] text-[#8A8272]">
+            <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" class="accent-[#2C6E5A]" checked>记住这本册子</label>
+            <span class="cursor-pointer hover:text-[var(--moss)]" onclick="toast('请联系实验中心管理员','life-buoy')">忘了密码？</span>
+          </div>
+
+          <button class="btn-primary mt-1" onclick="toast('跳转超星统一认证 → GET /api/auth/chaoxing','log-in')"><i data-lucide="log-in" class="w-4 h-4"></i>超星账号登录</button>
+          <div class="flex items-center gap-2.5 text-[10.5px] text-[#9A917E]"><span class="flex-1 border-t border-[var(--line)]"></span>或先翻一翻<span class="flex-1 border-t border-[var(--line)]"></span></div>
+          <button class="btn-ghost" onclick="openGuest()"><i data-lucide="compass" class="w-4 h-4 inline mr-1 align-[-2px]"></i>游客翻阅（免登录）</button>
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-[var(--line)] grid grid-cols-3 gap-2 text-center">
+          <div><div class="mono text-[16px] font-bold text-[var(--moss)]">42</div><div class="text-[9px] text-[#9A917E] font-bold mt-0.5">图鉴页</div></div>
+          <div><div class="mono text-[16px] font-bold text-[var(--sun)]">8</div><div class="text-[9px] text-[#9A917E] font-bold mt-0.5">Gate 章</div></div>
+          <div><div class="mono text-[16px] font-bold text-[var(--berry)]">1</div><div class="text-[9px] text-[#9A917E] font-bold mt-0.5">终章称号</div></div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-center gap-1.5 mt-3 text-[10px] text-[#9A917E] fade-up d1"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i>超星 SSO 白名单 1385 · Supabase 全程加密</div>
+    </div>
+  </div>
+</div>
+
+<!-- 游客弹窗 -->
+<div class="modal-mask" id="guest-modal">
+  <div class="login-card p-6 w-full max-w-[368px] text-center">
+    <div class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center" style="background:rgba(44,110,90,.1);border:2px solid rgba(44,110,90,.3)"><i data-lucide="compass" class="w-7 h-7 text-[var(--moss)]"></i></div>
+    <h3 class="serif font-black text-[16px] mt-3">选择翻阅身份</h3>
+    <p class="text-[11.5px] text-[#7A7466] mt-1.5">游客翻阅不产生真实收录记录。</p>
+    <div class="space-y-2.5 mt-4">
+      <a href="v3-student.html" class="block rounded-xl p-3.5 text-left transition-all hover:translate-x-1" style="background:rgba(44,110,90,.07);border:1.5px solid rgba(44,110,90,.3)" onclick="closeGuest()">
+        <div class="flex items-center gap-2 font-bold text-[13.5px] text-[var(--moss)]"><i data-lucide="graduation-cap" class="w-4 h-4"></i>学生图鉴册<span class="mono text-[9px] text-[#9A917E] ml-auto">STUDENT</span></div>
+        <div class="text-[11px] text-[#5C574A] mt-1">八步收集 · AI 批阅 · 盖章收录</div>
+      </a>
+      <a href="v3-teacher.html" class="block rounded-xl p-3.5 text-left transition-all hover:translate-x-1" style="background:rgba(93,138,168,.07);border:1.5px solid rgba(93,138,168,.3)" onclick="closeGuest()">
+        <div class="flex items-center gap-2 font-bold text-[13.5px] text-[#41678A]"><i data-lucide="library-big" class="w-4 h-4"></i>教师编目台<span class="mono text-[9px] text-[#9A917E] ml-auto">TEACHER</span></div>
+        <div class="text-[11px] text-[#5C574A] mt-1">全班图鉴墙 · 签章 · 回流编目</div>
+      </a>
+    </div>
+    <button class="mt-4 text-[11.5px] text-[#9A917E] hover:text-[var(--ink)] font-bold" onclick="closeGuest()">返回登录</button>
+  </div>
+</div>
+
+<div id="toast-box"></div>
+<nav class="switcher">
+  <a href="index.html" class="font-bold">总览</a>
+  <a href="v1-login.html">V1登录</a><a href="v1-student.html">V1学生</a><a href="v1-teacher.html">V1教师</a>
+  <a href="v2-login.html">V2登录</a><a href="v2-student.html">V2学生</a><a href="v2-teacher.html">V2教师</a>
+  <a href="v3-login.html">V3登录</a><a href="v3-student.html">V3学生</a><a href="v3-teacher.html">V3教师</a>
+</nav>
+
+<script>
+  lucide.createIcons();
+  function toast(msg, icon){ $('#toast-box').append(`<div class="toast"><i data-lucide="${icon||'info'}"></i>${msg}</div>`); lucide.createIcons(); setTimeout(()=>{ $('.toast').first().fadeOut(260, function(){ $(this).remove(); }); }, 2600); }
+  function openGuest(){ $('#guest-modal').addClass('open'); }
+  function closeGuest(){ $('#guest-modal').removeClass('open'); }
+  $('#guest-modal').on('click', function(e){ if(e.target === this) closeGuest(); });
+</script>
+</body>
+</html>

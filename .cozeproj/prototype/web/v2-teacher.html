@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案V2 · 数字实验台 — 教师端</title>
+<!-- Tailwind v4 browser build 本地化自 https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js （内部CDN在公网浏览器不可达，故本地引用） -->
+<script src="./vendor/lucide.min.js"></script>
+<script src="./vendor/jquery.min.js"></script>
+<link rel="stylesheet" href="./vendor/v2-teacher.css">
+</head>
+<body class="grid-bg">
+
+<!-- ═══ 顶栏 ═══ -->
+<header class="flex items-center gap-3.5 px-4 lg:px-5 h-[58px] border-b-[1.5px] sticky top-0 z-30 ic1">
+  <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-none" style="background:rgba(237,242,238,.12);border:1.5px solid rgba(237,242,238,.25)"><i data-lucide="flask-conical" class="w-4 h-4 text-[#9FD3B3]"></i></div>
+  <div class="hidden sm:block"><div class="serif text-white font-black text-[14px] leading-tight">珞珈生化智能体</div><div class="mono text-[8.5px] tracking-[.18em] text-[#8FA8C4]">TEACHER CONSOLE · 陈老师</div></div>
+  <span class="mono text-[9px] text-[#9FD3B3] border border-[#3E7C59] rounded px-2 py-1 hidden md:flex items-center gap-1.5"><span class="led led-g"></span>CLASS 1385 · 42 STUDENTS</span>
+
+  <div class="ml-auto flex items-center gap-2">
+    <button class="mono text-[10px] text-[#E8B96A] border border-[#8A6A2F] rounded px-2.5 py-1.5 hidden lg:flex items-center gap-1.5" onclick="toast('回流队列 26 条待投 · 每 5min 一轮','refresh-cw')"><i data-lucide="refresh-cw" class="w-3 h-3"></i>SYNC 26</button>
+    <button class="w-8 h-8 rounded-lg flex items-center justify-center text-[#B9C7D6] hover:bg-[rgba(237,242,238,.1)]" onclick="toast('3 条未读通知（演示）','bell')"><i data-lucide="bell" class="w-4 h-4"></i><span class="w-1.5 h-1.5 rounded-full bg-[#BF4A3A] absolute ml-3.5 -mt-3"></span></button>
+    <button class="btn-o ev-open-btn !py-1.5 !px-2.5 !text-[10px] !border-[#8FA8C4] !text-[#B9C7D6] !bg-transparent" onclick="$('.evidence-drawer').addClass('open')"><i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i>面板</button>
+    <div class="w-8 h-8 rounded-full flex items-center justify-center text-[10.5px] font-black text-white flex-none" style="background:var(--tint)">陈</div>
+  </div>
+</header>
+
+<div class="flex" style="min-height:calc(100vh - 58px)">
+
+  <!-- ═══ 左：班级名册 ═══ -->
+  <aside class="w-[240px] flex-none border-r-[1.5px] border-[var(--line)] bg-[var(--card)] hidden lg:flex flex-col sticky top-[58px] h-[calc(100vh-58px)]">
+    <div class="p-3 border-b-[1.5px] border-[var(--line)]">
+      <div class="flex items-center gap-2 mb-2.5"><b class="text-[12.5px]">班级名册</b><span class="mono text-[9px] text-[#7C8896] ml-auto">42 / 生科2301</span></div>
+      <div class="flex gap-1.5">
+        <button class="btn-o !py-1 !px-2.5 !text-[10px] flex-1 justify-center !bg-[rgba(74,123,166,.1)] !border-[rgba(74,123,166,.4)] !text-[var(--tint)]" onclick="filterRoster('all')">全部</button>
+        <button class="btn-o !py-1 !px-2.5 !text-[10px] flex-1 justify-center" onclick="filterRoster('warn')">预警</button>
+        <button class="btn-o !py-1 !px-2.5 !text-[10px] flex-1 justify-center" onclick="filterRoster('queue')">待签</button>
+      </div>
+    </div>
+    <div class="flex-1 overflow-y-auto" id="roster">
+      <div class="roster-row on" data-cat="queue" onclick="pick(this,'王雨桐')"><div class="avatar ic2">王</div><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5"><b class="text-[12px]">王雨桐</b><span class="led led-a"></span></div><div class="mono text-[9px] text-[#7C8896]">2023301012 · G5 88分</div></div><span class="chip chip-a !text-[9px]">待签</span></div>
+      <div class="roster-row" data-cat="" onclick="pick(this,'李明轩')"><div class="avatar ic3">李</div><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5"><b class="text-[12px]">李明轩</b><span class="led led-r"></span></div><div class="mono text-[9px] text-[#7C8896]">2023301018 · G2 ×3未过</div></div><span class="chip chip-r !text-[9px]">预警</span></div>
+      <div class="roster-row" data-cat="" onclick="pick(this,'张一诺')"><div class="avatar ic4">张</div><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5"><b class="text-[12px]">张一诺</b><span class="led led-g"></span></div><div class="mono text-[9px] text-[#7C8896]">2023301023 · G5 进行中</div></div><span class="chip chip-b !text-[9px]">进行</span></div>
+      <div class="roster-row" data-cat="queue" onclick="pick(this,'赵子墨')"><div class="avatar ic5">赵</div><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5"><b class="text-[12px]">赵子墨</b><span class="led led-a"></span></div><div class="mono text-[9px] text-[#7C8896]">2023301031 · G4 91分</div></div><span class="chip chip-a !text-[9px]">待签</span></div>
+      <div class="roster-row" data-cat="" onclick="pick(this,'钱思远')"><div class="avatar ic6">钱</div><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5"><b class="text-[12px]">钱思远</b><span class="led led-g"></span></div><div class="mono text-[9px] text-[#7C8896]">2023301035 · G4 已回流</div></div><span class="chip chip-g !text-[9px]">已过</span></div>
+      <div class="roster-row" data-cat="" onclick="pick(this,'孙嘉禾')"><div class="avatar ic7">孙</div><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5"><b class="text-[12px]">孙嘉禾</b><span class="led led-g"></span></div><div class="mono text-[9px] text-[#7C8896]">2023301037 · G4 已回流</div></div><span class="chip chip-g !text-[9px]">已过</span></div>
+      <div class="roster-row" data-cat="" onclick="pick(this,'周予安')"><div class="avatar ic8">周</div><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5"><b class="text-[12px]">周予安</b><span class="led led-g"></span></div><div class="mono text-[9px] text-[#7C8896]">2023301040 · G4 已回流</div></div><span class="chip chip-g !text-[9px]">已过</span></div>
+      <div class="roster-row" data-cat="warn" onclick="pick(this,'吴沛霖')"><div class="avatar ic9">吴</div><div class="min-w-0 flex-1"><div class="flex items-center gap-1.5"><b class="text-[12px]">吴沛霖</b><span class="led led-r"></span></div><div class="mono text-[9px] text-[#7C8896]">2023301044 · 停留 G1 超 48h</div></div><span class="chip chip-r !text-[9px]">预警</span></div>
+    </div>
+    <div class="p-2.5 border-t-[1.5px] border-[var(--line)] flex gap-2 mono text-[9px] text-[#7C8896]"><span><span class="led led-g inline-block mr-1"></span>已过 26</span><span><span class="led led-a inline-block mr-1"></span>待签 6</span><span><span class="led led-r inline-block mr-1"></span>预警 3</span></div>
+  </aside>
+
+  <!-- ═══ 中：数据中心 ═══ -->
+  <main class="flex-1 min-w-0 p-4 lg:p-5 space-y-4">
+
+    <!-- 4 仪表卡 -->
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 fade-up">
+      <div class="gauge"><div class="tag">今日提交</div><div class="flex items-end justify-between mt-1.5"><span class="mono text-[22px] font-bold leading-none">37</span><svg viewBox="0 0 60 24" class="w-[60px] h-6"><polyline points="2,18 12,15 22,17 32,9 42,11 52,5 58,7" fill="none" stroke="#4A7BA6" stroke-width="2" stroke-linecap="round"/></svg></div><div class="mono text-[9px] text-[#7C8896] mt-1.5">▲ 9.1% · 较昨日</div></div>
+      <div class="gauge"><div class="tag">班级均分</div><div class="flex items-end justify-between mt-1.5"><span class="mono text-[22px] font-bold leading-none text-[var(--green)]">84.2</span><span class="chip chip-g">A</span></div><div class="bar mt-2"><i style="width:84%;background:var(--green)"></i></div></div>
+      <div class="gauge"><div class="tag">待签章队列</div><div class="flex items-end justify-between mt-1.5"><span class="mono text-[22px] font-bold leading-none text-[#B37D22]">6</span><span class="led led-a"></span></div><div class="mono text-[9px] text-[#7C8896] mt-1.5">SLA 24h · 最久等待 4h</div></div>
+      <div class="gauge"><div class="tag">预警学生</div><div class="flex items-end justify-between mt-1.5"><span class="mono text-[22px] font-bold leading-none text-[var(--red)]">3</span><span class="led led-r"></span></div><div class="mono text-[9px] text-[#7C8896] mt-1.5">2 停留超时 · 1 三次未过</div></div>
+    </div>
+
+    <!-- 分布直方图 + 步骤进度 -->
+    <div class="grid xl:grid-cols-5 gap-4 fade-up d1">
+      <div class="panel xl:col-span-3">
+        <div class="p-head"><i data-lucide="bar-chart-3" class="w-4 h-4 text-[var(--tint)]"></i>成绩分布 · 步骤 5 首评<span class="mono text-[9px] text-[#9AA5AF] ml-auto">N=31 · μ=84.2 · σ=7.1</span></div>
+        <div class="p-4">
+          <div class="histo">
+            <div style="height:22%"><i>1</i><span>&lt;60</span></div>
+            <div style="height:30%"><i>2</i><span>60s</span></div>
+            <div style="height:52%"><i>5</i><span>70s</span></div>
+            <div style="height:88%"><i>11</i><span>80s</span></div>
+            <div style="height:72%"><i>8</i><span>90s</span></div>
+            <div style="height:18%"><i>4</i><span>100</span></div>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-8">
+            <span class="chip chip-b">80-89 分段 · 11 人（峰值）</span>
+            <span class="chip chip-r">&lt;60 · 1 人需干预</span>
+            <span class="chip chip-g">≥90 · 12 人</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel xl:col-span-2">
+        <div class="p-head"><i data-lucide="git-branch" class="w-4 h-4 text-[var(--tint)]"></i>八步骤班级进度</div>
+        <div class="p-3.5 space-y-2.5">
+          <div><div class="flex justify-between text-[10.5px] font-bold mb-1"><span>① 实验准备</span><span class="mono text-[#7C8896]">42/42</span></div><div class="bar"><i style="width:100%"></i></div></div>
+          <div><div class="flex justify-between text-[10.5px] font-bold mb-1"><span>② 感受态制备</span><span class="mono text-[#7C8896]">42/42</span></div><div class="bar"><i style="width:100%"></i></div></div>
+          <div><div class="flex justify-between text-[10.5px] font-bold mb-1"><span>③ 质粒转化</span><span class="mono text-[#7C8896]">41/42</span></div><div class="bar"><i style="width:97.6%"></i></div></div>
+          <div><div class="flex justify-between text-[10.5px] font-bold mb-1"><span>④ IPTG 诱导</span><span class="mono text-[#7C8896]">37/42</span></div><div class="bar"><i style="width:88%"></i></div></div>
+          <div><div class="flex justify-between text-[10.5px] font-bold mb-1"><span>⑤ 蛋白提取</span><span class="mono text-[#7C8896]">31/42</span></div><div class="bar"><i style="width:74%;background:var(--amber)"></i></div></div>
+          <div><div class="flex justify-between text-[10.5px] font-bold mb-1"><span>⑥ 纯化</span><span class="mono text-[#7C8896]">12/42</span></div><div class="bar"><i style="width:29%"></i></div></div>
+          <div><div class="flex justify-between text-[10.5px] font-bold mb-1"><span>⑦ SDS-PAGE</span><span class="mono text-[#7C8896]">3/42</span></div><div class="bar"><i style="width:7%"></i></div></div>
+          <div><div class="flex justify-between text-[10.5px] font-bold mb-1"><span>⑧ 分析反思</span><span class="mono text-[#7C8896]">0/42</span></div><div class="bar"><i style="width:0%"></i></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 待签章队列 -->
+    <div class="panel fade-up d2">
+      <div class="p-head"><i data-lucide="stamp" class="w-4 h-4 text-[#B37D22]"></i>待签章队列<span class="chip chip-a ml-2">6 条</span>
+        <div class="ml-auto flex gap-1.5">
+          <button class="btn-o !py-1 !px-2.5 !text-[10px]" onclick="toast('按等待时长重排 · SLA 优先','arrow-up-narrow-wide')"><i data-lucide="arrow-up-narrow-wide" class="w-3 h-3"></i>SLA 排序</button>
+          <button class="btn-g !py-1 !px-2.5 !text-[10px]" onclick="toast('批量签章 6 条 → POST /api/teacher/sign-batch','stamp')"><i data-lucide="stamp" class="w-3 h-3"></i>一键全签</button>
+        </div>
+      </div>
+      <div class="divide-y divide-[var(--line)]">
+        <div class="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(74,123,166,.04)] transition-colors">
+          <span class="mono text-[9.5px] font-bold text-[#7C8896] w-11 flex-none">G5</span>
+          <div class="avatar !w-7 !h-7 !text-[9px] ic10">王</div>
+          <div class="min-w-0 flex-1"><b class="text-[12px]">王雨桐</b> <span class="mono text-[9.5px] text-[#7C8896]">· 蛋白提取 · 尝试 2</span><div class="mono text-[9px] text-[#9AA5AF]">提交 14:32 · 已等 1h 40m</div></div>
+          <span class="chip chip-g hidden sm:inline-flex">88 分</span>
+          <button class="btn-o !py-1.5 !px-3 !text-[10.5px] hidden md:inline-flex" onclick="viewEvidence('王雨桐')"><i data-lucide="clipboard-list" class="w-3 h-3"></i>查看依据</button>
+          <button class="btn-g !py-1.5 !px-3 !text-[10.5px]" onclick="sign(this,'王雨桐')"><i data-lucide="stamp" class="w-3 h-3"></i>签章</button>
+        </div>
+        <div class="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(74,123,166,.04)] transition-colors">
+          <span class="mono text-[9.5px] font-bold text-[#7C8896] w-11 flex-none">G4</span>
+          <div class="avatar !w-7 !h-7 !text-[9px] ic11">赵</div>
+          <div class="min-w-0 flex-1"><b class="text-[12px]">赵子墨</b> <span class="mono text-[9.5px] text-[#7C8896]">· IPTG 诱导 · 尝试 1</span><div class="mono text-[9px] text-[#9AA5AF]">提交 10:47 · 已等 5h 25m</div></div>
+          <span class="chip chip-g hidden sm:inline-flex">91 分</span>
+          <button class="btn-o !py-1.5 !px-3 !text-[10.5px] hidden md:inline-flex" onclick="viewEvidence('赵子墨')"><i data-lucide="clipboard-list" class="w-3 h-3"></i>查看依据</button>
+          <button class="btn-g !py-1.5 !px-3 !text-[10.5px]" onclick="sign(this,'赵子墨')"><i data-lucide="stamp" class="w-3 h-3"></i>签章</button>
+        </div>
+        <div class="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(74,123,166,.04)] transition-colors">
+          <span class="mono text-[9.5px] font-bold text-[#7C8896] w-11 flex-none">G3</span>
+          <div class="avatar !w-7 !h-7 !text-[9px] ic12">孙</div>
+          <div class="min-w-0 flex-1"><b class="text-[12px]">孙嘉禾</b> <span class="mono text-[9.5px] text-[#7C8896]">· 质粒转化 · 尝试 3</span><div class="mono text-[9px] text-[#9AA5AF]">提交 09:12 · 已等 7h 00m</div></div>
+          <span class="chip chip-g hidden sm:inline-flex">85 分</span>
+          <button class="btn-o !py-1.5 !px-3 !text-[10.5px] hidden md:inline-flex" onclick="viewEvidence('孙嘉禾')"><i data-lucide="clipboard-list" class="w-3 h-3"></i>查看依据</button>
+          <button class="btn-g !py-1.5 !px-3 !text-[10.5px]" onclick="sign(this,'孙嘉禾')"><i data-lucide="stamp" class="w-3 h-3"></i>签章</button>
+        </div>
+      </div>
+      <div class="px-4 py-2.5 border-t-[1.5px] border-[var(--line)] mono text-[9px] text-[#9AA5AF] flex justify-between"><span>SIGN → SYNC OUTBOX → CHAOXING FORM 3513491</span><span>每轮 20 条 / 退避重试</span></div>
+    </div>
+
+    <!-- 学情问答 -->
+    <div class="panel fade-up d2">
+      <div class="p-head"><i data-lucide="search" class="w-4 h-4 text-[var(--tint)]"></i>学情问答<span class="mono text-[9px] text-[#9AA5AF] ml-auto">NLP · 全班实时数据</span></div>
+      <div class="p-4">
+        <div class="flex flex-wrap gap-1.5 mb-3">
+          <button class="btn-o !py-1.5 !px-3 !text-[10.5px]" onclick="ask('这次步骤5哪个班平均最低?')">步骤5哪个班最低？</button>
+          <button class="btn-o !py-1.5 !px-3 !text-[10.5px]" onclick="ask('李明轩卡在哪一步?')">李明轩卡在哪？</button>
+          <button class="btn-o !py-1.5 !px-3 !text-[10.5px]" onclick="ask('安全维低于70的学生有哪些?')">安全维&lt;70 的学生</button>
+          <button class="btn-o !py-1.5 !px-3 !text-[10.5px]" onclick="ask('生成给教研组的周报摘要')">生成周报摘要</button>
+        </div>
+        <div class="flex gap-2">
+          <input id="q-in" class="flex-1 text-[12px] px-3.5 py-2.5 rounded-lg border-[1.5px] border-[var(--line)] bg-[var(--bench)] outline-none focus:border-[var(--tint)] focus:bg-white" placeholder="用自然语言查询全班学情…（回车发送）" onkeydown="if(event.key==='Enter')ask()">
+          <button class="btn-p" onclick="ask()"><i data-lucide="send" class="w-3.5 h-3.5"></i>查询</button>
+        </div>
+        <div class="mt-3 rounded-lg p-3.5 text-[12px] leading-relaxed hidden" id="a-box" style="background:rgba(74,123,166,.05);border:1.5px solid rgba(74,123,166,.22)">
+          <div class="flex items-center gap-1.5 font-bold text-[var(--tint)] mb-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>珞珈学情回答<span class="mono text-[8.5px] text-[#9AA5AF] font-normal ml-2">BASED ON LIVE DB</span></div>
+          <div class="text-[#3D4A56]" id="a-text"></div>
+          <div class="flex gap-1.5 mt-2.5"><span class="chip chip-b">31 份记录</span><span class="chip chip-n">QUERY 240ms</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══ 右：学生详情面板 ═══ -->
+  <aside class="right-panel w-[268px] flex-none border-l-[1.5px] border-[var(--line)] p-4 space-y-4 sticky top-[58px] h-[calc(100vh-58px)] overflow-y-auto">
+    <div class="panel !shadow-none">
+      <div class="p-head !px-3"><i data-lucide="user-round" class="w-4 h-4 text-[var(--tint)]"></i>学生详情<span class="chip chip-b ml-auto !text-[9px]" id="d-name">王雨桐</span></div>
+      <div class="px-3 py-2.5">
+        <div class="flex items-center gap-2.5 mb-3">
+          <div class="avatar !w-11 !h-11 !text-[14px] ic13" id="d-av">王</div>
+          <div><b class="text-[13px]" id="d-nm">王雨桐</b><div class="mono text-[9px] text-[#7C8896]" id="d-sid">2023301012 · 生科2301</div></div>
+        </div>
+        <div class="kv"><span>当前步骤</span><b id="d-step" class="text-[var(--amber)]">⑤ 蛋白提取</b></div>
+        <div class="kv"><span>最近成绩</span><b class="text-[var(--green)]">88（G5-2）</b></div>
+        <div class="kv"><span>尝试次数</span><b>2</b></div>
+        <div class="kv"><span>Gate 重试</span><b class="text-[var(--amber)]">1 次</b></div>
+        <div class="kv"><span>回流状态</span><b class="text-[var(--green)]">G4 已同步</b></div>
+      </div>
+    </div>
+    <div class="panel !shadow-none">
+      <div class="p-head !px-3"><i data-lucide="line-chart" class="w-4 h-4 text-[var(--tint)]"></i>五维雷达</div>
+      <div class="p-3">
+        <svg viewBox="0 0 200 150" class="w-full"><g stroke="#D8DCD6" stroke-width="1"><polygon points="100,15 165,55 145,125 55,125 35,55" fill="none"/><polygon points="100,40 141,65 130,110 70,110 59,65" fill="none"/><polygon points="100,65 117,75 113,95 87,95 83,75" fill="none"/></g><polygon points="100,22 155,60 128,118 62,112 48,58" fill="rgba(74,123,166,.18)" stroke="#4A7BA6" stroke-width="2"/><circle cx="100" cy="22" r="3" fill="#4A7BA6"/><circle cx="155" cy="60" r="3" fill="#4A7BA6"/><circle cx="128" cy="118" r="3" fill="#4A7BA6"/><circle cx="62" cy="112" r="3" fill="#4A7BA6"/><circle cx="48" cy="58" r="3" fill="#4A7BA6"/><text x="100" y="10" font-size="9" text-anchor="middle" fill="#5A6570">完整</text><text x="172" y="55" font-size="9" fill="#5A6570">规范</text><text x="148" y="138" font-size="9" fill="#5A6570">数据</text><text x="50" y="138" font-size="9" fill="#5A6570">安全</text><text x="26" y="55" font-size="9" fill="#5A6570">分析</text></svg>
+        <div class="grid grid-cols-2 gap-x-3 gap-y-1 mt-1 text-[10px]">
+          <div class="flex justify-between"><span class="text-[#7C8896]">完整性</span><b class="mono">92</b></div>
+          <div class="flex justify-between"><span class="text-[#7C8896]">规范性</span><b class="mono">88</b></div>
+          <div class="flex justify-between"><span class="text-[#7C8896]">数据性</span><b class="mono text-[#B37D22]">78</b></div>
+          <div class="flex justify-between"><span class="text-[#7C8896]">安全性</span><b class="mono">95</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel !shadow-none">
+      <div class="p-head !px-3"><i data-lucide="clipboard-list" class="w-4 h-4 text-[var(--tint)]"></i>最新记录摘录</div>
+      <div class="px-3 py-2.5 text-[10.5px] text-[#4A5563] leading-relaxed border-l-[2.5px] border-[var(--tint)] ml-3 mt-1 mb-2 pl-2.5" style="background:rgba(74,123,166,.04)">"…12000 rpm 4°C 离心 15 min，上清澄清；BCA 法测蛋白浓度 2.4 mg/mL。"</div>
+      <div class="px-3 pb-3 flex gap-1.5">
+        <button class="btn-o !py-1.5 !px-2.5 !text-[10px] flex-1 justify-center" onclick="toast('进入完整对话记录 · 王雨桐','messages-square')"><i data-lucide="messages-square" class="w-3 h-3"></i>对话</button>
+        <button class="btn-o !py-1.5 !px-2.5 !text-[10px] flex-1 justify-center" onclick="toast('批注已送达学生端 → POST /api/teacher/note','pen-line')"><i data-lucide="pen-line" class="w-3 h-3"></i>批注</button>
+        <button class="btn-o !py-1.5 !px-2.5 !text-[10px] flex-1 justify-center !text-[var(--red)] !border-[rgba(191,74,58,.35)]" onclick="toast('已设为重点关注','flag')"><i data-lucide="flag" class="w-3 h-3"></i>关注</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- 证据抽屉 -->
+<div class="evidence-drawer">
+  <div class="mask" onclick="$('.evidence-drawer').removeClass('open')"></div>
+  <div class="sheet p-4">
+    <div class="flex items-center justify-between mb-3"><b class="text-[13px]" id="ev-title">审核依据 · 王雨桐</b><button class="w-8 h-8 rounded-lg border-[1.5px] border-[var(--line)] flex items-center justify-center" onclick="$('.evidence-drawer').removeClass('open')"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <div class="panel !shadow-none mb-3"><div class="p-head !px-3 !text-[11px]"><i data-lucide="line-chart" class="w-3.5 h-3.5 text-[var(--tint)]"></i>得分轨迹</div>
+      <div class="p-3"><svg viewBox="0 0 240 90" class="w-full"><polyline points="20,65 75,55 130,45 185,38 230,30" fill="none" stroke="#4A7BA6" stroke-width="2.5" stroke-linecap="round"/><g fill="#4A7BA6"><circle cx="20" cy="65" r="3.5"/><circle cx="75" cy="55" r="3.5"/><circle cx="130" cy="45" r="3.5"/><circle cx="185" cy="38" r="3.5"/><circle cx="230" cy="30" r="3.5"/></g><g font-size="8.5" fill="#9AA5AF" font-family="JetBrains Mono"><text x="14" y="80">G1·95</text><text x="70" y="80">G2·91</text><text x="125" y="80">G3·86</text><text x="180" y="80">G4·90</text><text x="222" y="80">G5·88</text></g></svg></div></div>
+    <div class="panel !shadow-none mb-3"><div class="p-head !px-3 !text-[11px]"><i data-lucide="image" class="w-3.5 h-3.5 text-[var(--blue)]"></i>证据照片</div>
+      <div class="p-3 grid grid-cols-2 gap-2">
+        <div class="aspect-square rounded-lg flex flex-col items-center justify-center gap-1.5 ic14"><i data-lucide="test-tubes" class="w-7 h-7 text-[#8C7A55]"></i><span class="mono text-[8.5px] text-[#8C7A55]">IMG_0812 · 通过</span></div>
+        <div class="aspect-square rounded-lg flex flex-col items-center justify-center gap-1.5 ic15"><i data-lucide="thermometer" class="w-7 h-7 text-[#5B7C5A]"></i><span class="mono text-[8.5px] text-[#5B7C5A]">IMG_0813 · 通过</span></div>
+      </div></div>
+    <div class="panel !shadow-none"><div class="p-head !px-3 !text-[11px]"><i data-lucide="pen-line" class="w-3.5 h-3.5 text-[var(--tint)]"></i>教师批注</div>
+      <div class="p-3"><textarea rows="3" placeholder="写给学生…" class="w-full text-[11.5px] p-2.5 rounded-lg border-[1.5px] border-[var(--line)] bg-[var(--bench)] outline-none focus:border-[var(--tint)] resize-none" style="font-family:inherit"></textarea>
+      <button class="btn-p w-full justify-center mt-2 !py-2 !text-[11px]" onclick="toast('批注已送达 → POST /api/teacher/note','send')"><i data-lucide="send" class="w-3 h-3"></i>发送批注</button></div></div>
+  </div>
+</div>
+
+<div id="toast-box"></div>
+<nav class="switcher">
+  <a href="index.html" class="font-bold">总览</a>
+  <a href="v1-login.html">V1登录</a><a href="v1-student.html">V1学生</a><a href="v1-teacher.html">V1教师</a>
+  <a href="v2-login.html">V2登录</a><a href="v2-student.html">V2学生</a><a href="v2-teacher.html">V2教师</a>
+  <a href="v3-login.html">V3登录</a><a href="v3-student.html">V3学生</a><a href="v3-teacher.html">V3教师</a>
+</nav>
+
+<script>
+  lucide.createIcons();
+  function toast(msg, icon){ $('#toast-box').append(`<div class="toast"><i data-lucide="${icon||'info'}"></i>${msg}</div>`); lucide.createIcons(); setTimeout(()=>{ $('.toast').first().fadeOut(260, function(){ $(this).remove(); }); }, 2600); }
+  function filterRoster(c){ toast('名册筛选 · ' + (c==='all'?'全部':c==='warn'?'预警':'待签'),'filter'); $('.roster-row').each(function(){ $(this).toggle(c==='all' || $(this).data('cat')===c || (c==='warn' && $(this).find('.chip-r').length)); }); }
+  function pick(el, name){ $('.roster-row').removeClass('on'); $(el).addClass('on'); $('#d-name,#d-nm').text(name); $('#d-av').text(name[0]); toast('查看 ' + name + ' 详情','user-round'); }
+  function sign(btn, name){ $(btn).closest('.flex').css('opacity','.45'); $(btn).replaceWith('<span class="chip chip-g !text-[10px]">已签章</span>'); toast(name + ' 签章完成 → 入回流队列','stamp'); }
+  function viewEvidence(name){ $('#ev-title').text('审核依据 · ' + name); $('.evidence-drawer').addClass('open'); }
+  function ask(q){ q = q || $('#q-in').val() || '步骤5整体情况?'; $('#q-in').val(''); toast('查询中 · POST /api/teacher/insight','loader-2');
+    setTimeout(()=>{ $('#a-box').removeClass('hidden'); $('#a-text').html('步骤 5「蛋白提取」：31 人已提交首评，均分 <b class="mono text-[var(--green)]">84.2</b>。80-89 分段 11 人为峰值；<b>&lt;60 分 1 人（吴沛霖）</b>需干预，主要丢分点为「数据性·标准曲线缺失」。建议在下一次课前集中讲解 BCA 定量记录规范。'); }, 800); }
+</script>
+</body>
+</html>

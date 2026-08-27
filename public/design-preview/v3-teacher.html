@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案V3 · 分子图鉴册 — 教师端</title>
+<!-- Tailwind v4 browser build 本地化自 https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js （内部CDN在公网浏览器不可达，故本地引用） -->
+<script src="./vendor/lucide.min.js"></script>
+<script src="./vendor/jquery.min.js"></script>
+<link rel="stylesheet" href="./vendor/v3-teacher.css">
+</head>
+<body class="paper-grain">
+
+<!-- ═══ 顶栏 ═══ -->
+<header class="flex items-center gap-3.5 px-4 lg:px-5 h-[60px] border-b-[1.5px] border-[var(--line)] sticky top-0 z-30 ic1">
+  <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-none" style="background:rgba(124,176,143,.16);border:2px solid rgba(124,176,143,.4)"><i data-lucide="library-big" class="w-5 h-5 text-[#9CCBAC]"></i></div>
+  <div class="hidden sm:block"><div class="serif text-[#F0EDE2] font-black text-[14.5px] leading-tight">教师编目台</div><div class="mono text-[8.5px] tracking-[.2em] text-[#7CB08F]">CODEX DESK · 陈老师 · 生科2301</div></div>
+  <button class="wall-open w-9 h-9 rounded-xl flex items-center justify-center text-[#9CCBAC] hover:bg-[rgba(124,176,143,.14)] md:hidden flex-none" onclick="toast('图鉴墙在宽屏展开 · 演示','grid-3x3')"><i data-lucide="grid-3x3" class="w-4.5 h-4.5 w-5 h-5"></i></button>
+  <div class="ml-auto flex items-center gap-2">
+    <span class="mono text-[9px] text-[#E8C286] border border-[rgba(232,162,61,.45)] rounded-full px-2.5 py-1.5 hidden lg:flex items-center gap-1.5"><i data-lucide="refresh-cw" class="w-3 h-3"></i>回流 26 待投</span>
+    <button class="ev-btn w-9 h-9 rounded-xl flex items-center justify-center text-[#9CCBAC] hover:bg-[rgba(124,176,143,.14)]" onclick="openDrawer('王雨桐')"><i data-lucide="clipboard-check" class="w-4.5 h-4.5 w-5 h-5"></i></button>
+    <div class="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-black text-[#F0EDE2] flex-none" style="background:var(--sky)">陈</div>
+  </div>
+</header>
+
+<div class="flex" style="min-height:calc(100vh - 60px)">
+
+  <!-- ═══ 左：全班图鉴墙 ═══ -->
+  <aside class="codex-wall w-[252px] flex-none border-r-[1.5px] border-[var(--line)] p-3.5 sticky top-[60px] h-[calc(100vh-60px)] overflow-y-auto" style="background:var(--cream)">
+    <div class="flex items-center justify-between mb-1.5"><b class="serif text-[13px]">全班图鉴墙</b><span class="mono text-[9px] text-[#9A917E]">42 册</span></div>
+    <div class="flex gap-1.5 mb-3">
+      <button class="btn-lt !py-1 !px-2.5 !text-[10px] flex-1 justify-center !bg-[rgba(44,110,90,.09)] !border-[rgba(44,110,90,.35)]" onclick="filterWall('all')">全部</button>
+      <button class="btn-lt !py-1 !px-2.5 !text-[10px] flex-1 justify-center" onclick="filterWall('warn')">卡册</button>
+      <button class="btn-lt !py-1 !px-2.5 !text-[10px] flex-1 justify-center" onclick="filterWall('queue')">待签</button>
+    </div>
+    <div class="grid grid-cols-2 gap-2" id="wall">
+      <div class="student-card" onclick="openDrawer('王雨桐')">
+        <div class="flex items-center gap-2 mb-1.5"><div class="avatar ic2">王</div><div class="min-w-0"><b class="text-[11px] block leading-tight">王雨桐</b><span class="mono text-[8px] text-[#9A917E]">3301012</span></div></div>
+        <div class="flex items-center justify-between"><span class="mono text-[13px] font-bold text-[var(--moss)]">88</span><div class="lv-dots"><i class="got"></i><i class="got"></i><i class="got"></i><i class="got"></i><i class="cur"></i><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="student-card warn" data-w="warn" onclick="openDrawer('李明轩')">
+        <div class="flex items-center gap-2 mb-1.5"><div class="avatar ic3">李</div><div class="min-w-0"><b class="text-[11px] block leading-tight">李明轩</b><span class="mono text-[8px] text-[#9A917E]">3301018</span></div></div>
+        <div class="flex items-center justify-between"><span class="mono text-[13px] font-bold text-[#A34444]">62</span><div class="lv-dots"><i class="got"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="student-card" data-w="queue" onclick="openDrawer('赵子墨')">
+        <div class="flex items-center gap-2 mb-1.5"><div class="avatar ic4">赵</div><div class="min-w-0"><b class="text-[11px] block leading-tight">赵子墨</b><span class="mono text-[8px] text-[#9A917E]">3301031</span></div></div>
+        <div class="flex items-center justify-between"><span class="mono text-[13px] font-bold text-[var(--moss)]">91</span><div class="lv-dots"><i class="got"></i><i class="got"></i><i class="got"></i><i class="cur"></i><i></i><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="student-card" data-w="queue" onclick="openDrawer('张一诺')">
+        <div class="flex items-center gap-2 mb-1.5"><div class="avatar ic5">张</div><div class="min-w-0"><b class="text-[11px] block leading-tight">张一诺</b><span class="mono text-[8px] text-[#9A917E]">3301023</span></div></div>
+        <div class="flex items-center justify-between"><span class="mono text-[13px] font-bold text-[#41678A]">84</span><div class="lv-dots"><i class="got"></i><i class="got"></i><i class="got"></i><i class="cur"></i><i></i><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="student-card" data-w="queue" onclick="openDrawer('钱思远')">
+        <div class="flex items-center gap-2 mb-1.5"><div class="avatar ic6">钱</div><div class="min-w-0"><b class="text-[11px] block leading-tight">钱思远</b><span class="mono text-[8px] text-[#9A917E]">3301035</span></div></div>
+        <div class="flex items-center justify-between"><span class="mono text-[13px] font-bold text-[var(--moss)]">89</span><div class="lv-dots"><i class="got"></i><i class="got"></i><i class="got"></i><i class="cur"></i><i></i><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="student-card warn" data-w="warn" onclick="openDrawer('吴沛霖')">
+        <div class="flex items-center gap-2 mb-1.5"><div class="avatar ic7">吴</div><div class="min-w-0"><b class="text-[11px] block leading-tight">吴沛霖</b><span class="mono text-[8px] text-[#9A917E]">3301044</span></div></div>
+        <div class="flex items-center justify-between"><span class="mono text-[13px] font-bold text-[#A34444]">—</span><div class="lv-dots"><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="student-card" onclick="openDrawer('孙嘉禾')">
+        <div class="flex items-center gap-2 mb-1.5"><div class="avatar ic8">孙</div><div class="min-w-0"><b class="text-[11px] block leading-tight">孙嘉禾</b><span class="mono text-[8px] text-[#9A917E]">3301037</span></div></div>
+        <div class="flex items-center justify-between"><span class="mono text-[13px] font-bold text-[var(--moss)]">85</span><div class="lv-dots"><i class="got"></i><i class="got"></i><i class="got"></i><i class="cur"></i><i></i><i></i><i></i><i></i></div></div>
+      </div>
+      <div class="student-card" onclick="openDrawer('周予安')">
+        <div class="flex items-center gap-2 mb-1.5"><div class="avatar ic9">周</div><div class="min-w-0"><b class="text-[11px] block leading-tight">周予安</b><span class="mono text-[8px] text-[#9A917E]">3301040</span></div></div>
+        <div class="flex items-center justify-between"><span class="mono text-[13px] font-bold text-[var(--moss)]">90</span><div class="lv-dots"><i class="got"></i><i class="got"></i><i class="got"></i><i class="cur"></i><i></i><i></i><i></i><i></i></div></div>
+      </div>
+    </div>
+    <div class="mono text-[9px] text-[#9A917E] text-center pt-3 border-t border-[var(--line)] mt-3">●绿=已盖章 · ●黄=书写中 · 红点=卡册预警</div>
+  </aside>
+
+  <!-- ═══ 中：签章台 ═══ -->
+  <main class="flex-1 min-w-0 p-4 lg:p-5 space-y-4">
+
+    <!-- 编目统计 -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 fade-up">
+      <div class="card p-3.5"><div class="flex items-center justify-between"><span class="text-[10.5px] font-bold text-[#6B6557]">全班收集率</span><span class="chip chip-g mono">A</span></div><div class="flex items-end gap-2 mt-1"><span class="mono text-[21px] font-bold leading-none">74<span class="text-[12px]">%</span></span><span class="mono text-[9px] text-[#9A917E] mb-0.5">▲ 6.2% 本周</span></div><div class="bar mt-2"><i style="width:74%"></i></div></div>
+      <div class="card p-3.5"><div class="flex items-center justify-between"><span class="text-[10.5px] font-bold text-[#6B6557]">待签章页</span><span class="chip chip-s">SLA 24h</span></div><div class="flex items-end gap-2 mt-1"><span class="mono text-[21px] font-bold leading-none text-[#8F6218]">6</span><span class="mono text-[9px] text-[#9A917E] mb-0.5">最久已等 4h</span></div><div class="mono text-[9px] text-[#9A917E] mt-2">签后自动回流超星表单</div></div>
+      <div class="card p-3.5"><div class="flex items-center justify-between"><span class="text-[10.5px] font-bold text-[#6B6557]">卡册预警</span><span class="chip chip-b">今日 +1</span></div><div class="flex items-end gap-2 mt-1"><span class="mono text-[21px] font-bold leading-none text-[#A34444]">3</span><span class="mono text-[9px] text-[#9A917E] mb-0.5">停留 &gt;48h × 2</span></div><button class="btn-lt !py-1 !px-2.5 !text-[10px] mt-2" onclick="toast('查看 3 份卡册详情','flag')"><i data-lucide="flag" class="w-3 h-3"></i>逐份查看</button></div>
+      <div class="card p-3.5"><div class="flex items-center justify-between"><span class="text-[10.5px] font-bold text-[#6B6557]">均分 · CH.09</span><span class="chip chip-sky">N=31</span></div><div class="flex items-end gap-2 mt-1"><span class="mono text-[21px] font-bold leading-none text-[var(--moss)]">84.2</span><span class="mono text-[9px] text-[#9A917E] mb-0.5">σ=7.1</span></div><div class="mono text-[9px] text-[#9A917E] mt-2">数据维平均最低 76</div></div>
+    </div>
+
+    <!-- 签章队列 -->
+    <div class="card fade-up d1">
+      <div class="flex items-center gap-2 px-4 py-2.5 border-b-[1.5px] border-[var(--line)]"><i data-lucide="stamp" class="w-4 h-4 text-[#8F6218]"></i><b class="text-[12.5px]">待签章页堆</b><span class="chip chip-s">6 页</span>
+        <div class="ml-auto flex gap-1.5"><button class="btn-lt !py-1 !px-2.5 !text-[10px]" onclick="toast('按 SLA 重排','arrow-up-narrow-wide')"><i data-lucide="arrow-up-narrow-wide" class="w-3 h-3"></i>SLA</button>
+        <button class="btn-stamp !py-1 !px-2.5 !text-[10px]" onclick="toast('批量签章 6 页 → POST /api/teacher/sign-batch','stamp')"><i data-lucide="stamp" class="w-3 h-3"></i>全签</button></div>
+      </div>
+      <div>
+        <div class="stack-row">
+          <span class="mono text-[9.5px] font-bold text-[#9A917E] w-11">CH.09</span>
+          <div class="avatar ic10">王</div>
+          <div class="min-w-0 flex-1"><b class="text-[12px]">王雨桐</b> <span class="mono text-[9.5px] text-[#9A917E]">· 2 稿 · 预评 88</span><div class="text-[10.5px] text-[#5C574A] mt-0.5">"…BCA 测得 2.4 mg/mL，R²=0.998 补全 ✓"</div></div>
+          <span class="chip chip-g hidden sm:inline-flex">88 分</span>
+          <span class="mono text-[9px] text-[#9A917E] hidden md:inline">等 1h 40m</span>
+          <button class="btn-lt !py-1.5 !px-3 !text-[10.5px]" onclick="openDrawer('王雨桐')"><i data-lucide="clipboard-check" class="w-3 h-3"></i>依据</button>
+          <button class="btn-stamp !py-1.5 !px-3 !text-[10.5px]" onclick="sign(this,'王雨桐')"><i data-lucide="stamp" class="w-3 h-3"></i>签章</button>
+        </div>
+        <div class="stack-row">
+          <span class="mono text-[9.5px] font-bold text-[#9A917E] w-11">CH.07</span>
+          <div class="avatar ic11">赵</div>
+          <div class="min-w-0 flex-1"><b class="text-[12px]">赵子墨</b> <span class="mono text-[9.5px] text-[#9A917E]">· 1 稿 · 预评 91</span><div class="text-[10.5px] text-[#5C574A] mt-0.5">"…0.5 mM IPTG 16°C 诱导 16h，OD600=0.6 时加入"</div></div>
+          <span class="chip chip-g hidden sm:inline-flex">91 分</span>
+          <span class="mono text-[9px] text-[#9A917E] hidden md:inline">等 5h 25m</span>
+          <button class="btn-lt !py-1.5 !px-3 !text-[10.5px]" onclick="openDrawer('赵子墨')"><i data-lucide="clipboard-check" class="w-3 h-3"></i>依据</button>
+          <button class="btn-stamp !py-1.5 !px-3 !text-[10.5px]" onclick="sign(this,'赵子墨')"><i data-lucide="stamp" class="w-3 h-3"></i>签章</button>
+        </div>
+        <div class="stack-row">
+          <span class="mono text-[9.5px] font-bold text-[#9A917E] w-11">CH.05</span>
+          <div class="avatar ic12">孙</div>
+          <div class="min-w-0 flex-1"><b class="text-[12px]">孙嘉禾</b> <span class="mono text-[9.5px] text-[#9A917E]">· 3 稿 · 预评 85</span><div class="text-[10.5px] text-[#5C574A] mt-0.5">"…42°C 热激 90s 复苏 60min，Amp 平板长出菌落"</div></div>
+          <span class="chip chip-g hidden sm:inline-flex">85 分</span>
+          <span class="mono text-[9px] text-[#9A917E] hidden md:inline">等 7h 00m</span>
+          <button class="btn-lt !py-1.5 !px-3 !text-[10.5px]" onclick="openDrawer('孙嘉禾')"><i data-lucide="clipboard-check" class="w-3 h-3"></i>依据</button>
+          <button class="btn-stamp !py-1.5 !px-3 !text-[10.5px]" onclick="sign(this,'孙嘉禾')"><i data-lucide="stamp" class="w-3 h-3"></i>签章</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 卡册预警 + 学情问答 -->
+    <div class="grid lg:grid-cols-2 gap-4 fade-up d2">
+      <div class="card">
+        <div class="flex items-center gap-2 px-4 py-2.5 border-b-[1.5px] border-[var(--line)]"><i data-lucide="alert-triangle" class="w-4 h-4 text-[#A34444]"></i><b class="text-[12.5px]">卡册预警 · 3 份</b></div>
+        <div class="p-3.5 space-y-2">
+          <div class="flex items-center gap-2.5 p-2.5 rounded-[10px]" style="background:rgba(194,94,94,.06);border:1.5px dashed rgba(194,94,94,.3)">
+            <div class="avatar ic13">李</div><div class="flex-1 min-w-0"><b class="text-[11.5px]">李明轩</b><div class="text-[10.5px] text-[#5C574A]">CH.05 三次未过 · 都缺「热激温度」</div></div>
+            <button class="btn-lt !py-1 !px-2.5 !text-[10px]" onclick="toast('写批注给李明轩 → POST /api/teacher/note','pen-line')"><i data-lucide="pen-line" class="w-3 h-3"></i>批注</button>
+          </div>
+          <div class="flex items-center gap-2.5 p-2.5 rounded-[10px]" style="background:rgba(232,162,61,.07);border:1.5px dashed rgba(232,162,61,.35)">
+            <div class="avatar ic14">吴</div><div class="flex-1 min-w-0"><b class="text-[11.5px]">吴沛霖</b><div class="text-[10.5px] text-[#5C574A]">CH.01 停留 52h 未提交首稿</div></div>
+            <button class="btn-lt !py-1 !px-2.5 !text-[10px]" onclick="toast('已发送提醒至学生册边便条','bell-ring')"><i data-lucide="bell-ring" class="w-3 h-3"></i>催一催</button>
+          </div>
+          <div class="flex items-center gap-2.5 p-2.5 rounded-[10px]" style="background:rgba(194,94,94,.06);border:1.5px dashed rgba(194,94,94,.3)">
+            <div class="avatar ic15">郑</div><div class="flex-1 min-w-0"><b class="text-[11.5px]">郑文珊</b><div class="text-[10.5px] text-[#5C574A]">CH.09 数据维连续 2 章 &lt;75</div></div>
+            <button class="btn-lt !py-1 !px-2.5 !text-[10px]" onclick="toast('查看郑文珊得分轨迹','line-chart')"><i data-lucide="line-chart" class="w-3 h-3"></i>轨迹</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="flex items-center gap-2 px-4 py-2.5 border-b-[1.5px] border-[var(--line)]"><i data-lucide="search" class="w-4 h-4 text-[#41678A]"></i><b class="text-[12.5px]">翻查全班图鉴 · 自然语言</b></div>
+        <div class="p-3.5">
+          <div class="flex flex-wrap gap-1.5 mb-2.5">
+            <button class="btn-lt !py-1.5 !px-3 !text-[10.5px]" onclick="ask('CH.09 谁还没交?')">CH.09 谁没交？</button>
+            <button class="btn-lt !py-1.5 !px-3 !text-[10.5px]" onclick="ask('数据维最低的5人?')">数据维最低 5 人</button>
+            <button class="btn-lt !py-1.5 !px-3 !text-[10.5px]" onclick="ask('给教研组生成周报摘要')">生成周报</button>
+          </div>
+          <div class="flex gap-2">
+            <input id="q-in" class="flex-1 text-[12px] px-3.5 py-2.5 rounded-[10px] border-[1.5px] border-[var(--line)] bg-[var(--paper)] outline-none focus:border-[var(--moss)] focus:bg-white" placeholder="例：本周期收集率变化？回车发送" onkeydown="if(event.key==='Enter')ask()">
+            <button class="btn-main" onclick="ask()"><i data-lucide="send" class="w-3.5 h-3.5"></i></button>
+          </div>
+          <div class="mt-3 rounded-[10px] p-3.5 text-[11.5px] leading-relaxed hidden" id="a-box" style="background:rgba(44,110,90,.06);border:1.5px solid rgba(44,110,90,.25)">
+            <div class="flex items-center gap-1.5 font-bold text-[var(--moss)] mb-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>编目台回答<span class="mono text-[8.5px] text-[#9A917E] font-normal ml-2">LIVE DB · 220ms</span></div>
+            <div class="text-[#3D4A44]" id="a-text"></div>
+            <div class="flex gap-1.5 mt-2"><span class="chip chip-sky">31 份记录</span><span class="chip chip-n">图鉴墙实时</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══ 右：选中学生 ═══ -->
+  <aside class="right w-[262px] flex-none border-l-[1.5px] border-[var(--line)] p-4 space-y-4 sticky top-[60px] h-[calc(100vh-60px)] overflow-y-auto" style="background:var(--cream)">
+    <div class="card !shadow-none">
+      <div class="flex items-center gap-2 px-3 py-2 border-b-[1.5px] border-[var(--line)]"><i data-lucide="book-open" class="w-3.5 h-3.5 text-[var(--moss)]"></i><b class="text-[11.5px]">正在翻阅</b><span class="chip chip-g ml-auto !text-[9px]" id="d-chip">王雨桐</span></div>
+      <div class="px-3 py-3">
+        <div class="flex items-center gap-2.5 mb-2.5">
+          <div class="avatar !w-11 !h-11 !text-[14px] ic16" id="d-av">王</div>
+          <div><b class="text-[13px]" id="d-nm">王雨桐</b><div class="mono text-[9px] text-[#9A917E]" id="d-sid">3301012 · 生科2301</div></div>
+        </div>
+        <div class="flex items-center justify-center mb-2"><div class="ring" style="--p:62.5"><b class="text-[var(--moss)]">62%</b></div></div>
+        <div class="text-center mono text-[9px] text-[#9A917E] mb-2.5">7 / 42 页 · 4 章已盖章</div>
+        <div class="kv"><span>书写中</span><b class="text-[#8F6218]">CH.09 蛋白提取</b></div>
+        <div class="kv"><span>最近签章</span><b class="text-[var(--moss)]">CH.07 · 90 分</b></div>
+        <div class="kv"><span>数据维</span><b class="text-[#8F6218]">78（偏低）</b></div>
+        <div class="kv"><span>回流超星</span><b class="text-[var(--moss)]">4 条已同步</b></div>
+      </div>
+    </div>
+    <div class="card !shadow-none">
+      <div class="flex items-center gap-2 px-3 py-2 border-b-[1.5px] border-[var(--line)]"><i data-lucide="line-chart" class="w-3.5 h-3.5 text-[#41678A]"></i><b class="text-[11.5px]">盖章轨迹</b></div>
+      <div class="p-3"><svg viewBox="0 0 240 88" class="w-full"><polyline points="20,64 75,54 130,44 185,37 230,30" fill="none" stroke="#2C6E5A" stroke-width="2.5" stroke-linecap="round"/><g fill="#2C6E5A"><circle cx="20" cy="64" r="3.5"/><circle cx="75" cy="54" r="3.5"/><circle cx="130" cy="44" r="3.5"/><circle cx="185" cy="37" r="3.5"/><circle cx="230" cy="30" r="3.5"/></g><g font-size="8.5" fill="#9A917E" font-family="JetBrains Mono"><text x="14" y="80">CH1·95</text><text x="70" y="80">CH3·91</text><text x="125" y="80">CH5·86</text><text x="178" y="80">CH7·90</text><text x="218" y="80">09·88</text></g></svg></div>
+    </div>
+    <div class="card !shadow-none">
+      <div class="flex items-center gap-2 px-3 py-2 border-b-[1.5px] border-[var(--line)]"><i data-lucide="pen-line" class="w-3.5 h-3.5 text-[var(--moss)]"></i><b class="text-[11.5px]">册边批注</b></div>
+      <div class="p-3">
+        <textarea rows="3" placeholder="贴到学生册边…" class="w-full text-[11.5px] p-2.5 rounded-[10px] border-[1.5px] border-[var(--line)] bg-[var(--paper)] outline-none focus:border-[var(--moss)] resize-none" style="font-family:inherit">离心力注意写 ×g 而不是 rpm，其他很好。</textarea>
+        <button class="btn-stamp w-full justify-center mt-2 !py-2 !text-[11px]" onclick="toast('批注已贴到王雨桐的册边 → POST /api/teacher/note','send')"><i data-lucide="send" class="w-3 h-3"></i>贴批注</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- 依据抽屉 -->
+<div class="drawer">
+  <div class="mask" onclick="$('.drawer').removeClass('open')"></div>
+  <div class="sheet p-4">
+    <div class="flex items-center justify-between mb-3"><b class="serif text-[14px]" id="ev-title">签章依据 · 王雨桐</b><button class="w-8 h-8 rounded-lg border-[1.5px] border-[var(--line)] flex items-center justify-center" onclick="$('.drawer').removeClass('open')"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <div class="card !shadow-none mb-3"><div class="flex items-center gap-2 px-3 py-2 border-b-[1.5px] border-[var(--line)]"><i data-lucide="history" class="w-3.5 h-3.5 text-[#8F6218]"></i><b class="text-[11.5px]">稿史</b></div>
+      <div class="p-3 space-y-2 text-[10.5px]"><div class="flex justify-between items-center"><span class="text-[#5C574A]">初稿 · 缺离心参数</span><b class="mono text-[#A34444]">62 退回</b></div>
+      <div class="flex justify-between items-center"><span class="text-[#5C574A]">二稿 · 补 R²=0.998 ✓</span><b class="mono text-[var(--moss)]">88 待签</b></div></div></div>
+    <div class="card !shadow-none mb-3"><div class="flex items-center gap-2 px-3 py-2 border-b-[1.5px] border-[var(--line)]"><i data-lucide="image" class="w-3.5 h-3.5 text-[#41678A]"></i><b class="text-[11.5px]">证据照片 · 2 张已验</b></div>
+      <div class="p-3 grid grid-cols-2 gap-2"><div class="aspect-square rounded-[10px] flex flex-col items-center justify-center gap-1.5 ic17"><i data-lucide="test-tubes" class="w-7 h-7 text-[#8C7A55]"></i><span class="mono text-[8px] text-[#8C7A55]">IMG_0812 ✓</span></div>
+      <div class="aspect-square rounded-[10px] flex flex-col items-center justify-center gap-1.5 ic18"><i data-lucide="thermometer" class="w-7 h-7 text-[#5B7C5A]"></i><span class="mono text-[8px] text-[#5B7C5A]">IMG_0813 ✓</span></div></div></div>
+    <div class="card !shadow-none"><div class="flex items-center gap-2 px-3 py-2 border-b-[1.5px] border-[var(--line)]"><i data-lucide="stamp" class="w-3.5 h-3.5 text-[var(--moss)]"></i><b class="text-[11.5px]">签章动作</b></div>
+      <div class="p-3 space-y-2"><button class="btn-stamp w-full justify-center !py-2.5" onclick="toast('签章完成 → 入回流队列（超星表单 3513491）','stamp')"><i data-lucide="stamp" class="w-3.5 h-3.5"></i>签章收录本章</button>
+      <button class="btn-lt w-full justify-center !py-2.5" onclick="toast('退回重写 · 附批注','undo-2')"><i data-lucide="undo-2" class="w-3.5 h-3.5"></i>退回重写</button></div></div>
+  </div>
+</div>
+
+<div id="toast-box"></div>
+<nav class="switcher">
+  <a href="index.html" class="font-bold">总览</a>
+  <a href="v1-login.html">V1登录</a><a href="v1-student.html">V1学生</a><a href="v1-teacher.html">V1教师</a>
+  <a href="v2-login.html">V2登录</a><a href="v2-student.html">V2学生</a><a href="v2-teacher.html">V2教师</a>
+  <a href="v3-login.html">V3登录</a><a href="v3-student.html">V3学生</a><a href="v3-teacher.html">V3教师</a>
+</nav>
+
+<script>
+  lucide.createIcons();
+  function toast(msg, icon){ $('#toast-box').append(`<div class="toast"><i data-lucide="${icon||'info'}"></i>${msg}</div>`); lucide.createIcons(); setTimeout(()=>{ $('.toast').first().fadeOut(260, function(){ $(this).remove(); }); }, 2600); }
+  function filterWall(c){ toast('图鉴墙筛选 · ' + (c==='all'?'全部':c==='warn'?'卡册':'待签'),'filter'); $('#wall .student-card').each(function(){ const w = $(this).data('w'); $(this).toggle(c==='all' || (c==='warn' && w==='warn') || (c==='queue' && w==='queue')); }); }
+  function openDrawer(name){ $('#ev-title').text('签章依据 · ' + name); $('#d-chip,#d-nm').text(name); $('#d-av').text(name[0]); $('.drawer').addClass('open'); }
+  function sign(btn, name){ $(btn).closest('.stack-row').css('opacity','.45'); $(btn).replaceWith('<span class="chip chip-g !text-[10px]">已签章</span>'); toast(name + ' 已收录 → 回流超星','stamp'); }
+  function ask(q){ q = q || $('#q-in').val() || '全班进度?'; $('#q-in').val(''); toast('翻查中 · POST /api/teacher/insight','loader-2');
+    setTimeout(()=>{ $('#a-box').removeClass('hidden'); $('#a-text').html('CH.09「蛋白提取」：31/42 已交预评，均分 <b class="mono text-[var(--moss)]">84.2</b>。数据维仍是全班短板（均 76），<b>11 人</b>未写标准曲线 R²。未交 11 人中 <b>吴沛霖</b> 已停留 52h，建议先催；建议下节课统一讲 BCA 记录范式。'); }, 800); }
+</script>
+</body>
+</html>

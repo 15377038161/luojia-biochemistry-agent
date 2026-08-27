@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案V1 · 装订实验志 — 学生端</title>
+<!-- Tailwind v4 browser build 本地化自 https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js （内部CDN在公网浏览器不可达，故本地引用） -->
+<script src="./vendor/lucide.min.js"></script>
+<script src="./vendor/jquery.min.js"></script>
+<link rel="stylesheet" href="./vendor/v1-student.css">
+</head>
+<body class="paper-bg">
+
+<!-- ═══ 顶栏 ═══ -->
+<header class="sticky top-0 z-30 bg-[#F2ECDD]/94 backdrop-blur border-b-[1.5px] border-[#C9BC9C]">
+  <div class="max-w-[1440px] mx-auto px-3 lg:px-5 h-[52px] flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-none ic1">
+      <i data-lucide="flask-conical" class="w-4 h-4 text-[#E8CE8C]"></i>
+    </div>
+    <span class="serif font-black text-[14px] text-[#2F4156] hidden sm:block">珞珈生化智能体</span>
+    <span class="chip chip-m ml-1 hidden md:inline-flex"><i data-lucide="book-open" class="w-3 h-3"></i>实验记录 03 · 质粒转化与 IPTG 诱导表达</span>
+    <div class="ml-auto flex items-center gap-2">
+      <button class="lg:hidden tool-btn !w-9 !h-9" onclick="$('.notes-aside').addClass('open')"><i data-lucide="sticky-note" class="w-4 h-4"></i></button>
+      <span class="chip chip-g hidden sm:inline-flex"><i data-lucide="flame" class="w-3 h-3"></i>连续记录 3 天</span>
+      <div class="w-8 h-8 rounded-lg bg-[#5B7C99] text-[#F6F1E3] flex items-center justify-center serif font-bold text-xs">珞</div>
+    </div>
+  </div>
+  <!-- 8 步骤进度条 -->
+  <div class="max-w-[1440px] mx-auto px-3 lg:px-5 pb-2.5 steps-scroll fade-up">
+    <div class="flex gap-1 min-w-max" id="steps-bar">
+      <div class="step-node step-done" data-step="0"><span class="dot"><i data-lucide="check" class="w-4 h-4"></i></span><span class="lbl">实验准备</span></div>
+      <div class="step-node step-done" data-step="1"><span class="dot"><i data-lucide="check" class="w-4 h-4"></i></span><span class="lbl">感受态制备</span></div>
+      <div class="step-node step-done" data-step="2"><span class="dot"><i data-lucide="check" class="w-4 h-4"></i></span><span class="lbl">质粒转化</span></div>
+      <div class="step-node step-cur" data-step="3"><span class="dot">4</span><span class="lbl">诱导表达</span></div>
+      <div class="step-node step-lock" data-step="4"><span class="dot"><i data-lucide="lock" class="w-3.5 h-3.5"></i></span><span class="lbl">蛋白提取</span></div>
+      <div class="step-node step-lock" data-step="5"><span class="dot"><i data-lucide="lock" class="w-3.5 h-3.5"></i></span><span class="lbl">纯化</span></div>
+      <div class="step-node step-lock" data-step="6"><span class="dot"><i data-lucide="lock" class="w-3.5 h-3.5"></i></span><span class="lbl">电泳分析</span></div>
+      <div class="step-node step-lock" data-step="7"><span class="dot"><i data-lucide="lock" class="w-3.5 h-3.5"></i></span><span class="lbl">反思报告</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1440px] mx-auto px-3 lg:px-5 py-5 grid gap-4 grid-main" style="grid-template-columns:64px minmax(0,1fr) 330px">
+
+  <!-- ═══ 左功能栏（5 按钮 + 活页孔） ═══ -->
+  <aside class="side-rail flex-none">
+    <div class="rounded-2xl p-2 sticky top-[118px] flex flex-col gap-1.5 ic2">
+      <div class="flex justify-center gap-1.5 py-1.5 border-b border-white/10 mb-1"><span class="w-1.5 h-1.5 rounded-full bg-[#8B7B5E]"></span><span class="w-1.5 h-1.5 rounded-full bg-[#8B7B5E]"></span><span class="w-1.5 h-1.5 rounded-full bg-[#8B7B5E]"></span></div>
+      <button class="side-btn on" onclick="toast('当前视图：实验记录','notebook-pen')"><i data-lucide="notebook-pen" class="w-[18px] h-[18px]"></i>记录</button>
+      <button class="side-btn" onclick="toast('打开素材库 → GET /api/student/media','folder-open')"><i data-lucide="folder-open" class="w-[18px] h-[18px]"></i>素材</button>
+      <button class="side-btn" onclick="toast('打开实验指南（PDF）','map')"><i data-lucide="map" class="w-[18px] h-[18px]"></i>指南</button>
+      <button class="side-btn" onclick="toast('打开实验笔记本总览','book')"><i data-lucide="book" class="w-[18px] h-[18px]"></i>笔记</button>
+      <button class="side-btn" onclick="toast('查看历史版本（4 版）','history')"><i data-lucide="history" class="w-[18px] h-[18px]"></i>版本</button>
+    </div>
+  </aside>
+
+  <!-- ═══ 核心区 ═══ -->
+  <section class="min-w-0 space-y-4">
+    <!-- 实验记录大卡（18 条结构化内容） -->
+    <div class="record-card p-5 fade-up d1">
+      <div class="flex items-start justify-between gap-2 flex-wrap">
+        <div>
+          <h2 class="serif text-[17px] font-black text-[#33261A]">实验记录 · 04 诱导表达</h2>
+          <p class="text-[11px] text-[#8A7A5C] mt-0.5">目标：用 IPTG 诱导 pET-28a 载体在大肠杆菌 BL21 中表达目的蛋白</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="chip chip-g"><i data-lucide="save" class="w-3 h-3"></i>已自动保存 14:32</span>
+          <span class="chip chip-c"><i data-lucide="alarm-clock" class="w-3 h-3"></i>剩余 2 天 8 小时</span>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-x-6 gap-y-4 mt-4">
+        <div>
+          <div class="sec-h"><i data-lucide="target" class="w-3.5 h-3.5 text-[#2D6A4F]"></i>实验目的</div>
+          <ul class="mt-2 space-y-1.5">
+            <li class="num-li"><span class="n">1</span>掌握 IPTG 诱导表达的基本原理与操作规范</li>
+            <li class="num-li"><span class="n">2</span>理解乳糖操纵子模型在原核表达中的应用</li>
+          </ul>
+        </div>
+        <div>
+          <div class="sec-h"><i data-lucide="list-ordered" class="w-3.5 h-3.5 text-[#2D6A4F]"></i>操作顺序</div>
+          <ul class="mt-2 space-y-1.5">
+            <li class="num-li"><span class="n">1</span>挑取单菌落接入 5 mL LB+Amp，37℃ 过夜摇菌</li>
+            <li class="num-li"><span class="n">2</span>按 1:100 转接，培养至 OD600≈0.6</li>
+            <li class="num-li"><span class="n">3</span>加入 IPTG 至终浓度 0.5 mmol/L，16℃ 诱导</li>
+            <li class="num-li"><span class="n">4</span>分别于 0/2/4/6h 取样 1 mL，离心收菌</li>
+            <li class="num-li"><span class="n">5</span>菌体重悬后加入上样缓冲液，沸水浴 10 min</li>
+            <li class="num-li"><span class="n">6</span>样品冻存，待 SDS-PAGE 检测</li>
+          </ul>
+        </div>
+        <div>
+          <div class="sec-h"><i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-[#5B7C99]"></i>关键参数与选择理由</div>
+          <ul class="mt-2 space-y-1.5">
+            <li class="num-li"><span class="n">P</span>OD600=0.58 时加诱导剂——对数中期表达效率最高</li>
+            <li class="num-li"><span class="n">P</span>16℃ 低温诱导——降低包涵体形成概率</li>
+            <li class="num-li"><span class="n">P</span>IPTG 0.5 mmol/L——预实验梯度筛选的最优浓度</li>
+            <li class="num-li"><span class="n">P</span>设未诱导对照组——排除本底表达干扰</li>
+          </ul>
+        </div>
+        <div>
+          <div class="sec-h"><i data-lucide="search-check" class="w-3.5 h-3.5 text-[#D9A441]"></i>结果判断</div>
+          <ul class="mt-2 space-y-1.5">
+            <li class="num-li"><span class="n">R</span>诱导组在 26 kDa 处应出现目的条带，且随时间增强</li>
+            <li class="num-li"><span class="n">R</span>对照组无特异性条带即可判定表达成功</li>
+          </ul>
+          <div class="sec-h mt-3"><i data-lucide="shield-alert" class="w-3.5 h-3.5 text-[#C0392B]"></i>安全事项</div>
+          <ul class="mt-2 space-y-1.5">
+            <li class="num-li"><span class="n ic3">!</span>戴手套操作，菌液废弃前高压灭菌</li>
+            <li class="num-li"><span class="n ic4">!</span>IPTG 有轻微毒性，避免皮肤接触</li>
+            <li class="num-li"><span class="n ic5">!</span>沸水浴时管盖扎孔防爆裂</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 输入区 -->
+      <div class="mt-5 rounded-xl border-[1.5px] border-dashed border-[#C9BC9C] bg-[#F7F2E4]/60 p-3">
+        <textarea class="w-full bg-transparent outline-none resize-none text-[12.5px] leading-relaxed text-[#4A3D2B] placeholder-[#B3A78C]" rows="2" id="record-input" placeholder="补充本次操作的观察、疑问或数据（例如：取样时发现 4h 管菌体明显更浓…）" oninput="$('#char-count').text($(this).val().length + '/500')"></textarea>
+        <div class="flex items-center gap-2 mt-2 flex-wrap">
+          <button class="tool-btn" onclick="toast('打开相机 → POST /api/student/vision','camera')" title="拍照上传"><i data-lucide="camera" class="w-[18px] h-[18px]"></i></button>
+          <button class="tool-btn" onclick="toast('附加菌落照片 plate-04.jpg','paperclip')" title="附加素材"><i data-lucide="paperclip" class="w-[18px] h-[18px]"></i></button>
+          <button class="tool-btn" onclick="toast('插入表格模板','table-2')" title="插入表格"><i data-lucide="table-2" class="w-[18px] h-[18px]"></i></button>
+          <span class="text-[10.5px] text-[#A08F6E] ml-1" id="char-count">0/500</span>
+          <button class="btn-send ml-auto" id="send-btn" onclick="sendRecord()"><i data-lucide="send-horizontal" class="w-4 h-4"></i>提交珞珈批阅</button>
+        </div>
+      </div>
+      <!-- AI 批阅反馈区 -->
+      <div id="ai-feedback" class="hidden mt-3"></div>
+    </div>
+
+    <!-- 3 线索可视化卡（菌落/曲线/电泳 SVG） -->
+    <div class="grid sm:grid-cols-3 gap-3 fade-up d2">
+      <div class="card p-3.5">
+        <div class="flex items-center justify-between mb-2">
+          <span class="sec-h" style="font-size:12px"><i data-lucide="microscope" class="w-3.5 h-3.5 text-[#2D6A4F]"></i>菌落平板 · 10⁻³</span>
+          <span class="chip chip-g">正常</span>
+        </div>
+        <svg viewBox="0 0 150 96" class="w-full rounded-lg ic6">
+          <circle cx="75" cy="48" r="42" fill="#F4F7F1" stroke="#C9D6C4" stroke-width="2"/>
+          <circle cx="60" cy="36" r="3.4" fill="#B9D4AE"/><circle cx="72" cy="30" r="2.6" fill="#B9D4AE"/><circle cx="84" cy="38" r="3" fill="#B9D4AE"/>
+          <circle cx="93" cy="52" r="2.4" fill="#B9D4AE"/><circle cx="66" cy="50" r="2.8" fill="#B9D4AE"/><circle cx="56" cy="62" r="2.2" fill="#B9D4AE"/>
+          <circle cx="78" cy="64" r="3.2" fill="#B9D4AE"/><circle cx="90" cy="68" r="2" fill="#B9D4AE"/><circle cx="72" cy="46" r="1.8" fill="#B9D4AE"/>
+          <text x="75" y="92" text-anchor="middle" font-size="7.5" fill="#8A9C84">LB+Amp · 37℃ 16h</text>
+        </svg>
+        <p class="text-[10.5px] text-[#6B5A3E] mt-2 leading-relaxed">对照组 42 个菌落，散布均匀、边缘清晰，无卫星菌落污染。</p>
+      </div>
+      <div class="card p-3.5">
+        <div class="flex items-center justify-between mb-2">
+          <span class="sec-h" style="font-size:12px"><i data-lucide="trending-up" class="w-3.5 h-3.5 text-[#5B7C99]"></i>OD600 生长曲线</span>
+          <span class="chip chip-i">6h</span>
+        </div>
+        <svg viewBox="0 0 150 96" class="w-full rounded-lg ic7">
+          <line x1="18" y1="12" x2="18" y2="76" stroke="#C9D6E4" stroke-width="1"/><line x1="18" y1="76" x2="142" y2="76" stroke="#C9D6E4" stroke-width="1"/>
+          <line x1="18" y1="26" x2="142" y2="26" stroke="#E3EBF3" stroke-width="1" stroke-dasharray="3 3"/><line x1="18" y1="51" x2="142" y2="51" stroke="#E3EBF3" stroke-width="1" stroke-dasharray="3 3"/>
+          <path d="M18 74 C 34 72, 44 58, 56 44 S 74 30, 86 28" fill="none" stroke="#5B7C99" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M86 28 C 96 27, 108 22, 122 16" fill="none" stroke="#D97B4A" stroke-width="2.4" stroke-dasharray="5 3" stroke-linecap="round"/>
+          <circle cx="56" cy="44" r="4" fill="#FBF7EC" stroke="#2D6A4F" stroke-width="2"/>
+          <text x="52" y="38" font-size="7.5" fill="#2D6A4F">OD600=0.58</text>
+          <circle cx="86" cy="28" r="4.5" fill="#D97B4A"/>
+          <text x="92" y="22" font-size="7.5" fill="#B85C2F">+IPTG</text>
+          <text x="22" y="88" font-size="7" fill="#8A9CB4">0h</text><text x="128" y="88" font-size="7" fill="#8A9CB4">6h</text>
+        </svg>
+        <p class="text-[10.5px] text-[#6B5A3E] mt-2 leading-relaxed">对数中期加 IPTG，诱导后生长放缓符合低温表达预期。</p>
+      </div>
+      <div class="card p-3.5">
+        <div class="flex items-center justify-between mb-2">
+          <span class="sec-h" style="font-size:12px"><i data-lucide="align-start-vertical" class="w-3.5 h-3.5 text-[#96702A]"></i>SDS-PAGE 预览</span>
+          <span class="chip chip-m">26 kDa ✓</span>
+        </div>
+        <svg viewBox="0 0 150 96" class="w-full rounded-lg ic8">
+          <rect x="14" y="8" width="122" height="76" rx="4" fill="#E6E4D8" stroke="#CFCBB8" stroke-width="1.5"/>
+          <g fill="#5C6B5E">
+            <rect x="22" y="14" width="8" height="2.2"/><rect x="22" y="22" width="8" height="2"/>
+            <rect x="22" y="30" width="8" height="1.6"/><rect x="22" y="38" width="8" height="1.4"/>
+            <rect x="22" y="46" width="8" height="1.2"/><rect x="22" y="54" width="8" height="1"/>
+          </g>
+          <rect x="46" y="50" width="9" height="2" fill="#AAB4A6" opacity=".6"/>
+          <rect x="62" y="46" width="9" height="2.4" fill="#7E8F7C"/>
+          <rect x="78" y="42" width="9" height="3" fill="#55684F"/>
+          <rect x="94" y="38" width="9" height="3.6" fill="#384A33"/>
+          <rect x="110" y="35" width="9" height="4" fill="#22301E"/>
+          <line x1="40" y1="56" x2="126" y2="56" stroke="#B8B4A0" stroke-width=".8" stroke-dasharray="2 2"/>
+          <text x="40" y="52" font-size="6.5" fill="#8A846E">M</text><text x="56" y="52" font-size="6.5" fill="#8A846E">0h</text><text x="72" y="52" font-size="6.5" fill="#8A846E">2h</text><text x="88" y="52" font-size="6.5" fill="#8A846E">4h</text><text x="104" y="52" font-size="6.5" fill="#8A846E">6h</text><text x="118" y="52" font-size="6.5" fill="#8A846E">对</text>
+          <text x="75" y="90" text-anchor="middle" font-size="7" fill="#8A846E">目的条带随诱导时间增强</text>
+        </svg>
+        <p class="text-[10.5px] text-[#6B5A3E] mt-2 leading-relaxed">梯度上样验证：6h 条带最亮，26 kDa 与预测分子量一致。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 右侧辅助区（3 批注卡 + Gate + 笔记本进度） ═══ -->
+  <aside class="notes-aside space-y-4 fade-up d3">
+    <div class="flex items-center justify-between">
+      <h3 class="serif text-[15px] font-black text-[#33261A] flex items-center gap-1.5"><i data-lucide="eye" class="w-4 h-4 text-[#96702A]"></i>观察与批注</h3>
+      <button class="lg:hidden tool-btn !w-8 !h-8" onclick="$('.notes-aside').removeClass('open')"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <div class="note-card nc-omit p-3.5 pt-4">
+      <span class="note-tab"><i data-lucide="file-warning" class="w-3 h-3"></i>遗漏 · 2</span>
+      <ul class="space-y-1.5 text-[11.5px] text-[#4A3D2B] leading-relaxed">
+        <li class="flex gap-1.5"><i data-lucide="dot" class="w-3.5 h-3.5 text-[#D97B4A] flex-none mt-0.5"></i>未记录 Amp 工作浓度 100 μg/mL 的计算依据</li>
+        <li class="flex gap-1.5"><i data-lucide="dot" class="w-3.5 h-3.5 text-[#D97B4A] flex-none mt-0.5"></i>复苏阶段缺少 1h 恒温摇床转速参数</li>
+      </ul>
+    </div>
+    <div class="note-card nc-param p-3.5 pt-4">
+      <span class="note-tab"><i data-lucide="sliders-horizontal" class="w-3 h-3"></i>参数 · 2</span>
+      <ul class="space-y-1.5 text-[11.5px] text-[#4A3D2B] leading-relaxed">
+        <li class="flex gap-1.5"><i data-lucide="dot" class="w-3.5 h-3.5 text-[#5B7C99] flex-none mt-0.5"></i>热激 90s 建议标注水浴锅编号便于溯源</li>
+        <li class="flex gap-1.5"><i data-lucide="dot" class="w-3.5 h-3.5 text-[#5B7C99] flex-none mt-0.5"></i>OD600 建议补充三次重复取均值 ±SD</li>
+      </ul>
+    </div>
+    <div class="note-card nc-safe p-3.5 pt-4">
+      <span class="note-tab"><i data-lucide="shield-check" class="w-3 h-3"></i>安全 · 1</span>
+      <ul class="space-y-1.5 text-[11.5px] text-[#4A3D2B] leading-relaxed">
+        <li class="flex gap-1.5"><i data-lucide="dot" class="w-3.5 h-3.5 text-[#96702A] flex-none mt-0.5"></i>废弃菌液已高压灭菌——记录规范，继续保持</li>
+      </ul>
+    </div>
+
+    <!-- Gate 审核卡 -->
+    <div class="record-card p-4">
+      <div class="flex items-center justify-between">
+        <h4 class="serif text-[13.5px] font-black text-[#33261A] flex items-center gap-1.5"><i data-lucide="stamp" class="w-4 h-4 text-[#C0392B]"></i>Gate 3 · 审核位</h4>
+        <span class="text-[10px] text-[#A08F6E]">AI 批阅 87 分</span>
+      </div>
+      <div class="flex items-center gap-4 mt-3">
+        <div class="gate-seal" id="gate-seal">
+          <span class="serif text-[12px] font-black">待通过</span>
+          <span class="text-[7.5px] mt-0.5">GATE·03</span>
+        </div>
+        <div class="flex-1 space-y-2">
+          <button class="btn-submit w-full" id="submit-gate" onclick="submitGate()"><i data-lucide="check-check" class="w-4 h-4 inline mr-1"></i>提交导师复核</button>
+          <p class="text-[10px] text-[#8A7A5C] leading-relaxed">提交后陈老师将在 24h 内签章；两次未过需重做该步骤实验。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 实验笔记本进度 -->
+    <div class="card p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="serif text-[13.5px] font-black text-[#33261A] flex items-center gap-1.5"><i data-lucide="book" class="w-4 h-4 text-[#2D6A4F]"></i>实验笔记本</h4>
+        <span class="chip chip-g">3/8</span>
+      </div>
+      <div class="flex gap-1.5 flex-wrap" id="book-cells"></div>
+      <div class="mt-3 pt-3 border-t border-dashed border-[#DCD2B8] text-[10.5px] text-[#8A7A5C] flex justify-between">
+        <span>上次书写 昨天 21:14</span><span class="text-[#2D6A4F] font-bold">连续 3 天</span>
+      </div>
+    </div>
+
+    <!-- 设计说明 -->
+    <div class="p-4 rounded-xl ic9">
+      <h4 class="text-[12.5px] font-bold text-[#2F4156] flex items-center gap-1.5"><i data-lucide="drafting-compass" class="w-3.5 h-3.5"></i>V1 学生端 · 规格标注</h4>
+      <ul class="mt-2 space-y-1 list-disc list-inside text-[11px] leading-relaxed text-[#6B5A3E]">
+        <li><b class="text-[#2D6A4F]">新增核心元素：</b>8 节点可点进度条（完成/当前/锁定三态）、左栏 5 功能钮、18 条结构化记录（目的/顺序/参数/判断/安全）、3 张 SVG 线索卡（菌落平板/OD600 曲线/SDS-PAGE 泳道）、3 张分类批注贴、Gate 3 审核章、笔记本 8 格进度。</li>
+        <li><b class="text-[#2D6A4F]">层级逻辑：</b>顶栏进度→左栏导航→中央记录主卡（最重投影）→线索三卡（次级）→右侧批注贴（叠压前景），信息密度从中心向两侧递减。</li>
+        <li><b class="text-[#2D6A4F]">配色优化：</b>五功能色统一明度带；红仅用于 Gate 印章与安全条目；批注贴用「白卡+彩舌+彩边」代替参考图的大色块，密度高而不乱。</li>
+      </ul>
+    </div>
+  </aside>
+</main>
+
+<div id="toast-box"></div>
+<nav class="switcher">
+  <a href="index.html" class="font-bold">总览</a>
+  <a href="v1-login.html">V1登录</a><a href="v1-student.html">V1学生</a><a href="v1-teacher.html">V1教师</a>
+  <a href="v2-login.html">V2登录</a><a href="v2-student.html">V2学生</a><a href="v2-teacher.html">V2教师</a>
+  <a href="v3-login.html">V3登录</a><a href="v3-student.html">V3学生</a><a href="v3-teacher.html">V3教师</a>
+</nav>
+
+<script>
+  lucide.createIcons();
+  function toast(msg, icon){ $('#toast-box').append(`<div class="toast"><i data-lucide="${icon||'info'}"></i>${msg}</div>`); lucide.createIcons(); setTimeout(()=>{ $('.toast').first().fadeOut(260, function(){ $(this).remove(); }); }, 2600); }
+
+  // 笔记本 8 格
+  const states = ['done','done','done','cur','lock','lock','lock','lock'];
+  const cellCls = {done:'background:rgba(45,106,79,.14);color:#2D6A4F;border:1.5px solid rgba(45,106,79,.45)', cur:'background:#D97B4A;color:#fff;border:1.5px solid #B85C2F', lock:'background:#EDE6D2;color:#B3A78C;border:1.5px dashed #C6BA9D'};
+  states.forEach((s,i)=>{ $('#book-cells').append(`<div class="book-cell" style="${cellCls[s]}">${s==='done'?'✓':(i+1)}</div>`); });
+
+  // 步骤点击
+  $('.step-node').on('click', function(){ toast($(this).find('.lbl').text() + ' — ' + ($(this).hasClass('step-lock') ? '完成上一步后解锁' : '已定位到该步骤记录'), 'milestone'); });
+
+  // 发送批阅
+  function sendRecord(){
+    const val = $('#record-input').val().trim();
+    if(!val){ toast('先写两句观察再提交吧','pen-line'); return; }
+    $('#send-btn').prop('disabled', true);
+    $('#ai-feedback').removeClass('hidden').html(`
+      <div class="rounded-xl p-4" style="background:rgba(91,124,153,.07);border:1.5px solid rgba(91,124,153,.3)">
+        <div class="flex items-center gap-2 text-[12px] font-bold text-[#41637F]"><i data-lucide="bot" class="w-4 h-4"></i>珞珈正在批阅你的记录<span class="writing"><i></i><i></i><i></i></span></div>
+      </div>`);
+    lucide.createIcons();
+    setTimeout(()=>{
+      $('#ai-feedback').html(`
+        <div class="rounded-xl p-4" style="background:rgba(45,106,79,.07);border:1.5px solid rgba(45,106,79,.35)">
+          <div class="flex items-center justify-between flex-wrap gap-1.5">
+            <div class="flex items-center gap-2 text-[12.5px] font-bold text-[#2D6A4F]"><i data-lucide="badge-check" class="w-4 h-4"></i>批阅完成 · 本段 88 分</div>
+            <span class="chip chip-g">POST /api/student/evaluate ✓</span>
+          </div>
+          <p class="text-[11.5px] text-[#4A3D2B] mt-2 leading-relaxed">观察细致，"4h 菌体更浓"与 OD600 曲线趋势互证。建议补一句低温诱导下生长放缓的机理解释。</p>
+          <div class="flex gap-2 mt-2.5 flex-wrap">
+            <button class="chip chip-c cursor-pointer" onclick="toast('生成追问 → /api/student/ask','help-circle')">深挖追问：为何 16℃ 反而更慢？</button>
+            <button class="chip chip-i cursor-pointer" onclick="toast('引用到正式记录','quote')">引用此批注</button>
+          </div>
+        </div>`);
+      lucide.createIcons();
+      $('#send-btn').prop('disabled', false);
+      toast('已存入实验笔记本（第 4 步）','notebook-pen');
+    }, 1800);
+  }
+
+  // Gate 提交
+  function submitGate(){
+    $('#submit-gate').prop('disabled', true).text('已提交，等待签章…');
+    setTimeout(()=>{
+      $('#gate-seal').attr('style','').addClass('stamp-in').css({'border-color':'#2D6A4F','color':'#2D6A4F'});
+      $('#gate-seal').html('<span class="serif text-[12px] font-black">已受理</span><span class="text-[7.5px] mt-0.5">待导师签</span>');
+      toast('已提交 Gate 3 复核 → 陈老师将收到提醒','stamp');
+    }, 700);
+  }
+</script>
+</body>
+</html>

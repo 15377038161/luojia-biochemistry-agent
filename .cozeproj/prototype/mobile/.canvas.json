@@ -1,0 +1,85 @@
+{
+  "elements": [
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/home.html"
+      },
+      "title": "首页 · 功能入口",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/student.html"
+      },
+      "title": "实验地图 · 点击站点进入",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/step1.html"
+      },
+      "title": "操作页 1/5 · 引导级·任务情境与理论",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/step2.html"
+      },
+      "title": "操作页 2/5 · 引导级·知识检验(解锁SOP)",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/step3.html"
+      },
+      "title": "操作页 3/5 · 操作级·SOP分步描述",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/step4.html"
+      },
+      "title": "操作页 4/5 · 评估级·提交与AI点评",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/step5.html"
+      },
+      "title": "操作页 5/5 · Gate检查点·放行判定",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/step.html"
+      },
+      "title": "步骤④工作台 · 三级交互全流程",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/teacher.html"
+      },
+      "title": "教师工作台 · 班级与复核",
+      "size": "mobile"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/mobile/report.html"
+      },
+      "title": "学习报告",
+      "size": "mobile"
+    }
+  ],
+  "updatedAt": 1787198661832
+}
