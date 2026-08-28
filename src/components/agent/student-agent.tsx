@@ -10,6 +10,8 @@ import StepWorkstation from '@/components/student/step-workstation';
 import type { ApiResult, StepProgress, StudentSessionView } from '@/domain/agent';
 import type { CourseContentPayload } from '@/domain/course-content';
 import { defaultCourseContent } from '@/domain/course-content';
+import { dispatchChaoxingTaskflow } from '@/lib/chaoxing-taskflow-client';
+import type { ChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
 
 interface Props {
   displayName: string;
@@ -58,6 +60,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
   const [reportMarkdown, setReportMarkdown] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
   const [reportError, setReportError] = useState('');
+  const [reportSyncNotice, setReportSyncNotice] = useState('');
   const [courseContent, setCourseContent] = useState<CourseContentPayload>(defaultCourseContent());
   const routeHref = useCallback((path: string) => `${routeBase}/${path}${preview ? '?preview=1' : ''}`, [preview, routeBase]);
 
@@ -107,8 +110,16 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
       return;
     }
     try {
-      const payload = await apiPost<{ rendered_markdown?: string; content?: string }>('/api/student/report', { sessionId: session.sessionId });
+      const payload = await apiPost<{ rendered_markdown?: string; content?: string; chaoxingTaskflow?: ChaoxingTaskflowPayload }>('/api/student/report', { sessionId: session.sessionId });
       setReportMarkdown(payload.rendered_markdown || payload.content || '报告内容为空。');
+      if (payload.chaoxingTaskflow) {
+        try {
+          const dispatch = await dispatchChaoxingTaskflow(payload.chaoxingTaskflow);
+          setReportSyncNotice(dispatch.detail);
+        } catch {
+          setReportSyncNotice('学习报告已保存；超星网页桥接暂不可用，服务器同步队列会保留记录。');
+        }
+      }
     } catch (reason) {
       setReportError(reason instanceof Error ? reason.message : '学习报告生成失败');
     } finally {
@@ -191,6 +202,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
           markdown={reportMarkdown}
           markdownBusy={reportBusy}
           markdownError={reportError}
+          syncNotice={reportSyncNotice}
           onClose={closeReport}
           standalone
           practiceMode={practiceMode}
@@ -222,6 +234,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
           markdown={reportMarkdown}
           markdownBusy={reportBusy}
           markdownError={reportError}
+          syncNotice={reportSyncNotice}
           onClose={closeReport}
           practiceMode={practiceMode}
         />

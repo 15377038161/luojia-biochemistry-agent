@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getExperimentStep } from '@/domain/experiment';
 import { normalizeEvaluation } from '@/domain/evaluation';
+import { buildChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
 import { evaluateText } from '@/lib/coze-workflows';
 import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     const key = body.requestId && /^[0-9a-f-]{36}$/i.test(body.requestId) ? body.requestId : crypto.randomUUID();
     const { supabase } = createSupabaseRouteClient(request);
     const { data: session, error: sessionError } = await supabase.from('agent_sessions')
-      .select('id,current_step,completed_at,user_id').eq('id', body.sessionId).single();
+      .select('id,current_step,completed_at,user_id,session_mode').eq('id', body.sessionId).single();
     if (sessionError) throw sessionError;
     if (session.user_id !== identity.user.id) throw new Error('FORBIDDEN');
     const { data: state, error: stateError } = await supabase.from('step_states').select('attempt_count')
@@ -43,7 +44,17 @@ export async function POST(request: NextRequest) {
       .select('id,current_step,completed_at').eq('id', session.id).single();
     if (updatedError) throw updatedError;
     const view = await loadStudentSessionView(supabase, updated, identity.user.profile.displayName);
-    return ok({ evaluation, session: view }, id);
+    const chaoxingTaskflow = session.session_mode === 'student'
+      ? buildChaoxingTaskflowPayload({
+        eventId: key,
+        studentId: identity.user.id,
+        stepId: step.id,
+        versionNo: state.attempt_count + 1,
+        studentAnswer: answer,
+        evaluation,
+      })
+      : undefined;
+    return ok({ evaluation, session: view, chaoxingTaskflow }, id);
   } catch (error) {
     return fail(errorFromUnknown(error), id, 500);
   }

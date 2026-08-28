@@ -8,6 +8,8 @@ import { experimentSteps } from '@/domain/experiment';
 import { getStepQuiz } from '@/domain/quiz';
 import PageBackground from '@/components/page-background';
 import StudentTopbar from '@/components/student/student-topbar';
+import { dispatchChaoxingTaskflow } from '@/lib/chaoxing-taskflow-client';
+import type { ChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
 
 const STAGE_LABELS = ['任务与原理', '知识检验', '分步文字推演', '提交与点评', 'Gate 检查点'];
 const STAGE_MOBILE_LABELS = ['任务', '检验', '推演', '点评', 'Gate'];
@@ -114,6 +116,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
   const [helpBusy, setHelpBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [syncNotice, setSyncNotice] = useState('');
   const [railHint, setRailHint] = useState('');
   const [evaluation, setEvaluation] = useState<TextEvaluation | null>(null);
   const [draftNotice, setDraftNotice] = useState('草稿自动保存');
@@ -187,18 +190,29 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
 
   async function submitEvaluation() {
     if (!descComplete || busy || !isCurrent) return;
-    setBusy(true); setError('');
+    setBusy(true); setError(''); setSyncNotice('');
     const answer = submittedAnswer;
     if (preview) {
       setEvaluation(previewEvaluation(step)); setBusy(false); setStage(4); return;
     }
     try {
-      const result = await api<{ evaluation: TextEvaluation; session: StudentSessionView }>('/api/student/evaluate', { sessionId: session.sessionId, answer, requestId: crypto.randomUUID() });
+      const requestKey = crypto.randomUUID();
+      const result = await api<{ evaluation: TextEvaluation; session: StudentSessionView; chaoxingTaskflow?: ChaoxingTaskflowPayload }>('/api/student/evaluate', { sessionId: session.sessionId, answer, requestId: requestKey });
       const lastIndex = result.session.messages.length - 1;
       if (lastIndex >= 0) result.session.messages[lastIndex] = { ...result.session.messages[lastIndex], evaluation: result.evaluation };
       setEvaluation(result.evaluation);
       onSessionUpdate(result.session);
       setStage(4);
+      if (result.chaoxingTaskflow) {
+        try {
+          const dispatch = await dispatchChaoxingTaskflow(result.chaoxingTaskflow);
+          setSyncNotice(dispatch.detail);
+        } catch {
+          setSyncNotice('本次评阅已保存；超星网页桥接暂不可用，服务器同步队列会保留记录。');
+        }
+      } else {
+        setSyncNotice('本次记录已保存；非正式学生会话不会写入超星。');
+      }
     } catch (reason) { setError(reason instanceof Error ? reason.message : '评阅失败，请稍后重试'); }
     finally { setBusy(false); }
   }
@@ -454,6 +468,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
           <section className="mt-4 rounded-2xl bg-card/90 border border-border/60 shadow-card p-6">
             <h2 className="text-lg font-bold flex items-center gap-2"><Flag className="w-5 h-5 text-primary" /> Gate {stepId} · {step.shortTitle}检查点</h2>
             <p className="mt-1 text-xs text-muted-foreground">验证内容（教学大纲）：{step.goal}{stepId < 8 ? `通过后才能进入步骤${STEP_BADGES[stepId]}。` : '这是最后一步，通过后完成全部文字推演。'}</p>
+            {syncNotice && <p className="mt-3 text-xs font-bold text-primary flex items-center gap-1.5"><Check className="w-3.5 h-3.5" />{syncNotice}</p>}
             <div className="mt-4 grid md:grid-cols-3 gap-3 text-xs">
               <div className="rounded-xl bg-muted/60 p-3"><p className="font-bold">描述完整性</p><p className={`mt-1 font-bold ${descComplete ? 'text-success' : 'text-warning'}`}>{describedCount}/{step.keyPoints.length} 子步骤已描述 {descComplete ? '✓' : ''}</p></div>
               <div className="rounded-xl bg-muted/60 p-3"><p className="font-bold">结果分析与判断</p><p className={`mt-1 font-bold ${!evaluation ? 'text-muted-foreground' : gatePassed ? 'text-success' : 'text-warning'}`}>{!evaluation ? '尚未提交评阅' : gatePassed ? `${totalScore}/100 达标 ✓` : `${totalScore}/100 待修订`}</p></div>

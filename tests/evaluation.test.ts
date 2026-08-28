@@ -12,6 +12,8 @@ import {
   getChaoxingFormConfigurationStatus,
   mapChaoxingFormFields,
 } from '../src/lib/chaoxing-sync';
+import { buildChaoxingReportTaskflowPayload, buildChaoxingTaskflowPayload } from '../src/lib/chaoxing-taskflow-contract';
+import { resolveChaoxingParentOrigin } from '../src/lib/chaoxing-taskflow-client';
 
 function evaluation(overrides: Partial<TextEvaluation> = {}): TextEvaluation {
   return {
@@ -93,4 +95,35 @@ test('超星回查健康检查只在回查接口成功时标记ready', async () 
     return new Response('{}', { status: 200 });
   });
   assert.equal(result.state, 'ready');
+});
+
+test('超星任务流载荷复用评阅幂等键并计算五维总分', () => {
+  const payload = buildChaoxingTaskflowPayload({
+    eventId: 'event-1', studentId: 'student-1', stepId: 4, versionNo: 2,
+    studentAnswer: '这是一段用于契约测试的文字实验推演描述。', evaluation: evaluation(),
+  });
+  assert.equal(payload.event_id, 'event-1');
+  assert.equal(payload.step_id, 4);
+  assert.equal(payload.version_no, 2);
+  assert.equal(payload.total_score, 100);
+  assert.equal(payload.ai_confidence, 0.9);
+  assert.equal(payload.teacher_comment, '');
+});
+
+test('网页桥接只接受超星智能体可信来源且拒绝顶层页面', () => {
+  assert.equal(resolveChaoxingParentOrigin(
+    'https://app.example.test/student?bot_referer=https%3A%2F%2Frobot.chaoxing.com%2Fchat', '', true,
+  ), 'https://robot.chaoxing.com');
+  assert.equal(resolveChaoxingParentOrigin('https://app.example.test/student', 'https://robot-lc1.chaoxing.com/chat', true), 'https://robot-lc1.chaoxing.com');
+  assert.equal(resolveChaoxingParentOrigin('https://app.example.test/student?bot_referer=https%3A%2F%2Fevil.example', 'https://evil.example', true), null);
+  assert.equal(resolveChaoxingParentOrigin('https://app.example.test/student', 'https://robot.chaoxing.com/chat', false), null);
+});
+
+test('学习报告任务流载荷会清空无关步骤字段', () => {
+  const payload = buildChaoxingReportTaskflowPayload({ reportId: 'report-1', studentId: 'student-1', versionNo: 1, markdown: '# 测试报告' });
+  assert.equal(payload.event_id, 'report:report-1');
+  assert.equal(payload.final_report, '# 测试报告');
+  assert.equal(payload.step_id, '');
+  assert.equal(payload.student_answer, '');
+  assert.equal(payload.total_score, '');
 });
