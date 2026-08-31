@@ -70,11 +70,20 @@ function levelName(percent: number): string {
   return '优先提升';
 }
 
+const RADAR_CENTER = { x: 140, y: 115 } as const;
+const RADAR_LABEL_POSITIONS: Array<{ x: number; y: number; textAnchor: 'start' | 'middle' }> = [
+  { x: 140, y: 11, textAnchor: 'middle' },
+  { x: 226, y: 70, textAnchor: 'start' },
+  { x: 210, y: 210, textAnchor: 'middle' },
+  { x: 70, y: 210, textAnchor: 'middle' },
+  { x: 4, y: 70, textAnchor: 'start' },
+];
+
 function radarPoints(values: number[], radius: number): string {
   return values.map((value, index) => {
     const angle = (Math.PI * 2 * index) / values.length - Math.PI / 2;
     const r = (radius * Math.max(Math.min(value, 100), 0)) / 100;
-    return `${(100 + r * Math.cos(angle)).toFixed(1)},${(100 + r * Math.sin(angle)).toFixed(1)}`;
+    return `${(RADAR_CENTER.x + r * Math.cos(angle)).toFixed(1)},${(RADAR_CENTER.y + r * Math.sin(angle)).toFixed(1)}`;
   }).join(' ');
 }
 
@@ -244,29 +253,32 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
                 <p className="mt-2 text-xs leading-5 text-muted-foreground">雷达半径展示各维度的得分率（实际得分 ÷ 该维度满分），不是额外考试分数。面积越外侧，说明已评阅文字中该能力证据越充分。</p>
                 {dims ? (
                   <div className="mt-3 flex justify-center">
-                    <svg viewBox="0 0 200 200" className="w-full max-w-[320px]">
+                    <svg viewBox="0 0 280 240" className="w-full max-w-[360px]" role="img" aria-label="五维能力得分雷达图">
                       <g fill="none" stroke="currentColor" className="text-border" strokeWidth="1">
-                        {[80, 53.3, 26.6].map((radius) => <polygon key={radius} points={radarPoints([100, 100, 100, 100, 100], radius)} />)}
-                        {radarPoints([100, 100, 100, 100, 100], 80).split(' ').map((point, index) => {
+                        {[72, 48, 24].map((radius) => <polygon key={radius} points={radarPoints([100, 100, 100, 100, 100], radius)} />)}
+                        {radarPoints([100, 100, 100, 100, 100], 72).split(' ').map((point, index) => {
                           const [x, y] = point.split(',');
-                          return <line key={index} x1="100" y1="100" x2={x} y2={y} />;
+                          return <line key={index} x1={RADAR_CENTER.x} y1={RADAR_CENTER.y} x2={x} y2={y} />;
                         })}
                       </g>
                       <g className="text-primary">
-                        <polygon points={radarPoints(radarValues, 80)} fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="2" />
+                        <polygon points={radarPoints(radarValues, 72)} fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="2" />
                         {radarValues.map((value, index) => {
                           const angle = (Math.PI * 2 * index) / radarValues.length - Math.PI / 2;
-                          const r = (80 * value) / 100;
-                          return <circle key={index} cx={100 + r * Math.cos(angle)} cy={100 + r * Math.sin(angle)} r="3" fill="currentColor" />;
+                          const r = (72 * value) / 100;
+                          return <circle key={index} cx={RADAR_CENTER.x + r * Math.cos(angle)} cy={RADAR_CENTER.y + r * Math.sin(angle)} r="3" fill="currentColor" />;
                         })}
                       </g>
-                      <g fill="currentColor" className="text-muted-foreground" fontSize="9" fontWeight="600">
+                      <g fill="currentColor" className="text-muted-foreground" fontSize="10" fontWeight="700">
                         {DIMENSIONS.map(({ key, label }, index) => {
-                          const angle = (Math.PI * 2 * index) / DIMENSIONS.length - Math.PI / 2;
-                          const x = 100 + 97 * Math.cos(angle);
-                          const y = 100 + 97 * Math.sin(angle);
+                          const { x, y, textAnchor } = RADAR_LABEL_POSITIONS[index];
                           const dimension = DIMENSIONS[index];
-                          return <text key={key} x={x} y={y} textAnchor="middle" dominantBaseline="middle">{label} {dims[key]}/{dimension.max}</text>;
+                          return (
+                            <text key={key} x={x} y={y} textAnchor={textAnchor}>
+                              <tspan x={x}>{label}</tspan>
+                              <tspan x={x} dy="12" fontSize="8.5" fontWeight="600">{dims[key]}/{dimension.max}</tspan>
+                            </text>
+                          );
                         })}
                       </g>
                     </svg>
