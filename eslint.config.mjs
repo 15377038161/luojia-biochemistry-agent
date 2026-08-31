@@ -46,6 +46,8 @@ const eslintConfig = defineConfig([
     'server.js',
     'dist/**',
     'release/**',
+    '.cozeproj/**',
+    'public/design-preview/vendor/**',
     // Script files (CommonJS):
     'scripts/**/*.js',
   ]),

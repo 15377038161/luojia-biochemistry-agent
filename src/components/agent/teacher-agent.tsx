@@ -8,6 +8,7 @@ import type { ApiResult } from '@/domain/agent';
 import type { TeacherOverview, TeacherStudentDetail, TeacherStudentOverview } from '@/app/api/teacher/overview/route';
 import LogoutButton from '@/components/logout-button';
 import PageBackground from '@/components/page-background';
+import BrandLockup from '@/components/brand-lockup';
 import ContentManager from '@/components/teacher/content-manager';
 import GradeReviewPanel from '@/components/teacher/grade-review-panel';
 import IntegrationStatusPanel from '@/components/teacher/integration-status-panel';
@@ -274,7 +275,7 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
       <PageBackground />
       <aside className="hidden lg:flex flex-col w-60 shrink-0 bg-card/85 backdrop-blur border-r border-border/60 sticky top-0 h-screen">
         <div className="flex items-center gap-2.5 px-5 h-16 border-b border-border/60">
-          <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center"><FlaskConical className="w-5 h-5 text-primary-foreground" /></span>
+          <BrandLockup compact decorative />
           <span className="leading-tight"><span className="block font-bold text-sm">珞珈生化 · 教学工作台</span><span className="block text-xs text-muted-foreground">八步文字实验学习分析</span></span>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1 text-sm font-medium overflow-y-auto">
@@ -295,7 +296,10 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
       <div className="flex-1 min-w-0">
         <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-lg border-b border-border/60">
           <div className="px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-            <div><h1 className="font-extrabold text-base">文字实验教学工作台</h1><p className="text-xs text-muted-foreground"><span className="hidden sm:inline">{displayName} · </span>{dateText}</p></div>
+            <div className="teacher-header-title">
+              <span className="teacher-header-logo lg:hidden"><BrandLockup compact decorative /></span>
+              <span><h1 className="font-extrabold text-base">文字实验教学工作台</h1><p className="text-xs text-muted-foreground"><span className="hidden sm:inline">{displayName} · </span>{dateText}</p></span>
+            </div>
             <div className="flex items-center gap-2">
               <Link href={preview ? '/student/map?preview=1' : '/student/map'} className="teacher-mode-switch"><FlaskConical className="w-4 h-4" /><span>学习体验</span></Link>
               <Link href="/" aria-label="返回首页" className="min-w-12 min-h-12 inline-flex items-center justify-center rounded-xl border border-border bg-card text-primary"><Home className="w-4 h-4" /></Link>

@@ -2,9 +2,10 @@ import Link from 'next/link';
 import {
   ArrowRight,
   BrainCircuit,
-  FlaskConical,
 } from 'lucide-react';
 import LoginButton from '@/components/login-button';
+import BrandLockup from '@/components/brand-lockup';
+import LabHeroVisual from '@/components/lab-hero-visual';
 import type { ChaoxingLoginOptions } from '@/lib/chaoxing-client';
 
 interface Props {
@@ -31,10 +32,10 @@ export default function HomeEntry({
 
       <header className="unified-entry-nav">
         <div className="unified-entry-brand">
-          <span><FlaskConical aria-hidden /></span>
+          <BrandLockup decorative />
           <div>
             <strong>珞珈生化智能体</strong>
-            <small>武汉大学生物化学文字实验</small>
+            <small>WHU · BIOCHEM TEXT LAB</small>
           </div>
         </div>
         <span className="unified-entry-course">EGFP · 八步文字推演</span>
@@ -69,8 +70,8 @@ export default function HomeEntry({
           <p className="unified-entry-note">
             学习通将自动识别学生或教师身份，无需手动选择角色。
           </p>
-
         </div>
+        <LabHeroVisual />
       </section>
 
       <footer className="unified-entry-footer">
@@ -79,4 +80,3 @@ export default function HomeEntry({
     </main>
   );
 }
-                       
