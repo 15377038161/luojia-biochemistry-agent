@@ -63,3 +63,7 @@
 
 - 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下
 - Next.js 项目**必须默认**采用 shadcn/ui 组件、风格和规范，**除非用户指定用其他的组件和规范。**
+
+## 常见问题和预防
+
+- 学生会话 `agent_sessions.current_step` 可能为 null（历史数据/旧创建路径）。所有读取处必须用 `|| 1` 归一到第 1 步，**严禁**用 `|| 8`：后者会把"当前步骤"误判为第 8 步，使学生端 `isCurrent=false`、提交按钮被锁成"仅当前步骤可提交"。评估接口 `src/app/api/student/evaluate/route.ts` 同样要对 null 归一（`Number(...) || 1`），并对可能缺失的 `step_states` 行用 `maybeSingle` + 默认 0 容错：该文件内**每一处** `state.attempt_count` 读取（含传给 `buildChaoxingTaskflowPayload` 的 `versionNo`）都必须写成 `(state?.attempt_count ?? 0) + 1`，漏掉任何一处都会导致 `next build` 类型检查失败、部署中断。

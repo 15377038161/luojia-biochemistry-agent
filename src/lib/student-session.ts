@@ -22,7 +22,7 @@ export async function loadStudentSessionView(
   return {
     sessionId: session.id,
     studentName,
-    currentStep: session.current_step || 8,
+    currentStep: session.current_step || 1,
     completed: Boolean(session.completed_at),
     steps: (states || []).map((item): StepProgress => ({
       stepId: item.step_no,

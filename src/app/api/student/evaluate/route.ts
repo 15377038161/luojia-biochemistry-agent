@@ -24,11 +24,11 @@ export async function POST(request: NextRequest) {
       .select('id,current_step,completed_at,user_id,session_mode').eq('id', body.sessionId).single();
     if (sessionError) throw sessionError;
     if (session.user_id !== identity.user.id) throw new Error('FORBIDDEN');
-    const { data: state, error: stateError } = await supabase.from('step_states').select('attempt_count')
-      .eq('session_id', session.id).eq('step_no', session.current_step).single();
-    if (stateError) throw stateError;
-    const step = getExperimentStep(session.current_step);
-    const workflow = await evaluateText(step, answer, state.attempt_count + 1);
+    const stepNo = Number(session.current_step) || 1;
+    const { data: state } = await supabase.from('step_states').select('attempt_count')
+      .eq('session_id', session.id).eq('step_no', stepNo).maybeSingle();
+    const step = getExperimentStep(stepNo);
+    const workflow = await evaluateText(step, answer, (state?.attempt_count ?? 0) + 1);
     const evaluation = normalizeEvaluation(step.id, answer, workflow.data);
     const { error: rpcError } = await supabase.rpc('record_text_evaluation', {
       target_session: session.id,
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         eventId: key,
         studentId: identity.user.id,
         stepId: step.id,
-        versionNo: state.attempt_count + 1,
+        versionNo: (state?.attempt_count ?? 0) + 1,
         studentAnswer: answer,
         evaluation,
       })
