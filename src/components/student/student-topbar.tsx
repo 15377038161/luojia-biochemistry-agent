@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, FileText, FlaskConical, LogOut } from 'lucide-react';
+import { ArrowLeft, FileText, LogOut } from 'lucide-react';
+import BrandLockup from '@/components/brand-lockup';
 
 interface Props {
   title: string;
@@ -18,7 +19,7 @@ export default function StudentTopbar({ title, subtitle, onBack, backLabel = '�
     <header className="student-topbar">
       <div className="student-topbar-inner">
         <Link href="/" className="student-topbar-brand" aria-label="返回珞珈生化智能体首页">
-          <span><FlaskConical aria-hidden /></span>
+          <BrandLockup compact decorative />
           <b>珞珈生化智能体</b>
         </Link>
         {onBack && (

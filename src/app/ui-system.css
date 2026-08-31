@@ -1,18 +1,21 @@
-/* 唯一活动视觉系统：珞珈数字实验笔记。 */
+/* 唯一活动视觉系统：珞珈山小实验家 · 科学探险手账。 */
 :root {
-  --ui-blue:#123f70;
-  --ui-blue-strong:#082f5d;
-  --ui-green:#236f5b;
-  --ui-coral:#e87561;
-  --ui-paper:#fffdf8;
-  --ui-canvas:#f7f4ed;
-  --ui-line:#dfe5e4;
-  --ui-muted:#667887;
+  --ui-blue:#002554;
+  --ui-blue-strong:#001c43;
+  --ui-green:#115740;
+  --ui-coral:#dd7187;
+  --ui-cyan:#5aa9d6;
+  --ui-gold:#e7b44f;
+  --ui-glow:#55d99a;
+  --ui-paper:#fffef9;
+  --ui-canvas:#fffaf2;
+  --ui-line:#d8e4e7;
+  --ui-muted:#63788a;
   --ui-radius-sm:10px;
   --ui-radius:16px;
   --ui-radius-lg:22px;
-  --ui-shadow:0 10px 30px rgba(18,63,112,.08);
-  --ui-shadow-hover:0 16px 36px rgba(18,63,112,.13);
+  --ui-shadow:0 10px 30px rgba(0,37,84,.09);
+  --ui-shadow-hover:0 18px 42px rgba(0,37,84,.15);
   --font-body:14px;
   --font-support:12px;
 }
@@ -22,44 +25,85 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .student-agent-app,.teacher-app,.workstation-shell,.report-page-shell { animation:none; }
 
 /* 唯一入口：根路由同时承担产品说明与统一身份登录。 */
-.unified-entry { position:relative; min-height:100svh; padding:0 max(22px,calc((100vw - 1280px)/2)); display:grid; grid-template-rows:auto 1fr auto; overflow:hidden; background:#fff9f0; isolation:isolate; }
-.unified-entry-art { position:absolute; inset:0; z-index:-3; background:url('/illustrations/luojia-biochem-agent-bg-v1.webp') center/cover no-repeat; }
-.unified-entry-wash { position:absolute; inset:0; z-index:-2; background:linear-gradient(90deg,rgba(255,252,245,.93) 0%,rgba(255,252,245,.84) 48%,rgba(255,252,245,.40) 75%,rgba(255,252,245,.22)); }
+.unified-entry { position:relative; min-height:100svh; padding:0 max(22px,calc((100vw - 1280px)/2)); display:grid; grid-template-rows:auto 1fr auto; overflow:hidden; background:#fffaf2; isolation:isolate; }
+.unified-entry-art { position:absolute; inset:0; z-index:-3; background:linear-gradient(135deg,#fffaf2 0%,#fffef9 48%,#edf7f4 100%); }
+.unified-entry-art::before { content:""; position:absolute; inset:0; opacity:.48; background-image:radial-gradient(circle at 12% 18%,rgba(221,113,135,.19),transparent 18rem),radial-gradient(circle at 88% 15%,rgba(90,169,214,.22),transparent 24rem),radial-gradient(circle at 55% 92%,rgba(85,217,154,.14),transparent 28rem); animation:entry-aurora 14s ease-in-out infinite alternate; }
+.unified-entry-art::after { content:""; position:absolute; inset:0; opacity:.34; background-image:radial-gradient(rgba(0,37,84,.18) .8px,transparent .8px); background-size:24px 24px; mask-image:linear-gradient(90deg,#000,transparent 66%); }
+.unified-entry-wash { position:absolute; inset:0; z-index:-2; background:linear-gradient(100deg,rgba(255,250,242,.22),transparent 56%); }
 .unified-entry-nav { min-height:76px; display:flex; align-items:center; justify-content:space-between; gap:24px; border-bottom:1px solid rgba(18,63,112,.10); }
 .unified-entry-brand { min-width:0; display:flex; align-items:center; gap:12px; }
-.unified-entry-brand>span { width:42px; height:42px; display:grid; place-items:center; flex:0 0 auto; color:#fff; border-radius:12px; background:linear-gradient(145deg,var(--ui-blue),var(--ui-green)); }
-.unified-entry-brand svg { width:22px; }
+.unified-entry-brand>.brand-lockup { flex:0 0 auto; }
 .unified-entry-brand>div { min-width:0; display:grid; gap:2px; }
 .unified-entry-brand strong { color:var(--ui-blue-strong); font-size:15px; letter-spacing:.02em; }
 .unified-entry-brand small { color:var(--ui-muted); font-size:11px; }
 .unified-entry-course { min-height:36px; padding:0 12px; display:inline-flex; align-items:center; color:var(--ui-green); border:1px solid rgba(35,111,91,.18); border-radius:10px; background:rgba(255,255,255,.60); font-size:11px; font-weight:900; }
-.unified-entry-stage { min-height:0; padding:clamp(38px,7vh,82px) 0; display:flex; align-items:center; }
+.unified-entry-stage { min-height:0; padding:clamp(34px,6vh,74px) 0; display:grid; grid-template-columns:minmax(0,.94fr) minmax(420px,.82fr); align-items:center; gap:clamp(36px,6vw,90px); }
 .unified-entry-copy { width:min(640px,100%); min-width:0; }
 .unified-entry-eyebrow { width:fit-content; margin:0 0 18px; display:inline-flex; align-items:center; gap:8px; color:var(--ui-green); font-size:12px; font-weight:900; letter-spacing:.08em; }
 .unified-entry-eyebrow svg { width:18px; }
 .unified-entry-welcome { margin:0 0 8px; color:var(--ui-coral); font-size:14px; font-weight:900; }
-.unified-entry h1 { margin:0; color:var(--ui-blue-strong); font-size:clamp(44px,5.4vw,76px); line-height:1.08; letter-spacing:-.045em; }
+.unified-entry h1 { margin:0; color:var(--ui-blue-strong); font-family:"Noto Serif CJK SC","Source Han Serif SC","Songti SC",STSong,serif; font-size:clamp(44px,5.1vw,72px); line-height:1.08; letter-spacing:-.045em; text-wrap:balance; }
 .unified-entry-lead { max-width:620px; margin:22px 0 0; color:#4f6678; font-size:16px; line-height:1.85; }
 .unified-entry-action { width:min(360px,100%); margin-top:28px; }
 .unified-entry-action>.flex,.unified-entry-action .flex.w-72 { width:100%; align-items:stretch; }
 .unified-entry-action [data-slot="select-trigger"] { min-height:50px; border-color:var(--ui-line); border-radius:11px; background:rgba(255,255,255,.90); }
-.unified-entry-action button,.unified-entry-primary { width:100%; min-height:52px; padding:0 20px; display:inline-flex; align-items:center; justify-content:center; gap:8px; color:#fff; border:0; border-radius:12px; background:var(--ui-blue); box-shadow:0 14px 30px rgba(18,63,112,.18); text-decoration:none; font-size:14px; font-weight:900; transition:background .18s ease,transform .18s ease; }
-.unified-entry-action button:hover,.unified-entry-primary:hover { background:var(--ui-blue-strong); transform:translateY(-1px); }
+.unified-entry-action button,.unified-entry-primary { width:100%; min-height:54px; padding:0 20px; display:inline-flex; align-items:center; justify-content:center; gap:8px; color:#fff; border:0; border-radius:14px; background:linear-gradient(135deg,var(--ui-blue),#0c5278); box-shadow:0 14px 30px rgba(0,37,84,.20),0 4px 0 #001c43; text-decoration:none; font-size:14px; font-weight:900; transition:background .18s ease,transform .18s ease,box-shadow .18s ease; }
+.unified-entry-action button:hover,.unified-entry-primary:hover { background:linear-gradient(135deg,#07386a,var(--ui-green)); transform:translateY(-2px); box-shadow:0 18px 34px rgba(0,37,84,.24),0 4px 0 #001c43; }
 .unified-entry-action button:disabled { color:#73808b; background:#e2e8ea; box-shadow:none; }
 .unified-entry-action .text-muted-foreground { color:var(--ui-muted); font-size:12px; text-align:left; }
 .unified-entry-primary svg { width:18px; }
 .unified-entry-note { margin:12px 0 0; color:var(--ui-muted); font-size:11px; line-height:1.6; }
 .unified-entry-footer { min-height:48px; display:flex; align-items:center; color:#718392; border-top:1px solid rgba(18,63,112,.10); font-size:10px; }
 
-.student-topbar { border-color:rgba(18,63,112,.10); background:rgba(255,253,248,.94); box-shadow:0 1px 0 rgba(255,255,255,.8); backdrop-filter:blur(16px); }
-.student-topbar-brand>span { border-radius:12px; background:linear-gradient(145deg,var(--ui-blue),var(--ui-green)); box-shadow:none; }
+/* 武汉大学 × 学习通联合品牌标记。 */
+.brand-lockup { position:relative; width:58px; height:50px; display:inline-block; flex:0 0 auto; }
+.brand-lockup>span { position:absolute; display:grid; place-items:center; overflow:hidden; background:#fff; box-shadow:0 7px 18px rgba(0,37,84,.14); }
+.brand-lockup-whu { left:0; top:0; width:48px; height:48px; padding:3px; border:1px solid rgba(0,37,84,.14); border-radius:50%; }
+.brand-lockup-whu img { width:100%; height:100%; object-fit:contain; }
+.brand-lockup-chaoxing { right:0; bottom:0; width:24px; height:24px; padding:2px; border:2px solid #fff; border-radius:8px; }
+.brand-lockup-chaoxing img { width:100%; height:100%; object-fit:cover; border-radius:5px; }
+.brand-lockup.is-compact { width:45px; height:39px; }
+.brand-lockup.is-compact .brand-lockup-whu { width:38px; height:38px; padding:2px; }
+.brand-lockup.is-compact .brand-lockup-chaoxing { width:20px; height:20px; border-radius:7px; }
+
+/* 首页主视觉：珞珈蓝实验台与 EGFP 荧光瓶。 */
+.lab-hero-visual { position:relative; width:min(540px,100%); aspect-ratio:1.12; justify-self:end; overflow:hidden; color:#e9fff4; border:1px solid rgba(137,208,231,.28); border-radius:32px 32px 80px 32px; background:linear-gradient(145deg,#001a3c 0%,#002554 55%,#0b4a45 100%); box-shadow:0 30px 70px rgba(0,37,84,.25),inset 0 1px rgba(255,255,255,.16); isolation:isolate; }
+.lab-hero-grid { position:absolute; inset:0; opacity:.18; background-image:linear-gradient(rgba(137,208,231,.26) 1px,transparent 1px),linear-gradient(90deg,rgba(137,208,231,.26) 1px,transparent 1px); background-size:42px 42px; mask-image:linear-gradient(#000,transparent 88%); }
+.lab-hero-label { position:absolute; left:28px; top:25px; z-index:2; display:grid; gap:4px; }
+.lab-hero-label span { color:var(--ui-glow); font-size:11px; font-weight:900; letter-spacing:.16em; }
+.lab-hero-label small { color:#a9c6d4; font-size:10px; letter-spacing:.08em; }
+.lab-hero-visual>svg { position:absolute; inset:42px 0 0; width:100%; height:calc(100% - 34px); overflow:visible; }
+.lab-hero-aura { animation:lab-aura 3.8s ease-in-out infinite; transform-origin:center; }
+.lab-hero-flask { animation:lab-flask 5.8s ease-in-out infinite; transform-origin:310px 442px; }
+.lab-hero-bench { fill:none; stroke:rgba(138,196,215,.28); stroke-width:3; }
+.lab-hero-bubbles circle { animation:lab-bubble 3.2s ease-in infinite; transform-box:fill-box; transform-origin:center; }
+.lab-hero-bubbles circle:nth-child(2n) { animation-delay:-1.4s; }.lab-hero-bubbles circle:nth-child(3n) { animation-delay:-2.2s; }
+.lab-hero-cells { animation:lab-drift 8s ease-in-out infinite alternate; transform-origin:center; }
+.lab-hero-tubes { animation:lab-tubes 6.4s ease-in-out infinite; transform-origin:520px 438px; }
+.lab-hero-stats { position:absolute; left:22px; bottom:20px; z-index:3; display:flex; gap:9px; }
+.lab-hero-stats span { min-width:94px; padding:10px 13px; display:flex; align-items:center; gap:9px; border:1px solid rgba(137,208,231,.22); border-radius:13px; background:rgba(1,20,45,.72); backdrop-filter:blur(10px); }
+.lab-hero-stats b { color:var(--ui-glow); font-size:20px; line-height:1; }.lab-hero-stats small { color:#bbd4dc; font-size:9px; }
+.lab-hero-cherry { position:absolute; z-index:2; color:#f3a6b7; text-shadow:0 0 18px rgba(243,166,183,.48); animation:cherry-drift 8s ease-in-out infinite; }
+.blossom-one { right:28px; top:28px; font-size:28px; }.blossom-two { right:74px; top:76px; font-size:15px; animation-delay:-3.5s; }
+
+/* 全局轻量动态背景：细胞轨道与实验气泡只在内容背后活动。 */
+.science-background { display:block; background:linear-gradient(150deg,#fffaf2 0%,#fffefb 48%,#eef8f5 100%)!important; }
+.science-background::before { opacity:.25!important; background-image:radial-gradient(circle at 12% 18%,rgba(221,113,135,.22),transparent 24%),radial-gradient(circle at 88% 12%,rgba(90,169,214,.22),transparent 22%),radial-gradient(circle at 76% 88%,rgba(85,217,154,.18),transparent 26%)!important; }
+.science-orbit { position:absolute; display:block; border:1px solid rgba(90,169,214,.16); border-radius:50%; animation:science-orbit 22s linear infinite; }
+.science-orbit::before,.science-orbit::after { content:""; position:absolute; width:9px; height:9px; border-radius:50%; background:var(--ui-cyan); box-shadow:0 0 0 5px rgba(90,169,214,.10); }
+.science-orbit-one { width:290px; height:170px; right:-70px; top:12%; transform:rotate(-22deg); }.science-orbit-one::before { left:34px; top:13px; }.science-orbit-one::after { right:18px; bottom:30px; background:var(--ui-coral); }
+.science-orbit-two { width:210px; height:118px; left:-70px; bottom:8%; animation-direction:reverse; animation-duration:28s; }.science-orbit-two::before { right:30px; top:4px; background:var(--ui-glow); }.science-orbit-two::after { left:20px; bottom:13px; }
+.science-bubble { position:absolute; display:block; border:2px solid rgba(17,87,64,.13); border-radius:46% 54% 49% 51%; background:rgba(255,255,255,.32); animation:science-float 11s ease-in-out infinite; }
+.science-bubble::after { content:""; position:absolute; inset:28%; border:2px solid rgba(221,113,135,.18); border-radius:50%; }
+.science-bubble-one { width:74px; height:74px; left:7%; top:14%; }.science-bubble-two { width:46px; height:46px; right:14%; bottom:18%; animation-delay:-4s; }.science-bubble-three { width:30px; height:30px; left:26%; bottom:9%; animation-delay:-7s; }
+
+.student-topbar { border-color:rgba(0,37,84,.10); background:rgba(255,254,249,.92); box-shadow:0 1px 0 rgba(255,255,255,.8); backdrop-filter:blur(16px); }
+.student-topbar-brand>.brand-lockup { flex:0 0 auto; }
 
 /* 学生端唯一页头。 */
 .student-topbar { position:sticky; top:0; z-index:70; min-height:64px; border-bottom:1px solid rgba(18,63,112,.10); }
 .student-topbar-inner { width:min(1180px,calc(100% - 32px)); min-height:64px; margin:0 auto; display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; align-items:center; gap:10px; }
 .student-topbar-brand { min-width:0; display:inline-flex; align-items:center; gap:9px; color:var(--ui-blue-strong); text-decoration:none; }
-.student-topbar-brand>span { width:38px; height:38px; display:grid; place-items:center; color:#fff; flex:0 0 auto; }
-.student-topbar-brand svg { width:19px; }
 .student-topbar-brand b { font-size:13px; white-space:nowrap; }
 .student-topbar-back,.student-topbar-actions button { min-height:44px; padding:0 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; color:var(--ui-blue); border:1px solid var(--ui-line); border-radius:11px; background:#fff; font-size:12px; font-weight:800; cursor:pointer; }
 .student-topbar-back svg,.student-topbar-actions svg { width:16px; }
@@ -150,8 +194,11 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .grade-appeal-form button:disabled { color:var(--ui-muted); background:rgba(255,255,255,.72); }
 .grade-review-result { grid-column:1/-1; margin:0; color:var(--ui-muted); font-size:12px; line-height:1.65; }
 .teacher-app { position:relative; isolation:isolate; color:var(--ui-blue-strong); background:linear-gradient(rgba(247,244,237,.88),rgba(247,244,237,.94)),url('/bg-texture.jpg') center/cover fixed!important; }
-.teacher-app .science-background { display:none; }
+.teacher-app .science-background { display:block; }
 .teacher-app>aside,.teacher-app header { border-color:rgba(18,63,112,.12)!important; background:rgba(255,253,248,.92)!important; }
+.teacher-app>aside .brand-lockup { margin-right:2px; }
+.teacher-header-title { min-width:0; display:flex; align-items:center; gap:8px; }
+.teacher-header-logo { flex:0 0 auto; }
 .teacher-app main>section>div,.teacher-app main>div,.teacher-work-panel,.teacher-metric-grid article { border-color:rgba(18,63,112,.13)!important; border-radius:var(--ui-radius)!important; background:rgba(255,255,255,.90)!important; box-shadow:0 7px 22px rgba(18,63,112,.06)!important; backdrop-filter:blur(7px); }
 .teacher-app>aside nav button:first-child { background:var(--ui-blue)!important; color:#fff!important; box-shadow:0 4px 0 var(--ui-blue-strong)!important; }
 .teacher-app>aside nav button:not(:first-child):hover { background:var(--ui-paper)!important; }
@@ -167,22 +214,37 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .agent-auth-error-icon { width:38px; height:38px; color:var(--ui-coral); }
 .agent-auth-error main>a,.agent-auth-error main button { min-height:50px; border-radius:999px; font-weight:900; box-shadow:0 4px 0 var(--ui-blue-strong); }
 
+@media (max-width:960px) {
+  .unified-entry-stage { grid-template-columns:1fr; align-content:center; gap:30px; }
+  .unified-entry-copy { width:min(680px,100%); }
+  .lab-hero-visual { width:min(460px,100%); justify-self:start; }
+}
+
+@media (min-width:1024px) {
+  .teacher-mobile-nav { display:none!important; }
+}
+
 @media (max-width:767px) {
   .unified-entry { min-height:100svh; padding:0 14px; }
   .unified-entry-art { background-position:58% center; }
   .unified-entry-wash { background:linear-gradient(180deg,rgba(255,252,245,.98) 0%,rgba(255,252,245,.93) 58%,rgba(255,252,245,.72)); }
   .unified-entry-nav { min-height:64px; }
-  .unified-entry-brand>span { width:40px; height:40px; }
+  .unified-entry-brand>.brand-lockup { transform:scale(.88); transform-origin:left center; margin-right:-7px; }
   .unified-entry-brand strong { font-size:13px; }
   .unified-entry-brand small { display:none; }
   .unified-entry-course { min-height:34px; padding:0 9px; font-size:9px; }
-  .unified-entry-stage { padding:24px 0 18px; display:flex; flex-direction:column; justify-content:center; align-items:stretch; }
+  .unified-entry-stage { padding:22px 0 18px; display:grid; grid-template-columns:1fr; align-content:start; gap:20px; }
   .unified-entry-eyebrow { margin-bottom:12px; font-size:10px; }
   .unified-entry h1 { font-size:clamp(36px,11vw,46px); line-height:1.14; }
   .unified-entry-lead { margin-top:16px; font-size:14px; line-height:1.72; }
   .unified-entry-action { width:100%; margin-top:22px; }
   .unified-entry-action button,.unified-entry-primary { min-height:50px; }
   .unified-entry-note { margin-top:10px; }
+  .lab-hero-visual { width:100%; aspect-ratio:1.42; min-height:224px; border-radius:22px 22px 48px 22px; }
+  .lab-hero-label { left:18px; top:16px; }.lab-hero-label small { display:none; }
+  .lab-hero-visual>svg { inset:24px -2% -8px auto; width:82%; height:calc(100% - 16px); }
+  .lab-hero-stats { left:13px; bottom:13px; display:grid; gap:6px; }.lab-hero-stats span { min-width:84px; padding:7px 9px; }.lab-hero-stats b { font-size:16px; }
+  .blossom-one { right:18px; top:16px; font-size:22px; }.blossom-two { display:none; }
   .unified-entry-footer { min-height:40px; font-size:9px; }
   .student-topbar-inner { width:calc(100% - 20px); gap:6px; }
   .student-topbar-brand b { display:none; }
@@ -219,6 +281,10 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
   .workstation-footer button { min-width:0; flex:1; }
   .report-page-card { width:calc(100% - 20px)!important; margin:10px auto!important; padding:16px 13px!important; border-radius:14px!important; }
   .teacher-app main { padding-inline:12px; }
+  .teacher-header-title>span:last-child { min-width:0; }
+  .teacher-header-title h1 { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px!important; }
+  .teacher-header-title p { display:none; }
+  .teacher-header-title .brand-lockup { transform:scale(.84); transform-origin:left center; margin-right:-7px; }
   .teacher-metric-grid { grid-template-columns:1fr 1fr; gap:10px; }
   .teacher-metric-grid article { min-height:92px; padding:13px; }
   .grade-summary-panel { grid-template-columns:1fr; padding:14px; gap:12px; }
@@ -231,9 +297,18 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 
 @media (prefers-reduced-motion:reduce) {
   .lab-map-page .map-node-visual { transition:none!important; }
-  .production-route-flow,.map-current-ring,.mobile-route-line { animation:none!important; }
+  .production-route-flow,.map-current-ring,.mobile-route-line,.unified-entry-art::before,.lab-hero-aura,.lab-hero-flask,.lab-hero-bubbles circle,.lab-hero-cells,.lab-hero-tubes,.lab-hero-cherry,.science-orbit,.science-bubble { animation:none!important; }
 }
 
 @keyframes production-route-flow { to { stroke-dashoffset:-36; } }
 @keyframes production-route-y { to { background-position-y:21px; } }
 @keyframes production-current-ring { from { opacity:.75; transform:scale(1); } to { opacity:0; transform:scale(1.16); } }
+@keyframes entry-aurora { from { transform:translate3d(-1.5%,-1%,0) scale(1); } to { transform:translate3d(1.5%,1%,0) scale(1.05); } }
+@keyframes lab-aura { 50% { opacity:.68; transform:scale(1.08); } }
+@keyframes lab-flask { 0%,100% { transform:rotate(-1deg) translateY(0); } 50% { transform:rotate(1deg) translateY(-7px); } }
+@keyframes lab-bubble { 0% { opacity:.15; transform:translateY(10px) scale(.75); } 55% { opacity:.9; } 100% { opacity:0; transform:translateY(-32px) scale(1.1); } }
+@keyframes lab-drift { from { transform:translate(-4px,3px) rotate(-2deg); } to { transform:translate(7px,-5px) rotate(3deg); } }
+@keyframes lab-tubes { 50% { transform:rotate(1.5deg) translateY(-4px); } }
+@keyframes cherry-drift { 0%,100% { transform:translateY(0) rotate(-8deg); } 50% { transform:translateY(9px) rotate(8deg); } }
+@keyframes science-orbit { to { rotate:360deg; } }
+@keyframes science-float { 0%,100% { transform:translate3d(0,0,0) rotate(-3deg); } 50% { transform:translate3d(0,-14px,0) rotate(4deg); } }

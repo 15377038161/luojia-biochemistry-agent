@@ -2,23 +2,23 @@
 @import 'tw-animate-css';
 
 @theme {
-  --color-primary: #2f78c8;
-  --color-primary-container: #eaf4ff;
+  --color-primary: #002554;
+  --color-primary-container: #e8f1fb;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #2f8f70;
-  --color-secondary-container: #e9f7f0;
-  --color-background: #fff9f1;
-  --color-card: #ffffff;
-  --color-muted: #f1f6f9;
-  --color-muted-foreground: #6c8195;
-  --color-foreground: #173b6b;
+  --color-secondary: #115740;
+  --color-secondary-container: #e6f5ee;
+  --color-background: #fffaf2;
+  --color-card: #fffefb;
+  --color-muted: #edf4f7;
+  --color-muted-foreground: #63788a;
+  --color-foreground: #092e59;
   --color-surface-container-lowest: #ffffff;
   --color-surface-container-high: #eaf1f5;
   --color-surface-container-highest: #dce9f1;
-  --color-success: #2b8a63;
-  --color-warning: #d77636;
-  --color-destructive: #e06068;
-  --color-inverse: #173b6b;
+  --color-success: #16835d;
+  --color-warning: #c87726;
+  --color-destructive: #cf5f6b;
+  --color-inverse: #002554;
   --color-inverse-foreground: #f8fbf7;
   --color-border: #d9e7f1;
   --radius-sm: 0.45rem;
@@ -34,17 +34,17 @@
 }
 
 :root {
-  --science-navy: #173b6b;
-  --science-blue: #2f78c8;
-  --science-green: #2f8f70;
-  --science-mint: #e9f7f0;
-  --science-warm: #fff9f1;
-  --science-coral: #f27d82;
-  --science-gold: #e7b86b;
-  --science-ink: #173b6b;
-  --science-muted: #6c8195;
+  --science-navy: #002554;
+  --science-blue: #377fb5;
+  --science-green: #115740;
+  --science-mint: #e6f5ee;
+  --science-warm: #fffaf2;
+  --science-coral: #dd7187;
+  --science-gold: #e7b44f;
+  --science-ink: #092e59;
+  --science-muted: #63788a;
   --science-line: #d9e7f1;
-  --display-font: "Noto Sans CJK SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif;
+  --display-font: "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", STSong, serif;
   --font-display: clamp(2.6rem, 7vw, 5.7rem);
   --font-title: clamp(1.45rem, 3vw, 2.25rem);
   --font-heading: 1.125rem;
@@ -897,7 +897,7 @@ body { font-family:var(--agent-font); color:var(--agent-ink); }
 .agent-auth-error { min-height:100svh; padding:20px; display:grid; place-items:center; background:linear-gradient(rgba(255,250,242,.84),rgba(255,250,242,.94)),url('/illustrations/login-luojia-poster-v1.webp') center/cover; }.agent-auth-error main { width:min(430px,100%); padding:32px; display:flex; flex-direction:column; align-items:center; gap:18px; border:1px solid white; border-radius:24px; background:rgba(255,253,248,.94); box-shadow:var(--agent-shadow); text-align:center; }.agent-auth-error-brand { width:46px; height:46px; display:grid; place-items:center; color:white; border-radius:15px; background:var(--luojia-blue); }.agent-auth-error-icon { width:34px; height:34px; color:var(--agent-coral); }.agent-auth-error main a { min-height:48px; border-radius:14px; background:var(--luojia-blue); }
 
 /* 教师端新增工作区 */
-.teacher-mode-switch { min-height:46px; padding:0 13px; display:inline-flex; align-items:center; gap:7px; color:var(--luojia-green); border:1px solid rgba(17,87,64,.20); border-radius:13px; background:var(--luojia-green-soft); text-decoration:none; font-size:12px; font-weight:900; }
+.teacher-mode-switch { min-height:48px; padding:0 13px; display:inline-flex; align-items:center; gap:7px; color:var(--luojia-green); border:1px solid rgba(17,87,64,.20); border-radius:13px; background:var(--luojia-green-soft); text-decoration:none; font-size:12px; font-weight:900; }
 .teacher-work-panel { scroll-margin-top:90px; padding:24px; border:1px solid rgba(0,37,84,.09); border-radius:22px; background:rgba(255,253,248,.93); box-shadow:0 12px 34px rgba(0,37,84,.055); }
 .teacher-panel-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; }.teacher-panel-heading p { margin:0 0 4px; color:var(--agent-coral); font-size:10px; font-weight:900; letter-spacing:.1em; }.teacher-panel-heading h2 { margin:0; color:var(--luojia-blue); font-size:18px; }.teacher-panel-heading > button { width:44px; height:44px; display:grid; place-items:center; color:var(--luojia-blue); border:1px solid var(--agent-line); border-radius:13px; background:white; cursor:pointer; }.teacher-panel-heading > button svg { width:17px; }
 .teacher-panel-lead { max-width:840px; margin:10px 0 0; color:var(--agent-muted); font-size:12px; line-height:1.7; }.teacher-panel-loading,.teacher-panel-error,.teacher-panel-message { margin:16px 0 0; display:flex; align-items:center; gap:8px; color:var(--agent-muted); font-size:12px; }.teacher-panel-loading svg { width:17px; }.teacher-panel-error { color:#b45145; }.teacher-panel-message { padding:10px 12px; border-radius:11px; background:#eef6f3; color:var(--luojia-green); }

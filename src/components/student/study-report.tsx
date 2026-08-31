@@ -14,6 +14,7 @@ interface Props {
   markdown: string;
   markdownBusy: boolean;
   markdownError: string;
+  syncNotice?: string;
   onClose: () => void;
   standalone?: boolean;
   practiceMode?: boolean;
@@ -77,7 +78,7 @@ function radarPoints(values: number[], radius: number): string {
   }).join(' ');
 }
 
-export default function StudyReport({ name, sessionId, preview, markdown, markdownBusy, markdownError, onClose, standalone = false, practiceMode = false }: Props) {
+export default function StudyReport({ name, sessionId, preview, markdown, markdownBusy, markdownError, syncNotice = '', onClose, standalone = false, practiceMode = false }: Props) {
   const [data, setData] = useState<StudentReportData | null>(null);
   const [error, setError] = useState('');
   const [grade, setGrade] = useState<GradeData | null>(preview ? { id: 'preview-grade', process_score: 86, contribution_points: 8.6, status: 'provisional', review: null } : null);
@@ -211,6 +212,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
                 <button type="button" onClick={exportReport} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-sm font-bold hover:bg-muted transition-colors cursor-pointer"><Download className="w-4 h-4" /> 导出报告</button>
               </div>
               <p className="max-w-sm text-xs leading-5 text-muted-foreground">报告只基于已提交的文字、Gate 与 AI 评阅记录；未评阅的步骤不会被推断为能力不足。</p>
+              {syncNotice && <p className="mt-2 max-w-sm text-xs font-bold leading-5 text-primary inline-flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />{syncNotice}</p>}
             </div>
 
             <section className="grade-summary-panel mt-5" aria-labelledby="grade-summary-title">
