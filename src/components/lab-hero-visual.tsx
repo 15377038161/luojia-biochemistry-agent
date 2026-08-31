@@ -17,6 +17,17 @@ export default function LabHeroVisual() {
         <i />
         <i />
         <i />
+        <i />
+        <i />
+        <i />
+      </div>
+      <div className="lab-hero-orbit" aria-hidden><i /><i /><i /></div>
+      <div className="lab-hero-shimmer" aria-hidden />
+      <div className="lab-hero-petals" aria-hidden>
+        <i />
+        <i />
+        <i />
+        <i />
       </div>
       <div className="lab-hero-label" aria-hidden>
         <span>EGFP · TEXT LAB</span>
