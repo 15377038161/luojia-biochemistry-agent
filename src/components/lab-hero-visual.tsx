@@ -13,22 +13,15 @@ export default function LabHeroVisual() {
       />
       <div className="lab-hero-grid" aria-hidden />
       <div className="lab-hero-glow" aria-hidden />
+      <div className="lab-hero-liquid" aria-hidden><i /><i /></div>
       <div className="lab-hero-bubbles" aria-hidden>
         <i />
         <i />
         <i />
         <i />
-        <i />
-        <i />
       </div>
-      <div className="lab-hero-orbit" aria-hidden><i /><i /><i /></div>
-      <div className="lab-hero-shimmer" aria-hidden />
-      <div className="lab-hero-petals" aria-hidden>
-        <i />
-        <i />
-        <i />
-        <i />
-      </div>
+      <div className="lab-hero-drop" aria-hidden />
+      <div className="lab-hero-sparkles" aria-hidden><i /><i /><i /></div>
       <div className="lab-hero-label" aria-hidden>
         <span>EGFP · TEXT LAB</span>
         <small>珞珈山小实验家计划</small>
