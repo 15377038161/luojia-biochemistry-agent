@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         eventId: key,
         studentId: identity.user.id,
         stepId: step.id,
-        versionNo: state.attempt_count + 1,
+        versionNo: (state?.attempt_count ?? 0) + 1,
         studentAnswer: answer,
         evaluation,
       })
