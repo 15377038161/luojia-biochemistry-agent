@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowRight,
   BrainCircuit,
@@ -57,6 +58,13 @@ export default function HomeEntry({
               </Link>
             ) : demo ? (
               <Link href="/student/map?preview=1" className="unified-entry-primary">
+                <Image
+                  src="/brand/xuexitong-icon.jpg"
+                  alt=""
+                  width={24}
+                  height={24}
+                  className="unified-entry-chaoxing-icon"
+                />
                 进入智能体开发预览<ArrowRight aria-hidden />
               </Link>
             ) : (

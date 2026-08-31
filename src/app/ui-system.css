@@ -51,6 +51,7 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .unified-entry-action button:disabled { color:#73808b; background:#e2e8ea; box-shadow:none; }
 .unified-entry-action .text-muted-foreground { color:var(--ui-muted); font-size:12px; text-align:left; }
 .unified-entry-primary svg { width:18px; }
+.unified-entry-action button img,.unified-entry-chaoxing-icon { width:24px; height:24px; flex:0 0 auto; border:2px solid rgba(255,255,255,.82); border-radius:7px; box-shadow:0 3px 8px rgba(0,28,67,.18); object-fit:cover; }
 .unified-entry-footer { min-height:48px; display:flex; align-items:center; color:#718392; border-top:1px solid rgba(18,63,112,.10); font-size:10px; }
 
 /* 武汉大学 × 学习通联合品牌标记。 */
