@@ -43,7 +43,6 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .unified-entry-eyebrow svg { width:18px; }
 .unified-entry-welcome { margin:0 0 8px; color:var(--ui-coral); font-size:14px; font-weight:900; }
 .unified-entry h1 { margin:0; color:var(--ui-blue-strong); font-family:"Noto Serif CJK SC","Source Han Serif SC","Songti SC",STSong,serif; font-size:clamp(44px,5.1vw,72px); line-height:1.08; letter-spacing:-.045em; text-wrap:balance; }
-.unified-entry-lead { max-width:620px; margin:22px 0 0; color:#4f6678; font-size:16px; line-height:1.85; }
 .unified-entry-action { width:min(360px,100%); margin-top:28px; }
 .unified-entry-action>.flex,.unified-entry-action .flex.w-72 { width:100%; align-items:stretch; }
 .unified-entry-action [data-slot="select-trigger"] { min-height:50px; border-color:var(--ui-line); border-radius:11px; background:rgba(255,255,255,.90); }
@@ -52,7 +51,6 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .unified-entry-action button:disabled { color:#73808b; background:#e2e8ea; box-shadow:none; }
 .unified-entry-action .text-muted-foreground { color:var(--ui-muted); font-size:12px; text-align:left; }
 .unified-entry-primary svg { width:18px; }
-.unified-entry-note { margin:12px 0 0; color:var(--ui-muted); font-size:11px; line-height:1.6; }
 .unified-entry-footer { min-height:48px; display:flex; align-items:center; color:#718392; border-top:1px solid rgba(18,63,112,.10); font-size:10px; }
 
 /* 武汉大学 × 学习通联合品牌标记。 */
@@ -65,26 +63,27 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .brand-lockup.is-compact { width:45px; height:39px; }
 .brand-lockup.is-compact .brand-lockup-whu { width:38px; height:38px; padding:2px; }
 .brand-lockup.is-compact .brand-lockup-chaoxing { width:20px; height:20px; border-radius:7px; }
+.brand-lockup.is-whu-only { width:50px; }
+.brand-lockup.is-whu-only.is-compact { width:39px; }
 
-/* 首页主视觉：珞珈蓝实验台与 EGFP 荧光瓶。 */
-.lab-hero-visual { position:relative; width:min(540px,100%); aspect-ratio:1.12; justify-self:end; overflow:hidden; color:#e9fff4; border:1px solid rgba(137,208,231,.28); border-radius:32px 32px 80px 32px; background:linear-gradient(145deg,#001a3c 0%,#002554 55%,#0b4a45 100%); box-shadow:0 30px 70px rgba(0,37,84,.25),inset 0 1px rgba(255,255,255,.16); isolation:isolate; }
-.lab-hero-grid { position:absolute; inset:0; opacity:.18; background-image:linear-gradient(rgba(137,208,231,.26) 1px,transparent 1px),linear-gradient(90deg,rgba(137,208,231,.26) 1px,transparent 1px); background-size:42px 42px; mask-image:linear-gradient(#000,transparent 88%); }
+/* 首页主视觉：明亮、无性别人物的珞珈山小实验家卡通场景。 */
+.lab-hero-visual { position:relative; width:min(540px,100%); aspect-ratio:1.12; justify-self:end; overflow:hidden; color:var(--ui-blue-strong); border:1px solid rgba(35,111,91,.16); border-radius:32px 32px 80px 32px; background:#fffaf2; box-shadow:0 26px 64px rgba(31,91,76,.14),inset 0 1px rgba(255,255,255,.88); isolation:isolate; }
+.lab-hero-visual::after { content:""; position:absolute; inset:0; z-index:1; pointer-events:none; background:linear-gradient(90deg,rgba(255,252,245,.92) 0%,rgba(255,252,245,.38) 30%,transparent 55%),linear-gradient(180deg,rgba(255,255,255,.10),transparent 64%,rgba(239,251,246,.18)); }
+.lab-hero-image { z-index:0; object-fit:cover; object-position:center; transform:scale(1.015); animation:lab-hero-drift 11s ease-in-out infinite alternate; transition:filter .8s ease; will-change:transform; }
+.lab-hero-visual:hover .lab-hero-image { filter:saturate(1.055) brightness(1.015); }
+.lab-hero-grid { position:absolute; inset:0; z-index:1; opacity:.34; background-image:radial-gradient(rgba(35,111,91,.20) .8px,transparent .8px); background-size:22px 22px; mask-image:linear-gradient(90deg,#000,transparent 42%); }
+.lab-hero-glow { position:absolute; z-index:2; width:42%; aspect-ratio:1; right:18%; bottom:7%; border-radius:50%; background:radial-gradient(circle,rgba(85,217,154,.30),rgba(85,217,154,.08) 43%,transparent 70%); mix-blend-mode:multiply; filter:blur(3px); animation:lab-hero-glow 4.8s ease-in-out infinite; pointer-events:none; }
+.lab-hero-bubbles { position:absolute; inset:0; z-index:2; pointer-events:none; }
+.lab-hero-bubbles i { position:absolute; display:block; width:10px; height:10px; border:1px solid rgba(35,111,91,.28); border-radius:50%; background:rgba(255,255,255,.58); box-shadow:inset 2px 2px 0 rgba(255,255,255,.72); animation:lab-hero-bubble 5.8s ease-in infinite; }
+.lab-hero-bubbles i:nth-child(1) { left:61%; bottom:25%; }
+.lab-hero-bubbles i:nth-child(2) { left:69%; bottom:20%; width:7px; height:7px; animation-delay:-2.1s; animation-duration:5.1s; }
+.lab-hero-bubbles i:nth-child(3) { left:57%; bottom:18%; width:13px; height:13px; animation-delay:-3.7s; animation-duration:6.4s; }
 .lab-hero-label { position:absolute; left:28px; top:25px; z-index:2; display:grid; gap:4px; }
-.lab-hero-label span { color:var(--ui-glow); font-size:11px; font-weight:900; letter-spacing:.16em; }
-.lab-hero-label small { color:#a9c6d4; font-size:10px; letter-spacing:.08em; }
-.lab-hero-visual>svg { position:absolute; inset:42px 0 0; width:100%; height:calc(100% - 34px); overflow:visible; }
-.lab-hero-aura { animation:lab-aura 3.8s ease-in-out infinite; transform-origin:center; }
-.lab-hero-flask { animation:lab-flask 5.8s ease-in-out infinite; transform-origin:310px 442px; }
-.lab-hero-bench { fill:none; stroke:rgba(138,196,215,.28); stroke-width:3; }
-.lab-hero-bubbles circle { animation:lab-bubble 3.2s ease-in infinite; transform-box:fill-box; transform-origin:center; }
-.lab-hero-bubbles circle:nth-child(2n) { animation-delay:-1.4s; }.lab-hero-bubbles circle:nth-child(3n) { animation-delay:-2.2s; }
-.lab-hero-cells { animation:lab-drift 8s ease-in-out infinite alternate; transform-origin:center; }
-.lab-hero-tubes { animation:lab-tubes 6.4s ease-in-out infinite; transform-origin:520px 438px; }
+.lab-hero-label span { color:var(--ui-green); font-size:11px; font-weight:900; letter-spacing:.16em; }
+.lab-hero-label small { color:#637f79; font-size:10px; letter-spacing:.08em; }
 .lab-hero-stats { position:absolute; left:22px; bottom:20px; z-index:3; display:flex; gap:9px; }
-.lab-hero-stats span { min-width:94px; padding:10px 13px; display:flex; align-items:center; gap:9px; border:1px solid rgba(137,208,231,.22); border-radius:13px; background:rgba(1,20,45,.72); backdrop-filter:blur(10px); }
-.lab-hero-stats b { color:var(--ui-glow); font-size:20px; line-height:1; }.lab-hero-stats small { color:#bbd4dc; font-size:9px; }
-.lab-hero-cherry { position:absolute; z-index:2; color:#f3a6b7; text-shadow:0 0 18px rgba(243,166,183,.48); animation:cherry-drift 8s ease-in-out infinite; }
-.blossom-one { right:28px; top:28px; font-size:28px; }.blossom-two { right:74px; top:76px; font-size:15px; animation-delay:-3.5s; }
+.lab-hero-stats span { min-width:94px; padding:10px 13px; display:flex; align-items:center; gap:9px; border:1px solid rgba(35,111,91,.15); border-radius:13px; background:rgba(255,253,248,.84); box-shadow:0 8px 22px rgba(31,91,76,.10); backdrop-filter:blur(10px); }
+.lab-hero-stats b { color:#e07842; font-size:20px; line-height:1; }.lab-hero-stats small { color:#4d6c66; font-size:9px; }
 
 /* 全局轻量动态背景：细胞轨道与实验气泡只在内容背后活动。 */
 .science-background { display:block; background:linear-gradient(150deg,#fffaf2 0%,#fffefb 48%,#eef8f5 100%)!important; }
@@ -236,13 +235,11 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
   .unified-entry-stage { padding:22px 0 18px; display:grid; grid-template-columns:1fr; align-content:start; gap:20px; }
   .unified-entry-eyebrow { margin-bottom:12px; font-size:10px; }
   .unified-entry h1 { font-size:clamp(36px,11vw,46px); line-height:1.14; }
-  .unified-entry-lead { margin-top:16px; font-size:14px; line-height:1.72; }
   .unified-entry-action { width:100%; margin-top:22px; }
   .unified-entry-action button,.unified-entry-primary { min-height:50px; }
-  .unified-entry-note { margin-top:10px; }
   .lab-hero-visual { width:100%; aspect-ratio:1.42; min-height:224px; border-radius:22px 22px 48px 22px; }
   .lab-hero-label { left:18px; top:16px; }.lab-hero-label small { display:none; }
-  .lab-hero-visual>svg { inset:24px -2% -8px auto; width:82%; height:calc(100% - 16px); }
+  .lab-hero-image { object-position:center; }
   .lab-hero-stats { left:13px; bottom:13px; display:grid; gap:6px; }.lab-hero-stats span { min-width:84px; padding:7px 9px; }.lab-hero-stats b { font-size:16px; }
   .blossom-one { right:18px; top:16px; font-size:22px; }.blossom-two { display:none; }
   .unified-entry-footer { min-height:40px; font-size:9px; }
@@ -297,18 +294,17 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 
 @media (prefers-reduced-motion:reduce) {
   .lab-map-page .map-node-visual { transition:none!important; }
-  .production-route-flow,.map-current-ring,.mobile-route-line,.unified-entry-art::before,.lab-hero-aura,.lab-hero-flask,.lab-hero-bubbles circle,.lab-hero-cells,.lab-hero-tubes,.lab-hero-cherry,.science-orbit,.science-bubble { animation:none!important; }
+  .lab-hero-image { animation:none!important; transition:none!important; }
+  .lab-hero-glow,.lab-hero-bubbles i { animation:none!important; }
+  .production-route-flow,.map-current-ring,.mobile-route-line,.unified-entry-art::before,.science-orbit,.science-bubble { animation:none!important; }
 }
 
 @keyframes production-route-flow { to { stroke-dashoffset:-36; } }
+@keyframes lab-hero-drift { 0% { transform:scale(1.025) translate3d(-.35%,.2%,0); } 55% { transform:scale(1.045) translate3d(.45%,-.45%,0); } 100% { transform:scale(1.032) translate3d(.2%,.35%,0); } }
+@keyframes lab-hero-glow { 0%,100% { opacity:.55; transform:scale(.9); } 50% { opacity:.9; transform:scale(1.08); } }
+@keyframes lab-hero-bubble { 0% { opacity:0; transform:translate3d(0,8px,0) scale(.7); } 24% { opacity:.82; } 78% { opacity:.35; } 100% { opacity:0; transform:translate3d(9px,-76px,0) scale(1.18); } }
 @keyframes production-route-y { to { background-position-y:21px; } }
 @keyframes production-current-ring { from { opacity:.75; transform:scale(1); } to { opacity:0; transform:scale(1.16); } }
 @keyframes entry-aurora { from { transform:translate3d(-1.5%,-1%,0) scale(1); } to { transform:translate3d(1.5%,1%,0) scale(1.05); } }
-@keyframes lab-aura { 50% { opacity:.68; transform:scale(1.08); } }
-@keyframes lab-flask { 0%,100% { transform:rotate(-1deg) translateY(0); } 50% { transform:rotate(1deg) translateY(-7px); } }
-@keyframes lab-bubble { 0% { opacity:.15; transform:translateY(10px) scale(.75); } 55% { opacity:.9; } 100% { opacity:0; transform:translateY(-32px) scale(1.1); } }
-@keyframes lab-drift { from { transform:translate(-4px,3px) rotate(-2deg); } to { transform:translate(7px,-5px) rotate(3deg); } }
-@keyframes lab-tubes { 50% { transform:rotate(1.5deg) translateY(-4px); } }
-@keyframes cherry-drift { 0%,100% { transform:translateY(0) rotate(-8deg); } 50% { transform:translateY(9px) rotate(8deg); } }
 @keyframes science-orbit { to { rotate:360deg; } }
 @keyframes science-float { 0%,100% { transform:translate3d(0,0,0) rotate(-3deg); } 50% { transform:translate3d(0,-14px,0) rotate(4deg); } }

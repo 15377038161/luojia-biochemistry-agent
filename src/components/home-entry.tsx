@@ -32,7 +32,7 @@ export default function HomeEntry({
 
       <header className="unified-entry-nav">
         <div className="unified-entry-brand">
-          <BrandLockup decorative />
+          <BrandLockup decorative showChaoxing={false} />
           <div>
             <strong>珞珈生化智能体</strong>
             <small>WHU · BIOCHEM TEXT LAB</small>
@@ -48,9 +48,6 @@ export default function HomeEntry({
           </p>
           {authenticated && <p className="unified-entry-welcome">欢迎回来，{displayName || '同学'}</p>}
           <h1 id="entry-title">先用文字想清楚，<br />再走进实验室。</h1>
-          <p className="unified-entry-lead">
-            使用课程绑定的学习通账号认证后，即可开始 EGFP 八步文字实验。
-          </p>
 
           <div className="unified-entry-action">
             {authenticated ? (
@@ -67,9 +64,6 @@ export default function HomeEntry({
             )}
           </div>
 
-          <p className="unified-entry-note">
-            学习通将自动识别学生或教师身份，无需手动选择角色。
-          </p>
         </div>
         <LabHeroVisual />
       </section>
