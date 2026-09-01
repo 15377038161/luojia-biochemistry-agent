@@ -174,18 +174,26 @@ export async function evaluateText(step: ExperimentStep, answer: string, attempt
   return { data: assertEvaluation(extractJson(content)), runId: randomUUID() };
 }
 
-export async function answerStudentQuestion(step: ExperimentStep, question: string): Promise<WorkflowResult<string>> {
+export type StudentQuestionMode = 'task' | 'review';
+
+export async function answerStudentQuestion(step: ExperimentStep, question: string, mode: StudentQuestionMode = 'task'): Promise<WorkflowResult<string>> {
   if (fixtureEnabled()) {
-    return { data: `这道问题和“${step.shortTitle}”有关。先想一想：${step.keyPoints[0].hints[0]} 我可以根据你的回答继续提示。`, runId: 'fixture' };
+    return { data: mode === 'review'
+      ? `可以结合本步报告继续看。先定位“${step.keyPoints[0].label}”对应的原文证据，再对照参考作答框架检查条件、理由和判断是否齐全。`
+      : `这道问题和“${step.shortTitle}”有关。先想一想：${step.keyPoints[0].hints[0]} 我可以根据你的回答继续提示。`, runId: 'fixture' };
   }
   const system = [
-    '你是生物化学文字实验的引导助教，用苏格拉底式提问引导学生自行发现答案。学生正在进行文字推演，不是在执行真实实验。',
+    mode === 'review'
+      ? '你是生物化学文字实验的复盘助教。学生已经提交本步答案，可以解释课程评分要点、点评原因与修订方法，但不能虚构实验结果。'
+      : '你是生物化学文字实验的引导助教，用苏格拉底式提问引导学生自行发现答案。学生还未进入独立作答，不是在执行真实实验。',
     '要求：',
-    '1. 不直接给出完整答案；可以指出思考方向、给出一部分原理或反问。',
+    mode === 'review'
+      ? '1. 结合当前步骤的课程提示解释“为什么这样评”和“应该怎样修改”；可以说明参考作答框架，但要提醒并非唯一表述。'
+      : '1. 不直接给出完整答案；可以指出思考方向、给出一部分原理或反问。',
     '2. 回复控制在 200 字以内，使用简体中文。',
     '3. 若学生问题与实验无关，礼貌地把话题引回当前实验步骤。',
   ].join('\n');
-  const user = [`当前实验步骤：${stepBrief(step)}`, `学生提问：${question}`].join('\n');
+  const user = [`当前实验步骤：${stepBrief(step)}`, `课程评分要点：${JSON.stringify(step.keyPoints)}`, `学生提问：${question}`].join('\n');
   const content = await invokeLlm(
     [
       { role: 'system', content: system },

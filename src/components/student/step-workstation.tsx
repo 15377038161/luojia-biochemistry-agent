@@ -1,27 +1,22 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, BarChart3, BookOpen, Check, CircleAlert, CircleHelp, Flag, LoaderCircle, PenLine, Save, Send } from 'lucide-react';
-import type { AgentMessage, ApiResult, DimensionScores, StudentSessionView, TextEvaluation } from '@/domain/agent';
+import { ArrowLeft, ArrowRight, BookOpen, Check, CircleAlert, CircleHelp, Flag, LoaderCircle, PenLine, Save } from 'lucide-react';
+import type { ApiResult, StudentSessionView, TextEvaluation } from '@/domain/agent';
 import type { ExperimentStep } from '@/domain/agent';
 import { experimentSteps } from '@/domain/experiment';
 import { getStepQuiz } from '@/domain/quiz';
 import PageBackground from '@/components/page-background';
 import StudentTopbar from '@/components/student/student-topbar';
+import AiTutor from '@/components/student/ai-tutor';
+import StepReviewReport from '@/components/student/step-review-report';
 import { dispatchChaoxingTaskflow } from '@/lib/chaoxing-taskflow-client';
 import type { ChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
 
-const STAGE_LABELS = ['任务与原理', '知识检验', '分步文字推演', '提交与点评', 'Gate 检查点'];
-const STAGE_MOBILE_LABELS = ['任务', '检验', '推演', '点评', 'Gate'];
-const STAGE_ICONS = [BookOpen, CircleHelp, PenLine, BarChart3, Flag];
+const STAGE_LABELS = ['任务与原理', '知识检验', '分步文字推演', 'AI 点评与本步报告'];
+const STAGE_MOBILE_LABELS = ['任务', '检验', '推演', '报告'];
+const STAGE_ICONS = [BookOpen, CircleHelp, PenLine, Flag];
 const STEP_BADGES = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
-const DIMENSION_META: Array<{ key: keyof DimensionScores; label: string; max: number }> = [
-  { key: 'knowledge', label: '知识理解', max: 20 },
-  { key: 'operation', label: '操作描述', max: 30 },
-  { key: 'decision', label: '科学决策', max: 20 },
-  { key: 'troubleshooting', label: '问题解决', max: 15 },
-  { key: 'analysis', label: '结果分析', max: 15 },
-];
 const MIN_DESC_LENGTH = 15;
 
 async function api<T>(url: string, body: unknown): Promise<T> {
@@ -71,38 +66,6 @@ function previewEvaluation(step: ExperimentStep): TextEvaluation {
   };
 }
 
-type DiagnosticKind = '需要补充' | '需要修正' | '表达待澄清';
-
-function buildDiagnostics(evaluation: TextEvaluation, submittedAnswer: string) {
-  if (evaluation.detailedIssues.length > 0) {
-    return evaluation.detailedIssues.slice(0, 4).map((issue) => ({
-      rubricId: `${issue.dimension}-${issue.title}`,
-      label: issue.title,
-      kind: issue.kind === 'incorrect' || issue.kind === 'safety' ? '需要修正' as const : issue.kind === 'ambiguous' ? '表达待澄清' as const : '需要补充' as const,
-      scene: issue.evidence.quote ? `${issue.scenario} 证据：“${issue.evidence.quote}”` : issue.scenario,
-      guidance: issue.action,
-      impact: issue.impact,
-      causeBoundary: issue.causeBoundary,
-      check: issue.check,
-    }));
-  }
-  const evidence = evaluation.coveredPoints.find((point) => point.quote.trim())?.quote.trim();
-  const fallbackScene = submittedAnswer.trim().replace(/\s+/g, ' ').slice(0, 72);
-  const source = [
-    ...evaluation.incorrectPoints.map((point) => ({ kind: '需要修正' as const, point })),
-    ...evaluation.ambiguousPhrases.map((point) => ({ kind: '表达待澄清' as const, point })),
-    ...evaluation.missingPoints.map((point) => ({ kind: '需要补充' as const, point })),
-  ].slice(0, 3);
-  return source.map(({ kind, point }) => ({
-    ...point,
-    kind: kind as DiagnosticKind,
-    scene: evidence ? `你在本次描述中写到：“${evidence}”` : fallbackScene ? `本次提交围绕“${fallbackScene}${submittedAnswer.length > 72 ? '…' : ''}”展开，但未交代该要点。` : '本次提交中未提供可引用的文字证据。',
-    impact: '该信息缺失会让本步判断依据无法被复核。',
-    causeBoundary: '只能确认本次文字描述存在信息缺口，不推断学习态度或习惯。',
-    check: `修订后应能直接定位到“${point.label}”对应的条件、理由与后续影响。`,
-  }));
-}
-
 export default function StepWorkstation({ session, stepId, catalog = experimentSteps, preview = false, onBack, onSessionUpdate, onOpenReport }: Props) {
   const step = catalog.find((item) => item.id === stepId) ?? experimentSteps[stepId - 1];
   const quiz = getStepQuiz(stepId);
@@ -110,10 +73,6 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   const [descs, setDescs] = useState<Record<string, string>>({});
   const [hintLevel, setHintLevel] = useState<Record<string, number>>({});
-  const [helpFor, setHelpFor] = useState<string | null>(null);
-  const [helpText, setHelpText] = useState('');
-  const [helpReplies, setHelpReplies] = useState<Record<string, string>>({});
-  const [helpBusy, setHelpBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [syncNotice, setSyncNotice] = useState('');
@@ -146,14 +105,13 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
   function stageUnlocked(index: number): boolean {
     if (index <= 1) return true;
     if (index === 2) return quizOk;
-    if (index === 4) return quizOk && descComplete && evaluation !== null;
-    return quizOk && descComplete;
+    return quizOk && descComplete && evaluation !== null;
   }
 
   function goTo(index: number) {
     if (stageUnlocked(index)) { setStage(index); setRailHint(''); return; }
     if (index === 2) setRailHint('先在「知识检验」答对全部题目，才能进入分步文字推演。');
-    else setRailHint('先用自己的话完成全部子步骤描述，才能提交点评与 Gate 检查。');
+    else setRailHint('先用自己的话完成全部子步骤描述并提交，AI 才会生成点评与本步报告。');
   }
 
   function pickQuiz(questionId: string, optionIndex: number) {
@@ -170,30 +128,12 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
     }
   }
 
-  async function sendHelp(pointId: string, label: string) {
-    const content = helpText.trim();
-    if (content.length < 2 || helpBusy) return;
-    setHelpBusy(true); setError('');
-    if (preview) {
-      const hint = step.keyPoints.find((point) => point.id === pointId)?.hints[1] || '先回顾本步目标再描述。';
-      setHelpReplies((value) => ({ ...value, [pointId]: `提示：${hint}` }));
-      setHelpText(''); setHelpBusy(false); return;
-    }
-    try {
-      const created = await api<AgentMessage[]>('/api/student/messages', { sessionId: session.sessionId, content: `【求助·${label}】${content}` });
-      const reply = [...created].reverse().find((message) => message.role === 'assistant');
-      if (reply) setHelpReplies((value) => ({ ...value, [pointId]: reply.content }));
-      setHelpText('');
-    } catch (reason) { setError(reason instanceof Error ? reason.message : '求助发送失败'); }
-    finally { setHelpBusy(false); }
-  }
-
   async function submitEvaluation() {
     if (!descComplete || busy || !isCurrent) return;
     setBusy(true); setError(''); setSyncNotice('');
     const answer = submittedAnswer;
     if (preview) {
-      setEvaluation(previewEvaluation(step)); setBusy(false); setStage(4); return;
+      setEvaluation(previewEvaluation(step)); setBusy(false); setStage(3); return;
     }
     try {
       const requestKey = crypto.randomUUID();
@@ -202,7 +142,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
       if (lastIndex >= 0) result.session.messages[lastIndex] = { ...result.session.messages[lastIndex], evaluation: result.evaluation };
       setEvaluation(result.evaluation);
       onSessionUpdate(result.session);
-      setStage(4);
+      setStage(3);
       if (result.chaoxingTaskflow) {
         try {
           const dispatch = await dispatchChaoxingTaskflow(result.chaoxingTaskflow);
@@ -218,7 +158,6 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
   }
 
   const gatePassed = evaluation?.decision === 'pass';
-  const totalScore = evaluation ? DIMENSION_META.reduce((sum, meta) => sum + evaluation.scores[meta.key], 0) : 0;
 
   return (
     <div className="workstation-shell watercolor-student-task text-foreground font-sans">
@@ -330,7 +269,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                 <span className="px-2.5 py-1 rounded-full bg-primary-container text-primary">已描述 {describedCount} / {step.keyPoints.length} 步</span>
               </div>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground flex items-start gap-1.5"><CircleHelp className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />假设你正在设计本步方案，用自己的话逐条写清顺序、参数、安全要点和结果判断；卡住可点「提示」或「求助」。</p>
+            <p className="mt-2 text-xs text-muted-foreground flex items-start gap-1.5"><CircleHelp className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />假设你正在设计本步方案，用自己的话逐条写清顺序、参数、安全要点和结果判断。答题期间 AI 助教暂时隐藏，避免提示影响独立作答。</p>
             <div className="mt-2.5 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-secondary transition-all" style={{ width: `${(describedCount / step.keyPoints.length) * 100}%` }} /></div>
             <p className="mt-2 text-right text-[11px] font-bold text-muted-foreground">{draftNotice}</p>
             {preview && (
@@ -357,8 +296,6 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                         className={`text-xs px-2 py-1 rounded-full border transition-colors ${hints >= 3 ? 'border-border text-muted-foreground cursor-not-allowed' : 'border-border text-muted-foreground hover:bg-muted cursor-pointer'}`}>
                         提示 {hints}/3
                       </button>
-                      <button type="button" onClick={() => { setHelpFor(helpFor === point.id ? null : point.id); setHelpText(''); }}
-                        className="text-xs px-2 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary-container transition-colors cursor-pointer">求助</button>
                     </div>
                     {hints > 0 && (
                       <ul className="mt-2 space-y-1 text-xs text-muted-foreground bg-muted/60 rounded-lg p-2.5">
@@ -372,162 +309,34 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                       placeholder={`用自己的话描述：${point.label}（至少 ${MIN_DESC_LENGTH} 字）`}
                       className="mt-2 w-full rounded-lg bg-muted border-none px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-muted-foreground/50 resize-y"
                     />
-                    {helpFor === point.id && (
-                      <div className="mt-2 rounded-lg bg-primary-container/40 border border-primary/20 p-3">
-                        {helpReplies[point.id] && <p className="text-xs leading-relaxed bg-card rounded-lg border border-border px-3 py-2 mb-2"><b className="text-primary">智能体：</b>{helpReplies[point.id]}</p>}
-                        <div className="flex gap-2">
-                          <input value={helpText} onChange={(event) => setHelpText(event.target.value)}
-                          onKeyDown={(event) => { if (event.key === 'Enter') void sendHelp(point.id, point.label); }}
-                            placeholder="针对这一条，你想问什么？"
-                            className="flex-1 rounded-lg bg-card border border-border px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/50" />
-                          <button type="button" onClick={() => sendHelp(point.id, point.label)} disabled={helpBusy || helpText.trim().length < 2}
-                            className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50 cursor-pointer inline-flex items-center gap-1">
-                            {helpBusy ? <LoaderCircle className="w-3.5 h-3.5 spin" /> : <Send className="w-3.5 h-3.5" />}发送
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
             </div>
             {error && <p className="mt-3 text-xs font-bold text-destructive flex items-center gap-1.5"><CircleAlert className="w-3.5 h-3.5" />{error}</p>}
-          </section>
-        )}
-
-        {stage === 3 && (
-          <section className="mt-4 rounded-2xl bg-card/90 border border-border/60 shadow-card p-6">
-            <p className="text-xs font-black text-primary bg-primary-container/60 border border-primary/30 rounded-full px-2.5 py-1 inline-flex items-center gap-1"><BarChart3 className="w-3 h-3" /> 评估级 · 提交点评</p>
-            <h2 className="text-lg font-bold mt-2">提交本步完整描述，获得智能体点评</h2>
-            <p className="mt-1 text-xs text-muted-foreground">你的 {step.keyPoints.length} 条文字推演将合并提交，智能体对照课程资料逐条核对，并按五维模型评分（本次提交计入正式次数）。</p>
-            <div className="mt-4 rounded-xl bg-muted/60 border border-border p-4 max-h-56 overflow-y-auto space-y-2">
-              {step.keyPoints.map((point) => (
-                <p key={point.id} className="text-xs leading-relaxed"><b className="text-primary">【{point.label}】</b>{(descs[point.id] || '').trim()}</p>
-              ))}
-            </div>
-            {error && <p className="mt-3 text-xs font-bold text-destructive flex items-center gap-1.5"><CircleAlert className="w-3.5 h-3.5" />{error}</p>}
-            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-              <button type="button" onClick={() => setStage(2)} className="px-4 py-2 rounded-xl border border-border bg-card text-sm font-bold hover:bg-muted transition-colors cursor-pointer">返回修改</button>
+            <div className="mt-5 rounded-xl border border-primary/20 bg-primary-container/35 p-4">
+              <p className="text-sm font-extrabold">完成后直接提交</p>
+              <p className="mt-1 text-xs leading-6 text-muted-foreground">无需再进入单独的“提交”页面。提交后，AI 会自动生成逐项点评、参考答案、本步五维学习报告和 Gate 结果。</p>
               <button type="button" onClick={submitEvaluation} disabled={busy || !descComplete || !isCurrent}
-                className={`px-4 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-2 cursor-pointer ${busy || !descComplete || !isCurrent ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-primary text-primary-foreground shadow-card hover:opacity-90'}`}>
-                {busy && <LoaderCircle className="w-4 h-4 spin" />}{busy ? '智能体正在评阅…' : isCurrent ? '提交并请求点评' : '仅当前步骤可提交'}
+                className={`mt-3 w-full rounded-xl px-4 py-3 text-sm font-bold inline-flex items-center justify-center gap-2 ${busy || !descComplete || !isCurrent ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-primary text-primary-foreground shadow-card hover:opacity-90 cursor-pointer'}`}>
+                {busy && <LoaderCircle className="w-4 h-4 spin" />}{busy ? 'AI 正在逐项评阅并生成报告…' : isCurrent ? '提交并生成本步学习报告' : '仅当前步骤可提交'}
               </button>
             </div>
-            {evaluation && (
-              <div className={`mt-5 rounded-xl border p-4 ${gatePassed ? 'border-success/40 bg-success/10' : 'border-warning/40 bg-warning/10'}`}>
-                <p className="text-sm font-extrabold flex items-center gap-2">
-                  {gatePassed ? <Check className="w-4 h-4 text-success" /> : <CircleAlert className="w-4 h-4 text-warning" />}
-                  {gatePassed ? '本步达标' : '还需补充'} · 五维得分 {totalScore}/100
-                </p>
-                <p className="mt-2 text-xs leading-relaxed">{evaluation.studentFeedback}</p>
-                <div className="mt-3 grid sm:grid-cols-5 gap-2">
-                  {DIMENSION_META.map((meta) => {
-                    const score = evaluation.scores[meta.key];
-                    return (
-                      <div key={meta.key} className="rounded-lg bg-card border border-border p-2.5 text-xs">
-                        <p className="font-bold">{meta.label}</p>
-                        <p className="mt-1 font-black text-primary">{score}<span className="text-muted-foreground font-normal">/{meta.max}</span></p>
-                        <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-primary" style={{ width: `${(score / meta.max) * 100}%` }} /></div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {evaluation.coveredPoints.length > 0 && (
-                  <div className="mt-3"><p className="text-xs font-black text-success">已经讲清楚</p><ul className="mt-1 space-y-1">{evaluation.coveredPoints.map((point) => <li key={point.rubricId} className="text-xs flex gap-1.5"><Check className="w-3.5 h-3.5 text-success shrink-0 mt-0.5" />{point.label}</li>)}</ul></div>
-                )}
-                {evaluation.missingPoints.length > 0 && (
-                  <div className="mt-3"><p className="text-xs font-black text-warning">建议补充</p><ul className="mt-1 space-y-1">{evaluation.missingPoints.map((point) => <li key={point.rubricId} className="text-xs flex gap-1.5"><CircleAlert className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />{point.label}：{point.guidance}</li>)}</ul></div>
-                )}
-                {buildDiagnostics(evaluation, submittedAnswer).length > 0 && (
-                  <div className="mt-4 border-t border-border/70 pt-4">
-                    <p className="text-xs font-black text-primary">逐项学习诊断（基于本次提交）</p>
-                    <div className="mt-2 space-y-2">
-                      {buildDiagnostics(evaluation, submittedAnswer).map((item) => (
-                        <article key={`${item.kind}-${item.rubricId}`} className="rounded-lg border border-border bg-card/75 p-3 text-xs leading-6">
-                          <p className="font-bold text-foreground">{item.kind} · {item.label}</p>
-                          <p className="mt-1 text-muted-foreground"><b>学习场景：</b>{item.scene}</p>
-                          <p className="mt-1 text-muted-foreground"><b>问题影响：</b>{item.impact}</p>
-                          <p className="mt-1 text-muted-foreground"><b>成因边界：</b>{item.causeBoundary}</p>
-                          <p className="mt-1 text-primary"><b>修订动作：</b>{item.guidance}</p>
-                          <p className="mt-1 text-secondary"><b>检查标准：</b>{item.check}</p>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {evaluation.safetyAlerts.length > 0 && (
-                  <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3"><p className="text-xs font-black text-destructive">必须修正</p>{evaluation.safetyAlerts.map((point) => <p key={point.rubricId} className="mt-1 text-xs">{point.guidance}</p>)}</div>
-                )}
-                {evaluation.questions.length > 0 && <p className="mt-3 text-xs font-bold text-primary flex items-center gap-1.5"><CircleHelp className="w-3.5 h-3.5" />{evaluation.questions[0]}</p>}
-              </div>
-            )}
           </section>
         )}
 
-        {stage === 4 && (
-          <section className="mt-4 rounded-2xl bg-card/90 border border-border/60 shadow-card p-6">
-            <h2 className="text-lg font-bold flex items-center gap-2"><Flag className="w-5 h-5 text-primary" /> Gate {stepId} · {step.shortTitle}检查点</h2>
-            <p className="mt-1 text-xs text-muted-foreground">验证内容（教学大纲）：{step.goal}{stepId < 8 ? `通过后才能进入步骤${STEP_BADGES[stepId]}。` : '这是最后一步，通过后完成全部文字推演。'}</p>
-            {syncNotice && <p className="mt-3 text-xs font-bold text-primary flex items-center gap-1.5"><Check className="w-3.5 h-3.5" />{syncNotice}</p>}
-            <div className="mt-4 grid md:grid-cols-3 gap-3 text-xs">
-              <div className="rounded-xl bg-muted/60 p-3"><p className="font-bold">描述完整性</p><p className={`mt-1 font-bold ${descComplete ? 'text-success' : 'text-warning'}`}>{describedCount}/{step.keyPoints.length} 子步骤已描述 {descComplete ? '✓' : ''}</p></div>
-              <div className="rounded-xl bg-muted/60 p-3"><p className="font-bold">结果分析与判断</p><p className={`mt-1 font-bold ${!evaluation ? 'text-muted-foreground' : gatePassed ? 'text-success' : 'text-warning'}`}>{!evaluation ? '尚未提交评阅' : gatePassed ? `${totalScore}/100 达标 ✓` : `${totalScore}/100 待修订`}</p></div>
-              <div className="rounded-xl bg-muted/60 p-3"><p className="font-bold">安全与记录</p><p className={`mt-1 font-bold ${!evaluation ? 'text-muted-foreground' : evaluation.safetyAlerts.length > 0 ? 'text-warning' : 'text-success'}`}>{!evaluation ? '尚未提交评阅' : evaluation.safetyAlerts.length > 0 ? `${evaluation.safetyAlerts.length} 项待修正` : '无安全修正项 ✓'}</p></div>
-            </div>
-            <div className="mt-4 rounded-xl border border-border bg-card p-4">
-              <p className="text-xs font-black flex items-center gap-1.5"><BarChart3 className="w-4 h-4 text-primary" /> 五维评价模型（本步记录计入总评）</p>
-              <div className="mt-2 grid sm:grid-cols-5 gap-2 text-xs">
-                {DIMENSION_META.map((meta) => (
-                  <div key={meta.key} className="rounded-lg bg-muted/60 p-2.5"><p className="font-bold">{meta.label}</p><p className="mt-0.5 text-muted-foreground">权重 {meta.max} 分</p></div>
-                ))}
-              </div>
-            </div>
-            <div className={`mt-4 rounded-xl border p-5 text-center ${gatePassed ? 'border-success/50 bg-success/10' : 'border-warning/50 bg-warning/10'}`}>
-              <p className={`text-xl font-black tracking-widest ${gatePassed ? 'text-success' : 'text-warning'}`}>{gatePassed ? '✓ GATE 通过' : '⚠ GATE 待通过'}</p>
-              <p className="mt-2 text-xs text-muted-foreground">{gatePassed ? '本步达标，地图上的下一站点已解锁。' : '根据上方点评修订描述后重新提交，即可通过本 Gate。'}</p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {gatePassed ? (
-                  <button type="button" onClick={onBack} className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-card hover:opacity-90 transition-opacity cursor-pointer">返回实验地图，进入下一站</button>
-                ) : (
-                  <button type="button" onClick={() => setStage(2)} className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-card hover:opacity-90 transition-opacity cursor-pointer">返回修改描述</button>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
+        {stage === 3 && evaluation && <StepReviewReport step={step} evaluation={evaluation} answers={descs} syncNotice={syncNotice} onRevise={() => setStage(2)} onBack={onBack} />}
           <footer className="workstation-footer mt-6 flex items-center justify-between gap-2">
             <button type="button" onClick={() => goTo(stage - 1)} disabled={stage === 0} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-muted-foreground shadow-card disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:bg-muted transition-colors"><ArrowLeft className="w-4 h-4" /> 上一阶段</button>
             {stage === 2 ? <button type="button" aria-label="保存文字推演草稿" onClick={saveDraft} className="draft-save-button inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-card border border-border text-xs font-bold text-secondary shadow-card"><Save className="w-4 h-4" /><span className="hidden sm:inline">保存草稿</span></button> : <p className="hidden sm:block text-xs font-semibold text-muted-foreground">阶段 {stage + 1} / {STAGE_LABELS.length} · {STAGE_LABELS[stage]}</p>}
             <button type="button" onClick={() => goTo(stage + 1)} disabled={stage >= STAGE_LABELS.length - 1 || !stageUnlocked(stage + 1)} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold shadow-card disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors">下一阶段 <ArrowRight className="w-4 h-4" /></button>
           </footer>
         </main>
-        <aside className="workstation-feedback-rail hidden lg:block sticky top-6">
-          <div className="rounded-3xl bg-card border border-border shadow-card p-5">
-            <p className="text-xs font-black text-primary tracking-[.12em]">AI FEEDBACK</p>
-            <h2 className="mt-2 text-lg font-extrabold">本步点评与修订</h2>
-            {!evaluation ? (
-              <div className="mt-4 rounded-2xl bg-primary-container/60 border border-primary/20 p-4">
-                <p className="text-sm font-bold">先完成文字方案</p>
-                <p className="mt-2 text-xs leading-6 text-muted-foreground">提交后，AI 会对照课程材料指出遗漏、表达模糊和必须修正项。</p>
-              </div>
-            ) : (
-              <>
-                <div className={`mt-4 rounded-2xl border p-4 ${gatePassed ? 'border-success/30 bg-success/10' : 'border-warning/30 bg-warning/10'}`}>
-                  <p className={`text-sm font-extrabold ${gatePassed ? 'text-success' : 'text-warning'}`}>{gatePassed ? 'Gate 已通过' : `${evaluation.missingPoints.length} 项建议补充`}</p>
-                  <p className="mt-2 text-xs leading-6 text-muted-foreground">{evaluation.studentFeedback}</p>
-                </div>
-                {evaluation.missingPoints.slice(0, 3).map((point) => (
-                  <div key={point.rubricId} className="mt-3 rounded-2xl bg-[#fff2ea] border border-[#f6c5a9] p-4">
-                    <p className="text-xs font-extrabold text-warning">{point.label}</p>
-                    <p className="mt-1.5 text-xs leading-6 text-muted-foreground">{point.guidance}</p>
-                  </div>
-                ))}
-                {evaluation.coveredPoints.length > 0 && <p className="mt-4 text-xs font-bold text-success flex items-center gap-1.5"><Check className="w-4 h-4" /> 已讲清楚 {evaluation.coveredPoints.length} 项</p>}
-              </>
-            )}
-            <div className="mt-5 pt-4 border-t border-border text-xs leading-6 text-muted-foreground">修改后再次提交，直到本步 Gate 通过。AI 反馈只用于学习修订，不生成真实实验结果。</div>
-          </div>
-        </aside>
+        {(stage === 0 || stage === 3) && (
+          <aside className="workstation-feedback-rail lg:sticky lg:top-6">
+            <AiTutor sessionId={session.sessionId} step={step} mode={stage === 3 ? 'review' : 'task'} preview={preview} />
+          </aside>
+        )}
       </div>
     </div>
   );

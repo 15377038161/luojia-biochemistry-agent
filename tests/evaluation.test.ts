@@ -14,6 +14,7 @@ import {
 } from '../src/lib/chaoxing-sync';
 import { buildChaoxingReportTaskflowPayload, buildChaoxingTaskflowPayload } from '../src/lib/chaoxing-taskflow-contract';
 import { resolveChaoxingParentOrigin } from '../src/lib/chaoxing-taskflow-client';
+import { buildStepReviewRows, getStepLearningSummary } from '../src/lib/step-learning-report';
 
 function evaluation(overrides: Partial<TextEvaluation> = {}): TextEvaluation {
   return {
@@ -49,6 +50,22 @@ test('评分被限制在五维最大值内', () => {
 test('低置信评阅必须建议教师查看', () => {
   const result = normalizeEvaluation(1, '正常描述', evaluation({ confidence: 0.4 }));
   assert.equal(result.requiresTeacherReview, true);
+});
+
+test('本步报告逐项给出学生证据、改法和参考答案', () => {
+  const step = experimentSteps[3];
+  const result = evaluation({
+    coveredPoints: [{ rubricId: step.keyPoints[0].id, label: step.keyPoints[0].label, quote: 'SDS使蛋白变性并统一电荷。' }],
+    missingPoints: [{ rubricId: step.keyPoints[1].id, label: step.keyPoints[1].label, guidance: '补充低温、间歇超声与等量上样。' }],
+  });
+  const rows = buildStepReviewRows(step, result, { [step.keyPoints[1].id]: '我会进行超声破碎。' });
+  assert.equal(rows.length, 5);
+  assert.equal(rows[0].status, '讲清楚了');
+  assert.match(rows[0].studentEvidence, /SDS使蛋白变性/);
+  assert.equal(rows[1].status, '需要补充');
+  assert.match(rows[1].feedback, /低温/);
+  assert.match(rows[1].referenceAnswer, /上清和沉淀/);
+  assert.match(getStepLearningSummary(step, result).title, /步骤 4/);
 });
 
 test('每一步都有一张来源明确的图片题', () => {
