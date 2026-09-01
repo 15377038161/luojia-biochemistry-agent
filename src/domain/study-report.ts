@@ -1,3 +1,5 @@
+import { AiValidationError } from '@/lib/errors';
+
 export interface StudyReportSectionsV2 {
   schemaVersion: 'StudyReport.v2';
   dataBasis: string[];
@@ -29,7 +31,7 @@ export function normalizeStudyReport(value: unknown): StudyReportV2 {
   const source = asRecord(value);
   const sections = asRecord(source.sections);
   const markdown = typeof source.markdown === 'string' ? source.markdown.trim() : '';
-  if (!markdown) throw new Error('学习报告缺少 markdown 正文');
+  if (!markdown) throw new AiValidationError('学习报告缺少 markdown 正文');
   return {
     schemaVersion: 'StudyReport.v2',
     markdown,

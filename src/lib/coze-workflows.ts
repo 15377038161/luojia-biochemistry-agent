@@ -4,6 +4,7 @@ import type { ContentPart, Message } from 'coze-coding-dev-sdk';
 import { assertEvaluation } from '@/domain/evaluation';
 import { getExperimentStep } from '@/domain/experiment';
 import type { ExperimentStep, TextEvaluation } from '@/domain/agent';
+import { AiValidationError } from '@/lib/errors';
 
 export interface WorkflowResult<T> {
   data: T;
@@ -41,7 +42,13 @@ const TEXT_SCHEMA = `{
     "causeBoundary": "只能由本次证据确认的原因边界，不推测性格或习惯",
     "action": "学生下一次可直接执行的修订动作",
     "check": "下一次提交时可核对的完成标准"
-  }]
+  }],
+  "strengths": ["学生本次作答写得好的 1-3 个要点（写不出可空数组）"],
+  "reasoningReview": "对学生推理路径的复盘评价：思路从哪一步开始偏或成立，依据是否充分",
+  "standardAnswer": "基于本步课程要点与Gate生成的参考答案（完整、可直接对照，不得遗漏关键要点）",
+  "improvedAnswer": "在学生原作答基础上改写出的推荐答案：保留学生表达，补齐缺失与纠正错误",
+  "knowledgeExplanation": "本步涉及核心知识点的详细讲解（原理、条件、常见误区），2-5 句",
+  "nextAction": "学生下一步最应做的一件事（明确、可执行）"
 }`;
 
 const VISION_SCHEMA = `{
@@ -96,15 +103,19 @@ function extractJson(raw: string): unknown {
   if (fenced) text = fenced[1].trim();
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
-  if (start === -1 || end <= start) throw new Error('AI 输出中未找到 JSON 内容');
-  return JSON.parse(text.slice(start, end + 1));
+  if (start === -1 || end <= start) throw new AiValidationError('AI 输出中未找到 JSON 内容');
+  try {
+    return JSON.parse(text.slice(start, end + 1));
+  } catch {
+    throw new AiValidationError('AI 输出的 JSON 无法解析');
+  }
 }
 
 function stepBrief(step: ExperimentStep) {
   return JSON.stringify({ step_id: step.id, title: step.title, context: step.context, goal: step.goal });
 }
 
-function fixtureEvaluation(step: ExperimentStep, answer: string): TextEvaluation {
+export function fixtureEvaluation(step: ExperimentStep, answer: string): TextEvaluation {
   const lengthFactor = Math.min(1, answer.trim().length / 420);
   const coveredCount = Math.max(1, Math.min(5, Math.floor(answer.trim().length / 90) + 1));
   const covered = step.keyPoints.slice(0, coveredCount);
@@ -129,6 +140,12 @@ function fixtureEvaluation(step: ExperimentStep, answer: string): TextEvaluation
     scores,
     requiresTeacherReview: false,
     knowledgeChunkIds: step.keyPoints.map((item) => item.id),
+    strengths: covered.map((item) => item.label),
+    reasoningReview: missing.length ? '演示评阅：本次推理在部分要点上缺少依据支撑，需要补齐判断链条。' : '演示评阅：推理链条完整，依据与结论一一对应。',
+    standardAnswer: step.keyPoints.map((item) => `${item.label}：${item.hints.join('；')}`).join('；'),
+    improvedAnswer: answer.trim() ? `${answer.trim()}\n（补充）${missing.map((item) => item.label).join('、')}：按课程要点补齐依据与影响。` : '',
+    knowledgeExplanation: step.keyPoints.map((item) => item.hints[0]).join(' '),
+    nextAction: missing.length ? `优先补写“${missing[0].label}”的判断依据。` : '保持当前表达结构，继续下一步。',
     detailedIssues: missing.map((item) => ({
       dimension: item.dimension,
       kind: 'missing',
@@ -155,7 +172,8 @@ export async function evaluateText(step: ExperimentStep, answer: string, attempt
     '4. 每一个 missing / incorrect / ambiguous 项都必须对应具体学习场景：引用学生原话，或明确写“本次提交未交代……”。不能写“描述不够完整”“建议加强”等空泛结论。',
     '5. studentFeedback 必须按“表现—证据—影响—下一步”组织 2-4 段：说明学生写了什么或没写什么、会影响哪项判断、下一次应补写或核对什么；不得给出完整标准答案。',
     '6. detailedIssues 必须逐项对应问题维度、学生证据、学习场景、影响、原因边界、可执行动作和检查标准。没有证据就让 quote 为空并明确写“本次提交未交代”，禁止推测学习态度、性格或家庭表现。',
-    `7. 只输出一个 JSON 对象，不要输出任何其他文字。字段结构：${TEXT_SCHEMA}`,
+    '7. strengths/reasoningReview/standardAnswer/improvedAnswer/knowledgeExplanation/nextAction 六个字段必须基于本步课程要点与Gate填写：standardAnswer 是完整参考答案，improvedAnswer 在学生原作答上补齐缺失并纠正错误，knowledgeExplanation 讲解本步核心知识点，禁止编造课程外实验结果。',
+    `8. 只输出一个 JSON 对象，不要输出任何其他文字。字段结构：${TEXT_SCHEMA}`,
   ].join('\n');
   const user = [
     `实验步骤信息：${stepBrief(step)}`,

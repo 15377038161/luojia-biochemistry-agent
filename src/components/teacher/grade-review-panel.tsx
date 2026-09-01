@@ -27,17 +27,15 @@ function asNumber(value: unknown): number {
 
 function normalize(value: unknown): ReviewView[] {
   if (!Array.isArray(value)) return [];
+  // 正式模型：申诉来自 agent_messages（kind='grade_review_request'），
+  // 成绩由统一成绩模块计算后随列表返回。
   return value.map((entry) => {
     const source = asRecord(entry);
-    const gradeRaw = source.grade_components;
-    const grade = asRecord(Array.isArray(gradeRaw) ? gradeRaw[0] : gradeRaw);
-    const profileRaw = grade.profiles;
-    const profile = asRecord(Array.isArray(profileRaw) ? profileRaw[0] : profileRaw);
     return {
       id: String(source.id ?? ''), status: String(source.status ?? 'pending'), reason: String(source.reason ?? ''),
-      resolution: String(source.resolution ?? ''), createdAt: String(source.created_at ?? ''),
-      studentName: String(profile.display_name ?? '未命名学生'), studentNo: String(profile.student_no ?? '—'),
-      processScore: asNumber(grade.process_score), contributionPoints: asNumber(grade.contribution_points),
+      resolution: String(source.resolution ?? ''), createdAt: String(source.createdAt ?? source.created_at ?? ''),
+      studentName: String(source.studentName ?? '未命名学生'), studentNo: String(source.studentNo ?? '—'),
+      processScore: asNumber(source.processScore), contributionPoints: asNumber(source.contributionPoints),
     };
   }).filter((item) => item.id);
 }

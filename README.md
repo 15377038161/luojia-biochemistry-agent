@@ -12,7 +12,7 @@
 - 学习报告：`StudyReport.v2` 只读取真实步骤状态、文字回答与评阅证据；雷达图按 20/30/20/15/15 换算，解释定义、评分依据、场景、影响、成因边界、行动和检查标准。
 - 成绩：八步最终 Gate 等权形成 100 分过程成绩，按 10% 折算课程贡献分；学生仅可申请一次异议，教师结论作为最终成绩。
 - 教师智能体：班级概览、学生复核、成绩认定、八步内容草稿/校验/发布、素材上传和外部服务真实状态。
-- 数据层：新增 `session_mode`、教师授权、内容版本、成绩组件和异议表；教师学习体验不计成绩、不进班级统计和超星 outbox。
+- 数据层：完全运行在 `202608140001_agent_core.sql` 的 Coze 原生模型上——`agent_sessions.agent_role` 区分会话类型、`content_versions` 单表承载草稿/发布、`evaluations` 是过程成绩唯一事实来源、申诉复核走 `teacher_reviews`+`agent_messages`、`sync_outbox.payload` 保存外部记录编号；教师学习体验不计成绩、不进班级统计和超星 outbox。
 - UI V7：全站使用唯一“珞珈数字实验笔记”视觉系统；首页、统一登录、学生地图、步骤、报告与教师工作台共用字体、颜色、圆角、控件尺寸和导航规则。
 
 ## 产品边界
@@ -25,7 +25,7 @@
 ## 本地运行
 
 1. 复制`.env.example`为`.env.local`并填写Supabase。
-2. 按文件名顺序执行 `supabase/migrations/202608140001_agent_core.sql`、`supabase/migrations/202608230001_unified_agent_v2.sql` 和 `supabase/migrations/202608240001_chaoxing_sync_contract.sql`。
+2. 按文件名顺序执行 `supabase/migrations/202608140001_agent_core.sql` 和 `supabase/migrations/202608190001_profiles_role_lockdown.sql`。生产 Coze Supabase 不允许执行 DDL，全部功能必须基于这两份迁移建立的模型运行；数据映射见 `docs/数据库映射说明-Coze原生模型.md`。
 3. 执行`pnpm seed:content`导入八步、40个五维知识块、仪器和图片题。
 4. 开发联调可设置`ENABLE_DEMO_ACCESS=true`和`ENABLE_AI_FIXTURE=true`。
 5. 运行`pnpm dev`。
@@ -54,13 +54,13 @@ pwsh -File scripts/package-delivery.ps1
 
 `WF-TEXT` 同时处理两种模式：
 
-- `evaluate`：正式评阅并返回 `TextEvaluation.v2`，每个问题包含能力维度、原文证据/场景、影响、成因边界、修订动作和检查标准。
+- `evaluate`：正式评阅并返回 `TextEvaluation.v2`（扩展字段：strengths/missingPoints/reasoningReview/standardAnswer/improvedAnswer/knowledgeExplanation，入库时按 `evaluations.result` 契约转蛇形键），每个问题包含能力维度、原文证据/场景、影响、成因边界、修订动作和检查标准。
 - `tutor_question`：回答原理问题，但不改变步骤进度、不输出完整标准答案。
 
 ## 超星边界
 
 - OAuth通过`/api/auth/chaoxing`和`/api/auth/callback/chaoxing`建立同一套Supabase Session。
-- 教师身份只认 `CHAOXING_TEACHER_ROLE_IDS` 或数据库 `teacher_role_grants`，不使用角色名称猜测。
+- 教师身份由服务端数据链判断：`profiles.role`（teacher/content_admin）+ `external_identities.raw_roles`（学习通原始角色留痕）+ `enrollments` + `is_authorized_teacher(class_id)` RPC；只认 `CHAOXING_TEACHER_ROLE_IDS` 白名单角色，不使用角色名称猜测，不依据前端参数授权。
 - 完整业务状态只保存在Supabase。
 - 超星表单`3513491`只接收关键留痕字段；默认通过`CHAOXING_FORM_TRANSPORT=disabled`保留事件，不会误报已接通。
 - 取得已发布任务流或正式API契约后，设置`CHAOXING_FORM_TRANSPORT=taskflow|api`、写入URL、Token、限流和可选回查URL；写入仍由服务端Worker异步处理。

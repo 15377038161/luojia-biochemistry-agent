@@ -469,7 +469,7 @@ Coze结束节点没有输出纯JSON或字段名不一致。按工作流文档修
 - `docs/coze/WF-VISION.md`
 - `docs/coze/WF-REPORT.md`
 - `supabase/migrations/202608140001_agent_core.sql`
-- `supabase/migrations/202608230001_unified_agent_v2.sql`
-- `supabase/migrations/202608240001_chaoxing_sync_contract.sql`
+- `supabase/migrations/202608190001_profiles_role_lockdown.sql`
+- `docs/数据库映射说明-Coze原生模型.md`
 - `knowledge-base/README.md`
 - `.env.example`

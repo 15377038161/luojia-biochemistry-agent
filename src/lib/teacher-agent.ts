@@ -31,7 +31,13 @@ export async function answerTeacherQuery(supabase: SupabaseClient, query: string
   if (sessionError) throw sessionError;
   if (evaluationError) throw evaluationError;
   const studentSessions = sessions || [];
-  const allEvaluations = evaluations || [];
+  // 班级统计与证据只允许学生正式实验数据；教师体验会话（agent_role='teacher'）
+  // 的评价记录不得进入教师看板。
+  const studentSessionIds = new Set(studentSessions.map((item) => item.id));
+  const allEvaluations = (evaluations || []).filter((item) => {
+    const attempt = item.step_attempts as unknown as { session_id: string };
+    return studentSessionIds.has(attempt.session_id);
+  });
 
   if (/待.*复核|需要.*查看|低置信/.test(query)) {
     const records = allEvaluations.filter((item) => item.requires_teacher_review || Number(item.confidence) < 0.65);
@@ -83,7 +89,7 @@ export async function answerTeacherQuery(supabase: SupabaseClient, query: string
     if (!target) return { answer: `没有找到姓名包含“${name}”的学生记录。`, scope: '演示班级', evidence: [], suggestedActions: ['核对学生姓名或学号'] };
     const records = allEvaluations.filter((item) => (item.step_attempts as unknown as { session_id: string }).session_id === target.id);
     return {
-      answer: `${name}同学当前进行到第${target.current_step || 8}步，共有${records.length}次正式评阅记录。`,
+      answer: `${name}同学当前进行到第${Number(target.current_step) || 1}步，共有${records.length}次正式评阅记录。`,
       scope: `单个学生：${name}`,
       evidence: records.slice(-8).map((item) => {
         const attempt = item.step_attempts as unknown as { step_no: number; answer: string };

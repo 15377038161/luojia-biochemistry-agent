@@ -37,27 +37,12 @@ export async function createSupabaseLoginToken(identity: ChaoxingIdentity): Prom
   const email = virtualEmail(userInfo.openid);
   const teacherRoleIds = configuredTeacherRoleIds();
   const returnedRoleIds = userInfo.role.map((item) => item.roleId).filter(Boolean);
-  let teacherGranted = hasConfiguredTeacherRole(returnedRoleIds, teacherRoleIds);
-  let roleSource = teacherGranted ? 'chaoxing_role_id' : 'student_default';
-
-  if (!teacherGranted && returnedRoleIds.length > 0) {
-    const { data: grant, error: grantError } = await admin
-      .from('teacher_role_grants')
-      .select('id')
-      .eq('provider', 'chaoxing')
-      .eq('fid', userInfo.fid)
-      .eq('active', true)
-      .in('external_role_id', returnedRoleIds)
-      .limit(1)
-      .maybeSingle();
-    if (grantError) {
-      console.warn('教师角色授权表暂不可用，将只使用 CHAOXING_TEACHER_ROLE_IDS：', grantError.message);
-    } else if (grant) {
-      teacherGranted = true;
-      roleSource = 'teacher_role_grant';
-    }
-  }
-
+  // 正式教师身份来源：服务端配置的 CHAOXING_TEACHER_ROLE_IDS 白名单。
+  // 命中后写入 profiles.role / app_metadata.app.role；超星原始角色保存在
+  // external_identities.raw_roles，班级范围权限由 enrollments + is_authorized_teacher 控制。
+  // 不使用前端参数、URL 参数或客户端 role 判断，也不按 external_role_id 自动批量授权。
+  const teacherGranted = hasConfiguredTeacherRole(returnedRoleIds, teacherRoleIds);
+  const roleSource = teacherGranted ? 'chaoxing_role_id' : 'student_default';
   const role = teacherGranted ? 'teacher' : 'student';
   // 只记录 roleId 与最终授权来源，roleName 仅供排查显示，不参与权限判断。
   const rawRoles = userInfo.role.map((item) => `${item.roleId || '无ID'}:${item.roleName || '未命名'}`).join('、') || '（空）';
@@ -102,6 +87,14 @@ export async function createSupabaseLoginToken(identity: ChaoxingIdentity): Prom
     role,
   }, { onConflict: 'class_id,user_id' });
   if (enrollmentError) throw new Error(`无法同步课程身份：${enrollmentError.message}`);
+  const { error: identityError } = await admin.from('external_identities').upsert({
+    user_id: userId,
+    provider: 'chaoxing',
+    external_uid: userInfo.uid,
+    fid: userInfo.fid ?? null,
+    raw_roles: userInfo.role.map((item) => ({ roleId: item.roleId ?? null, roleName: item.roleName ?? null })),
+  }, { onConflict: 'provider,external_uid,fid' });
+  if (identityError) throw new Error(`无法同步外部身份：${identityError.message}`);
 
   return link.properties.hashed_token;
 }

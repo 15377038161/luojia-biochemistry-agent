@@ -21,7 +21,9 @@ function evaluation(overrides: Partial<TextEvaluation> = {}): TextEvaluation {
     schemaVersion: 'TextEvaluation.v2', decision: 'pass', confidence: 0.9, coveredPoints: [], missingPoints: [], incorrectPoints: [], ambiguousPhrases: [], safetyAlerts: [], questions: [],
     studentFeedback: '可以进入下一步', teacherSummary: '已覆盖',
     scores: { knowledge: 20, operation: 30, decision: 20, troubleshooting: 15, analysis: 15 },
-    requiresTeacherReview: false, knowledgeChunkIds: [], detailedIssues: [], ...overrides,
+    requiresTeacherReview: false, knowledgeChunkIds: [], detailedIssues: [],
+    strengths: ['要点覆盖完整'], reasoningReview: '推理完整。', standardAnswer: '参考答案。',
+    improvedAnswer: '改写建议。', knowledgeExplanation: '知识讲解。', nextAction: '进入下一步。', ...overrides,
   };
 }
 

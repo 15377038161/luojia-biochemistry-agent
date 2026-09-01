@@ -1,47 +1,67 @@
 import { NextRequest } from 'next/server';
-import { errorFromUnknown, fail, ok } from '@/lib/api-result';
+import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
+import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
+import { listAppeals, resolveAppeal } from '@/lib/services/appeals';
 
 export async function GET(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
-  if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
-  if (!identity.user.capabilities.teacherWorkspace) return fail({ code: 'FORBIDDEN', message: '仅教师可查看成绩复核。', retryable: false }, undefined, 403);
+  const id = requestId();
   try {
-    const { supabase } = createSupabaseRouteClient(request);
-    const { data, error } = await supabase
-      .from('grade_review_requests')
-      .select('id,status,reason,resolution,created_at,grade_components!inner(id,user_id,process_score,contribution_points,status,profiles!grade_components_user_id_fkey(display_name,student_no))')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return ok(data ?? []);
+    const identity = await getSessionUser(request.cookies);
+    if (!identity) return fail({ code: 'AUTH_REQUIRED', message: 'AUTH_REQUIRED', retryable: false }, id, 401);
+    if (!identity.user.capabilities.teacherWorkspace) {
+      return fail({ code: 'FORBIDDEN', message: 'FORBIDDEN', retryable: false }, id, 403);
+    }
+
+    const admin = getSupabaseAdminClient();
+    const items = await listAppeals(admin);
+    return ok(items, id);
   } catch (error) {
-    return fail(errorFromUnknown(error), undefined, 500);
+    return fail(errorFromUnknown(error), id, 500);
   }
 }
 
 export async function POST(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
-  if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
-  if (!identity.user.capabilities.teacherWorkspace) return fail({ code: 'FORBIDDEN', message: '仅教师可处理成绩复核。', retryable: false }, undefined, 403);
+  const id = requestId();
   try {
-    const body = await request.json() as { requestId?: string; resolution?: string; overrideScore?: number | null; accepted?: boolean };
-    if (!body.requestId || !body.resolution?.trim()) {
-      return fail({ code: 'VALIDATION_ERROR', message: '复核结论不能为空。', retryable: false }, undefined, 400);
+    const identity = await getSessionUser(request.cookies);
+    if (!identity) return fail({ code: 'AUTH_REQUIRED', message: 'AUTH_REQUIRED', retryable: false }, id, 401);
+    if (!identity.user.capabilities.teacherWorkspace) {
+      return fail({ code: 'FORBIDDEN', message: 'FORBIDDEN', retryable: false }, id, 403);
     }
-    if (body.overrideScore != null && (!Number.isFinite(body.overrideScore) || body.overrideScore < 0 || body.overrideScore > 100)) {
-      return fail({ code: 'VALIDATION_ERROR', message: '调整后成绩必须在0到100之间。', retryable: false }, undefined, 400);
+
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const requestIdValue = typeof body.requestId === 'string' ? body.requestId.trim() : '';
+    const resolution = typeof body.resolution === 'string' ? body.resolution.trim() : '';
+    const overrideScore = typeof body.overrideScore === 'number' && Number.isFinite(body.overrideScore)
+      ? Math.min(100, Math.max(0, body.overrideScore))
+      : null;
+    const accepted = body.accepted === true;
+    if (!requestIdValue || !resolution || resolution.length < 10) {
+      return fail({ code: 'VALIDATION_ERROR', message: '请填写至少10字的处理意见。', retryable: false }, id, 400);
     }
-    const { supabase } = createSupabaseRouteClient(request);
-    const { data, error } = await supabase.rpc('resolve_grade_review', {
-      target_request: body.requestId,
-      resolution_text: body.resolution.trim(),
-      override_score: body.overrideScore ?? null,
-      accepted: body.accepted !== false,
+    if (accepted && overrideScore !== null) {
+      return fail({ code: 'VALIDATION_ERROR', message: '确认成绩与调整成绩不能同时进行。', retryable: false }, id, 400);
+    }
+
+    const admin = getSupabaseAdminClient();
+    const resolved = await resolveAppeal(admin, {
+      requestId: requestIdValue,
+      resolution,
+      overrideScore,
+      accepted,
+      teacherId: identity.user.id,
     });
-    if (error) throw error;
-    return ok(data);
+    return ok(
+      {
+        id: resolved.id,
+        status: resolved.status,
+        reason: resolved.reason,
+        resolution: resolved.resolution,
+      },
+      id,
+    );
   } catch (error) {
-    return fail(errorFromUnknown(error), undefined, 500);
+    return fail(errorFromUnknown(error), id, 500);
   }
 }

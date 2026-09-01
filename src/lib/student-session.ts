@@ -3,7 +3,7 @@ import type { AgentMessage, StepProgress, StudentSessionView, TextEvaluation } f
 
 interface SessionRow {
   id: string;
-  current_step: number;
+  current_step: number | null;
   completed_at: string | null;
 }
 

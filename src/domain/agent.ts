@@ -1,4 +1,5 @@
 export type AgentRole = 'student' | 'teacher';
+export type GradeStatus = 'provisional' | 'review_required' | 'appealed' | 'final';
 export type MessageRole = 'user' | 'assistant' | 'system';
 export type MessageKind =
   | 'question'
@@ -8,7 +9,10 @@ export type MessageKind =
   | 'image_upload'
   | 'navigation'
   | 'report_request'
-  | 'feedback';
+  | 'feedback'
+  | 'content_snapshot'
+  | 'grade_review_request'
+  | 'grade_review_resolution';
 
 export type StepStatus = 'locked' | 'active' | 'passed' | 'teacher_review';
 export type EvaluationDecision = 'pass' | 'revise' | 'teacher_review';
@@ -65,6 +69,12 @@ export interface TextEvaluation {
   requiresTeacherReview: boolean;
   knowledgeChunkIds: string[];
   detailedIssues: DetailedFeedbackIssue[];
+  strengths: string[];
+  reasoningReview: string;
+  standardAnswer: string;
+  improvedAnswer: string;
+  knowledgeExplanation: string;
+  nextAction: string;
 }
 
 export interface ExperimentStep {
@@ -122,13 +132,15 @@ export interface ApiError {
     | 'FORBIDDEN'
     | 'STATE_INVALID'
     | 'VALIDATION_ERROR'
+    | 'DB_ERROR'
     | 'AI_OUTPUT_INVALID'
     | 'AI_TIMEOUT'
+    | 'NETWORK_ERROR'
     | 'MEDIA_QUALITY_LOW'
     | 'RESOURCE_MISSING'
     | 'SYNC_DEFERRED';
   message: string;
-  retryable: boolean;
+  retryable?: boolean;
 }
 
 export type ApiResult<T> =

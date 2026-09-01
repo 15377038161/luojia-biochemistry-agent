@@ -176,6 +176,25 @@ async function waitForRateLimit(lastSentAt: number, rateLimitPerSecond: number):
   if (waitMs > 0) await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
 }
 
+async function verifyChaoxingReadback(config: ChaoxingFormConfig, fetchImpl: typeof fetch): Promise<{ verified: boolean; at: string | null }> {
+  if (!config.readbackUrl) return { verified: false, at: null };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const response = await fetchImpl(config.readbackUrl, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${config.token}` },
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+    return { verified: response.ok, at: response.ok ? new Date().toISOString() : null };
+  } catch {
+    return { verified: false, at: null };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function processChaoxingOutbox(limit = 20) {
   const admin = getSupabaseAdminClient();
   const config = getChaoxingFormConfig();
@@ -191,13 +210,8 @@ export async function processChaoxingOutbox(limit = 20) {
       await waitForRateLimit(lastSentAt, config.rateLimitPerSecond);
       const writeResult = await sendToChaoxing(row, config);
       lastSentAt = Date.now();
-      await admin.from('sync_outbox').update({
-        status: 'succeeded',
-        attempt_count: row.attempt_count + 1,
-        external_record_id: writeResult.externalRecordId ?? null,
-        last_error: null,
-        updated_at: new Date().toISOString(),
-      }).eq('id', row.id);
+      const readback = await verifyChaoxingReadback(config, fetch);
+      await admin.from('sync_outbox').update(buildSucceededSyncUpdate(row, writeResult.externalRecordId ?? null, readback)).eq('id', row.id);
       result.succeeded += 1;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -216,4 +230,28 @@ export async function processChaoxingOutbox(limit = 20) {
     }
   }
   return result;
+}
+
+// 外部记录编号统一保存在 payload.external_record_id（正式模型没有独立的
+// external_record_id 列），同步成功后把回执信息合并写回 payload。
+export function buildSucceededSyncUpdate(
+  row: OutboxRow,
+  externalRecordId: string | null,
+  readback: { verified: boolean; at: string | null },
+): Record<string, unknown> {
+  const existingPayload = (row.payload ?? {}) as Record<string, unknown>;
+  const payload: Record<string, unknown> = {
+    ...existingPayload,
+    submitted_at: new Date().toISOString(),
+    readback_verified: readback.verified,
+    readback_at: readback.at,
+  };
+  if (externalRecordId) payload.external_record_id = externalRecordId;
+  return {
+    status: 'succeeded',
+    attempt_count: row.attempt_count + 1,
+    payload,
+    last_error: null,
+    updated_at: new Date().toISOString(),
+  };
 }

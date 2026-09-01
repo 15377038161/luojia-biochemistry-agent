@@ -9,6 +9,7 @@ import { getStepQuiz } from '@/domain/quiz';
 import PageBackground from '@/components/page-background';
 import StudentTopbar from '@/components/student/student-topbar';
 import AiTutor from '@/components/student/ai-tutor';
+import { isTutorAllowedWorkstationStage } from '@/lib/tutor';
 import StepReviewReport from '@/components/student/step-review-report';
 import { dispatchChaoxingTaskflow } from '@/lib/chaoxing-taskflow-client';
 import type { ChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
@@ -63,6 +64,12 @@ function previewEvaluation(step: ExperimentStep): TextEvaluation {
       action: point.hints[2],
       check: `修订后应能定位到“${point.label}”对应的原因、动作与判断标准。`,
     })),
+    strengths: step.keyPoints.slice(0, 3).map((point) => `已覆盖“${point.label}”。`),
+    reasoningReview: '这是功能预览：正式评阅会给出完整推理点评。',
+    standardAnswer: '本步参考要点：' + step.keyPoints.map((point) => point.label).join('；') + '。',
+    improvedAnswer: '预览模式不提供改写示例；正式评阅会基于你的回答给出推荐改写。',
+    knowledgeExplanation: '预览模式：正式评阅会结合知识点给出详细讲解。',
+    nextAction: '预览通过后可进入下一步。',
   };
 }
 
