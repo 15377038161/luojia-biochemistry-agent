@@ -90,6 +90,7 @@ function radarPoints(values: number[], radius: number): string {
 }
 
 export default function StudyReport({ name, sessionId, preview, markdown, markdownBusy, markdownError, syncNotice = '', onClose, standalone = false, practiceMode = false, canSwitchToTeacher = false }: Props) {
+  const [reportTab, setReportTab] = useState<'overview' | 'gates' | 'analysis'>('overview');
   const [data, setData] = useState<StudentReportData | null>(null);
   const [error, setError] = useState('');
   const [grade, setGrade] = useState<GradeData | null>(preview ? { id: 'preview-grade', process_score: 86, contribution_points: 8.6, status: 'provisional', review: null } : null);
@@ -196,7 +197,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
     <div className={standalone ? 'report-page-shell watercolor-student-report min-h-screen' : 'fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4'}>
       {standalone && <StudentTopbar title="学习报告" subtitle="八步证据与五维能力" onBack={onClose} backLabel="实验地图" reportActive showTeacherSwitch={canSwitchToTeacher} />}
       {!standalone && <button type="button" aria-label="关闭学习报告" onClick={onClose} className="absolute inset-0 bg-foreground/40 cursor-default" />}
-      <section className={standalone ? 'report-page-card relative w-[calc(100%_-_2rem)] max-w-5xl mx-auto my-5 rounded-3xl bg-card/92 border border-border shadow-card p-5 sm:p-8' : 'report-sheet relative w-full max-w-3xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-card border border-border shadow-dialog p-5 sm:p-8'}>
+      <section className={standalone ? 'report-page-card relative w-[calc(100%_-_2rem)] max-w-[1380px] mx-auto my-5 rounded-3xl bg-card/92 border border-border shadow-card p-5 sm:p-8' : 'report-sheet relative w-full max-w-5xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-card border border-border shadow-dialog p-5 sm:p-8'}>
         {!standalone && <button type="button" aria-label="向下滑动关闭学习报告" className="sheet-swipe-handle" {...swipeDismiss}><span /></button>}
         <div className="flex items-start gap-2">
           <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -226,7 +227,13 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
               {syncNotice && <p className="mt-2 max-w-sm text-xs font-bold leading-5 text-primary inline-flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />{syncNotice}</p>}
             </div>
 
-            <section className="grade-summary-panel mt-5" aria-labelledby="grade-summary-title">
+            <nav className="student-report-tabs" aria-label="学习报告分区">
+              <button type="button" aria-current={reportTab === 'overview' ? 'page' : undefined} onClick={() => setReportTab('overview')}><RadarIcon />能力总览</button>
+              <button type="button" aria-current={reportTab === 'gates' ? 'page' : undefined} onClick={() => setReportTab('gates')}><BadgeCheck />八步记录</button>
+              <button type="button" aria-current={reportTab === 'analysis' ? 'page' : undefined} onClick={() => setReportTab('analysis')}><ScanSearch />AI 分析</button>
+            </nav>
+
+            {reportTab === 'overview' && <section className="grade-summary-panel mt-5" aria-labelledby="grade-summary-title">
               <div>
                 <p id="grade-summary-title" className="text-sm font-extrabold">课程过程成绩 · 占总评10%</p>
                 {practiceMode ? (
@@ -247,9 +254,9 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
               )}
               {grade?.review && <p className="grade-review-result"><b>复核记录：</b>{grade.review.resolution || grade.review.reason}</p>}
               {appealNotice && <p className="grade-review-result" role="status">{appealNotice}</p>}
-            </section>
+            </section>}
 
-            <div className="mt-6 grid lg:grid-cols-2 gap-6">
+            {reportTab === 'overview' && <div className="mt-6 grid lg:grid-cols-2 gap-6">
               <div className="rounded-2xl border border-border/60 shadow-card p-5">
                 <h4 className="font-extrabold flex items-center gap-2 text-sm"><RadarIcon className="w-5 h-5 text-primary" /> 五维能力雷达</h4>
                 <p className="mt-2 text-xs leading-5 text-muted-foreground">雷达半径展示各维度的得分率（实际得分 ÷ 该维度满分），不是额外考试分数。面积越外侧，说明已评阅文字中该能力证据越充分。</p>
@@ -300,9 +307,9 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
                 );
                 }) : <p className="text-xs text-muted-foreground">完成步骤评阅后这里会展示各维度得分。</p>}
               </div>
-            </div>
+            </div>}
 
-            <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
+            {reportTab === 'gates' && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
               <h4 className="font-extrabold flex items-center gap-2 text-sm"><BadgeCheck className="w-5 h-5 text-success" /> 八步 Gate 记录</h4>
               <ol className="mt-4 space-y-3">
                 {data.steps.map((step, index) => {
@@ -332,9 +339,9 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
                 })}
               </ol>
               {pendingSteps.length > 0 && <p className="mt-4 text-xs text-muted-foreground flex items-center gap-1.5"><Hourglass className="w-3.5 h-3.5" /> Gate {pendingSteps.map((step) => step.stepNo).join('、')} 待完成。</p>}
-            </div>
+            </div>}
 
-            {dimensionInsights.length > 0 && (
+            {reportTab === 'analysis' && dimensionInsights.length > 0 && (
               <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
                 <h4 className="font-extrabold flex items-center gap-2 text-sm"><ScanSearch className="w-5 h-5 text-secondary" /> 五维问题分析与提升方案</h4>
                 <p className="mt-2 text-xs leading-5 text-muted-foreground">每项先呈现评分依据，再列出已有记录中的具体场景；没有证据的维度不作负面推断。</p>
@@ -356,12 +363,12 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
               </div>
             )}
 
-            <div className="mt-6">
+            {reportTab === 'analysis' && <div className="mt-6">
               <h4 className="font-extrabold flex items-center gap-2 text-sm"><FileText className="w-5 h-5 text-primary" /> 完整学习报告</h4>
               {markdownBusy && <p className="mt-3 text-sm text-muted-foreground font-bold inline-flex items-center gap-2"><LoaderCircle className="w-4 h-4 animate-spin" />正在生成学习报告…</p>}
               {markdownError && <p className="mt-3 text-sm font-bold text-destructive flex items-center gap-1.5"><CircleAlert className="w-4 h-4" />{markdownError}</p>}
               {markdown && !markdownBusy && !markdownError && <div className="mt-3 rounded-xl border border-border bg-muted/40 p-4 text-sm leading-relaxed whitespace-pre-wrap">{markdown}</div>}
-            </div>
+            </div>}
           </>
         )}
       </section>

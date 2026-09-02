@@ -7,12 +7,14 @@ import PageBackground from '@/components/page-background';
 import StudyReport from '@/components/student/study-report';
 import ExperimentMap from '@/components/student/experiment-map';
 import StepWorkstation from '@/components/student/step-workstation';
+import GlobalAiTutor from '@/components/student/global-ai-tutor';
 import type { ApiResult, StepProgress, StudentSessionView } from '@/domain/agent';
 import type { CourseContentPayload } from '@/domain/course-content';
 import { defaultCourseContent } from '@/domain/course-content';
 import { dispatchChaoxingTaskflow } from '@/lib/chaoxing-taskflow-client';
 import type { ChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
 import { clientErrorMessage } from '@/lib/client-request';
+import { getExperimentStep } from '@/domain/experiment';
 
 interface Props {
   displayName: string;
@@ -193,6 +195,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
     try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* 退出失败也回到首页 */ }
     window.location.replace('/');
   };
+  const tutorStep = courseContent.steps.find((step) => step.id === session.currentStep) ?? getExperimentStep(session.currentStep);
 
   if (reportPage) {
     return (
@@ -211,6 +214,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
           practiceMode={practiceMode}
           canSwitchToTeacher={canSwitchToTeacher}
         />
+        <GlobalAiTutor sessionId={session.sessionId} step={tutorStep} mode="review" messages={session.messages} preview={preview} />
       </div>
     );
   }
@@ -230,6 +234,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
         onOpenReport={openReport}
         onLogout={demo ? undefined : () => void handleLogout()}
       />
+      <GlobalAiTutor sessionId={session.sessionId} step={tutorStep} mode="task" messages={session.messages} preview={preview} />
 
       {reportOpen && (
         <StudyReport
