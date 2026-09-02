@@ -9,7 +9,16 @@ interface RawSession {
   id: string;
   current_step: number | null;
   completed_at: string | null;
-  profiles: Array<{ display_name: string | null; student_no: string | null }> | { display_name: string | null; student_no: string | null } | null;
+  profiles: Array<RawProfile> | RawProfile | null;
+  classes: Array<{ name: string | null }> | { name: string | null } | null;
+}
+
+interface RawProfile {
+  display_name: string | null;
+  student_no: string | null;
+  major_name: string | null;
+  grade_name: string | null;
+  class_name: string | null;
 }
 
 interface RawAttempt {
@@ -56,6 +65,9 @@ export interface TeacherStudentOverview {
   sessionId: string;
   name: string;
   studentNo: string;
+  majorName: string;
+  gradeName: string;
+  className: string;
   currentStep: number;
   completed: boolean;
   gates: TeacherGateStatus[];
@@ -67,11 +79,18 @@ export interface TeacherOverview {
   pendingReviews: number;
   weakestGate: { stepNo: number; count: number } | null;
   students: TeacherStudentOverview[];
+  dimensions: { majors: string[]; grades: string[]; classes: string[] };
 }
 
-function profileOf(session: RawSession): { display_name: string | null; student_no: string | null } | null {
+function profileOf(session: RawSession): RawProfile | null {
   if (!session.profiles) return null;
   return Array.isArray(session.profiles) ? session.profiles[0] || null : session.profiles;
+}
+
+function classOf(session: RawSession): string {
+  if (!session.classes) return '';
+  const value = Array.isArray(session.classes) ? session.classes[0] : session.classes;
+  return value?.name?.trim() || '';
 }
 
 function dimensionScores(result: unknown): DimensionScores | null {
@@ -96,7 +115,7 @@ export async function GET(request: NextRequest) {
     const { supabase } = createSupabaseRouteClient(request);
     const [{ data: sessions, error: sessionError }, { data: evaluationRows, error: evaluationError }] = await Promise.all([
       supabase.from('agent_sessions')
-        .select('id,current_step,completed_at,profiles!agent_sessions_user_id_fkey(display_name,student_no)')
+        .select('id,current_step,completed_at,profiles!agent_sessions_user_id_fkey(display_name,student_no,major_name,grade_name,class_name),classes(name)')
         .eq('agent_role', 'student'),
       supabase.from('evaluations')
         .select('id,decision,confidence,total_score,result,requires_teacher_review,created_at,teacher_reviews(id,decision,comment),step_attempts!inner(step_no,answer,version_no,session_id)')
@@ -164,6 +183,9 @@ export async function GET(request: NextRequest) {
         sessionId: session.id,
         name: profileOf(session)?.display_name || '未命名学生',
         studentNo: profileOf(session)?.student_no || '',
+        majorName: profileOf(session)?.major_name?.trim() || '待同步专业',
+        gradeName: profileOf(session)?.grade_name?.trim() || '待同步年级',
+        className: profileOf(session)?.class_name?.trim() || classOf(session) || '待同步班级',
         currentStep,
         completed,
         gates,
@@ -183,7 +205,18 @@ export async function GET(request: NextRequest) {
       if (!weakestGate || count > weakestGate.count) weakestGate = { stepNo, count };
     }
 
-    return ok<TeacherOverview>({ totalStudents: students.length, pendingReviews, weakestGate, students });
+    const unique = (values: string[]) => [...new Set(values)].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+    return ok<TeacherOverview>({
+      totalStudents: students.length,
+      pendingReviews,
+      weakestGate,
+      students,
+      dimensions: {
+        majors: unique(students.map((student) => student.majorName)),
+        grades: unique(students.map((student) => student.gradeName)),
+        classes: unique(students.map((student) => student.className)),
+      },
+    });
   } catch (error) {
     return fail(errorFromUnknown(error), undefined, 500);
   }

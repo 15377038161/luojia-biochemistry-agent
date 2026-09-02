@@ -11,7 +11,7 @@
 - 图片学习：使用老师提供的仪器图和结果案例图完成观察与判断；既有媒体接口保留兼容，但不进入学生主流程。
 - 学习报告：`StudyReport.v2` 只读取真实步骤状态、文字回答与评阅证据；雷达图按 20/30/20/15/15 换算，解释定义、评分依据、场景、影响、成因边界、行动和检查标准。
 - 成绩：八步最终 Gate 等权形成 100 分过程成绩，按 10% 折算课程贡献分；学生仅可申请一次异议，教师结论作为最终成绩。
-- 教师智能体：班级概览、学生复核、成绩认定、八步内容草稿/校验/发布、素材上传和外部服务真实状态。
+- 教师智能体：教学概览、按专业/年级/班级筛选的学生管理、成绩复核，以及独立的八步内容草稿/校验/发布页面。
 - 数据层：完全运行在 `202608140001_agent_core.sql` 的 Coze 原生模型上——`agent_sessions.agent_role` 区分会话类型、`content_versions` 单表承载草稿/发布、`evaluations` 是过程成绩唯一事实来源、申诉复核走 `teacher_reviews`+`agent_messages`、`sync_outbox.payload` 保存外部记录编号；教师学习体验不计成绩、不进班级统计和超星 outbox。
 - UI V7：全站使用唯一“珞珈数字实验笔记”视觉系统；首页、统一登录、学生地图、步骤、报告与教师工作台共用字体、颜色、圆角、控件尺寸和导航规则。
 
@@ -32,7 +32,7 @@
 
 仅做本地 UI 验收时设置 `ENABLE_UI_PREVIEW=true`，随后访问 `/`、`/student/map?preview=1` 和 `/teacher/dashboard?preview=1`。`/login` 与旧 `/preview/*` 地址只做兼容跳转，不再渲染第二套页面；该开关不得用于正式环境。
 
-学生端采用多页面层级：`/student/map` 为八步任务地图，`/student/step/[stepId]` 为分步文字推演，`/student/report` 为学习报告。教师端入口为 `/teacher/dashboard`。Next.js Link 与客户端预取会预加载已解锁步骤和报告资源，路由切换期间由 `loading.tsx` 提供轻量加载状态，避免白屏。
+学生端采用多页面层级：`/student/map` 为八步任务地图，`/student/step/[stepId]` 为分步文字推演，`/student/report` 为学习报告。教师端拆分为 `/teacher/dashboard` 教学概览、`/teacher/students` 学生管理、`/teacher/reviews` 成绩复核、`/teacher/content` 内容管理。学生的专业、年级、班级优先取学习通身份/课程成员字段，缺失值明确显示为“待同步”，不得猜测。Next.js Link 与客户端预取负责页面切换，路由期间由 `loading.tsx` 提供轻量加载状态。
 
 非核心提示使用轻量抽屉/弹窗；移动端支持向下滑动关闭，桌面端支持点击遮罩、关闭按钮与 Esc。全局视觉变量、固定字号、48px 操作目标、底部安全区和低成本动效均集中在 `src/app/globals.css`，并遵循 `prefers-reduced-motion`。
 

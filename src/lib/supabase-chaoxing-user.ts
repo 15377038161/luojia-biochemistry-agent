@@ -79,6 +79,12 @@ export async function createSupabaseLoginToken(identity: ChaoxingIdentity): Prom
     display_name: userInfo.displayName || userInfo.name || userInfo.uid,
     role,
     student_no: role === 'student' ? userInfo.name : null,
+    major_name: role === 'student' ? userInfo.majorName || null : null,
+    grade_name: role === 'student' ? userInfo.gradeName || null : null,
+    class_name: role === 'student' ? userInfo.className || null : null,
+    academic_source: role === 'student' && (userInfo.majorName || userInfo.gradeName || userInfo.className)
+      ? 'chaoxing_identity'
+      : null,
   }, { onConflict: 'id' });
   if (profileError) throw new Error(`无法同步业务用户资料：${profileError.message}`);
   const { error: enrollmentError } = await admin.from('enrollments').upsert({

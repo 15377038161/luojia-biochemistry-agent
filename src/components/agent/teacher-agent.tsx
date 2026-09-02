@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { BookOpenText, CheckCircle2, CloudCog, FlaskConical, History, Home, LayoutDashboard, LoaderCircle, PenLine, Radar, Scale, Search, Users, CircleAlert, X } from 'lucide-react';
+import { BookOpenText, CheckCircle2, ChevronRight, FlaskConical, GraduationCap, History, Home, LayoutDashboard, LoaderCircle, PenLine, Radar, Scale, Search, Users, CircleAlert, X } from 'lucide-react';
 import { experimentSteps } from '@/domain/experiment';
 import type { ApiResult } from '@/domain/agent';
 import type { TeacherOverview, TeacherStudentDetail, TeacherStudentOverview } from '@/app/api/teacher/overview/route';
@@ -11,10 +11,10 @@ import PageBackground from '@/components/page-background';
 import BrandLockup from '@/components/brand-lockup';
 import ContentManager from '@/components/teacher/content-manager';
 import GradeReviewPanel from '@/components/teacher/grade-review-panel';
-import IntegrationStatusPanel from '@/components/teacher/integration-status-panel';
 import { clientErrorMessage } from '@/lib/client-request';
 
-interface Props { displayName: string; demo: boolean; preview?: boolean }
+type TeacherView = 'overview' | 'students' | 'reviews' | 'content';
+interface Props { displayName: string; demo: boolean; preview?: boolean; view?: TeacherView }
 
 const DIMENSION_LABELS: Array<{ key: 'knowledge' | 'operation' | 'decision' | 'troubleshooting' | 'analysis'; label: string; max: number }> = [
   { key: 'knowledge', label: '知识理解', max: 20 },
@@ -25,11 +25,10 @@ const DIMENSION_LABELS: Array<{ key: 'knowledge' | 'operation' | 'decision' | 't
 ];
 
 const NAV_ITEMS = [
-  { label: '班级概览', icon: LayoutDashboard, target: 'teacher-overview' },
-  { label: '学生进度', icon: Users, target: 'student-progress' },
-  { label: '成绩复核', icon: Scale, target: 'grade-reviews' },
-  { label: '内容管理', icon: BookOpenText, target: 'content-management' },
-  { label: '集成状态', icon: CloudCog, target: 'integration-status' },
+  { label: '教学概览', icon: LayoutDashboard, view: 'overview' as const, href: '/teacher/dashboard' },
+  { label: '学生管理', icon: Users, view: 'students' as const, href: '/teacher/students' },
+  { label: '成绩复核', icon: Scale, view: 'reviews' as const, href: '/teacher/reviews' },
+  { label: '内容管理', icon: BookOpenText, view: 'content' as const, href: '/teacher/content' },
 ];
 
 function mockGate(status: 'passed' | 'current' | 'locked', stepNo: number, decision?: 'pass' | 'revise', totalScore?: number) {
@@ -40,6 +39,7 @@ function previewOverview(): TeacherOverview {
   const students: TeacherStudentOverview[] = [
     {
       sessionId: 'preview-1', name: '张明轩', studentNo: '2023302110041', currentStep: 5, completed: false,
+      majorName: '生物技术', gradeName: '2023级', className: '生物技术1班',
       gates: [mockGate('passed', 1, 'pass', 88), mockGate('passed', 2, 'pass', 85), mockGate('passed', 3, 'pass', 82), mockGate('passed', 4, 'revise', 64), mockGate('current', 5), mockGate('locked', 6), mockGate('locked', 7), mockGate('locked', 8)],
       detail: {
         stepNo: 4, evaluationId: 'preview-eval-1', decision: 'revise', totalScore: 64,
@@ -55,6 +55,7 @@ function previewOverview(): TeacherOverview {
     },
     {
       sessionId: 'preview-2', name: '李思远', studentNo: '2023302110027', currentStep: 4, completed: false,
+      majorName: '生物技术', gradeName: '2023级', className: '生物技术1班',
       gates: [mockGate('passed', 1, 'pass', 92), mockGate('passed', 2, 'pass', 90), mockGate('passed', 3, 'pass', 87), mockGate('current', 4), mockGate('locked', 5), mockGate('locked', 6), mockGate('locked', 7), mockGate('locked', 8)],
       detail: {
         stepNo: 3, evaluationId: 'preview-eval-2', decision: 'pass', totalScore: 87,
@@ -67,11 +68,13 @@ function previewOverview(): TeacherOverview {
     },
     {
       sessionId: 'preview-3', name: '王梓涵', studentNo: '2023302110088', currentStep: 8, completed: true,
+      majorName: '生物技术', gradeName: '2023级', className: '生物技术2班',
       gates: [1, 2, 3, 4, 5, 6, 7, 8].map((stepNo) => mockGate('passed', stepNo, 'pass', 95 - stepNo)),
       detail: null,
     },
     {
       sessionId: 'preview-4', name: '陈嘉树', studentNo: '2023302110012', currentStep: 3, completed: false,
+      majorName: '生物科学', gradeName: '2023级', className: '生物科学1班',
       gates: [mockGate('passed', 1, 'pass', 80), mockGate('passed', 2, 'revise', 58), mockGate('current', 3), mockGate('locked', 4), mockGate('locked', 5), mockGate('locked', 6), mockGate('locked', 7), mockGate('locked', 8)],
       detail: {
         stepNo: 2, evaluationId: 'preview-eval-3', decision: 'revise', totalScore: 58,
@@ -84,11 +87,22 @@ function previewOverview(): TeacherOverview {
     },
     {
       sessionId: 'preview-5', name: '刘一桐', studentNo: '2023302110056', currentStep: 1, completed: false,
+      majorName: '生物科学', gradeName: '2024级', className: '生物科学1班',
       gates: [mockGate('current', 1), mockGate('locked', 2), mockGate('locked', 3), mockGate('locked', 4), mockGate('locked', 5), mockGate('locked', 6), mockGate('locked', 7), mockGate('locked', 8)],
       detail: null,
     },
   ];
-  return { totalStudents: 48, pendingReviews: 23, weakestGate: { stepNo: 4, count: 9 }, students };
+  return {
+    totalStudents: students.length,
+    pendingReviews: 2,
+    weakestGate: { stepNo: 4, count: 2 },
+    students,
+    dimensions: {
+      majors: ['生物技术', '生物科学'],
+      grades: ['2023级', '2024级'],
+      classes: ['生物技术1班', '生物技术2班', '生物科学1班'],
+    },
+  };
 }
 
 function gateChipClass(student: TeacherStudentOverview, stepNo: number): string {
@@ -110,10 +124,13 @@ function statusBadge(student: TeacherStudentOverview): { text: string; className
   return { text: '进行中', className: 'bg-primary-container text-primary' };
 }
 
-export default function TeacherAgent({ displayName, demo, preview = false }: Props) {
+export default function TeacherAgent({ displayName, demo, preview = false, view = 'overview' }: Props) {
   const [overview, setOverview] = useState<TeacherOverview | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
+  const [majorFilter, setMajorFilter] = useState('');
+  const [gradeFilter, setGradeFilter] = useState('');
+  const [classFilter, setClassFilter] = useState('');
   const [reviewText, setReviewText] = useState('');
   const [reviewBusy, setReviewBusy] = useState(false);
   const [planTab, setPlanTab] = useState<'raw' | 'ai' | 'final'>('raw');
@@ -160,16 +177,17 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
     };
   }, [mobileDetailOpen]);
 
-  function jumpTo(target: string) {
-    document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
   const students = overview?.students || [];
   const filtered = useMemo(() => {
     const keyword = filter.trim();
-    if (!keyword) return students;
-    return students.filter((item) => item.name.includes(keyword) || item.studentNo.includes(keyword));
-  }, [students, filter]);
+    return students.filter((item) => {
+      const matchesKeyword = !keyword || item.name.includes(keyword) || item.studentNo.includes(keyword);
+      return matchesKeyword
+        && (!majorFilter || item.majorName === majorFilter)
+        && (!gradeFilter || item.gradeName === gradeFilter)
+        && (!classFilter || item.className === classFilter);
+    });
+  }, [students, filter, majorFilter, gradeFilter, classFilter]);
   const selected = students.find((item) => item.sessionId === selectedId) || null;
   const completedStudents = students.filter((item) => item.completed).length;
   const medianProgress = useMemo(() => {
@@ -271,6 +289,8 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
   }
 
   const firstName = displayName.trim().charAt(0) || '师';
+  const pageTitle = view === 'students' ? '学生管理' : view === 'reviews' ? '成绩复核' : view === 'content' ? '课程内容管理' : '教学概览';
+  const withPreview = (href: string) => preview ? `${href}?preview=1` : href;
   return (
     <div className="teacher-app flex min-h-screen" data-testid="teacher-dashboard">
       <PageBackground />
@@ -280,10 +300,10 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
           <span className="leading-tight"><span className="block font-bold text-sm">珞珈生化 · 教学工作台</span><span className="block text-xs text-muted-foreground">八步文字实验学习分析</span></span>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1 text-sm font-medium overflow-y-auto">
-          {NAV_ITEMS.map(({ label, icon: Icon, target }, index) => (
-            <button key={label} type="button" onClick={() => jumpTo(target)} className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-xl cursor-pointer text-left ${index === 0 ? 'bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-card' : 'text-muted-foreground hover:bg-muted'}`}>
+          {NAV_ITEMS.map(({ label, icon: Icon, href, view: itemView }) => (
+            <Link key={label} href={withPreview(href)} className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-xl text-left transition-colors ${view === itemView ? 'bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-card' : 'text-muted-foreground hover:bg-muted'}`}>
               <Icon className="w-4 h-4" /> {label}
-            </button>
+            </Link>
           ))}
         </nav>
         <div className="p-4 border-t border-border/60">
@@ -299,22 +319,27 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
           <div className="px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
             <div className="teacher-header-title">
               <span className="teacher-header-logo lg:hidden"><BrandLockup compact decorative /></span>
-              <span><h1 className="font-extrabold text-base">文字实验教学工作台</h1><p className="text-xs text-muted-foreground"><span className="hidden sm:inline">{displayName} · </span>{dateText}</p></span>
+              <span><h1 className="font-extrabold text-base">{pageTitle}</h1><p className="text-xs text-muted-foreground"><span className="hidden sm:inline">{displayName} · </span>{dateText}</p></span>
             </div>
             <div className="flex items-center gap-2">
               <Link href={preview ? '/student/map?preview=1' : '/student/map'} className="teacher-mode-switch"><FlaskConical className="w-4 h-4" /><span>学生端</span></Link>
               <Link href="/" aria-label="返回首页" className="min-w-12 min-h-12 inline-flex items-center justify-center rounded-xl border border-border bg-card text-primary"><Home className="w-4 h-4" /></Link>
               {demo && <span className="px-3 py-2 rounded-lg bg-warning/10 text-warning text-xs font-bold">演示环境</span>}
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-muted text-xs font-bold"><Users className="w-3.5 h-3.5 text-primary" /> 生物技术 2023 级 1 班</span>
-              <span className="hidden sm:inline-flex px-3 py-2 rounded-lg bg-primary-container text-primary text-xs font-bold">2025-2026 秋季学期</span>
+               <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-muted text-xs font-bold"><GraduationCap className="w-3.5 h-3.5 text-primary" /> 武汉大学 · 生物化学实验</span>
               <div className="lg:hidden"><LogoutButton /></div>
             </div>
           </div>
         </header>
         <main className="px-4 sm:px-6 py-6 space-y-5 max-w-[1400px] mx-auto">
           <nav className="teacher-mobile-nav lg:hidden" aria-label="教师工作台页面导航">
-            {NAV_ITEMS.map(({ label, icon: Icon, target }) => <button key={target} type="button" onClick={() => jumpTo(target)}><Icon className="w-4 h-4" />{label}</button>)}
+            {NAV_ITEMS.map(({ label, icon: Icon, href, view: itemView }) => <Link key={href} href={withPreview(href)} aria-current={view === itemView ? 'page' : undefined}><Icon className="w-4 h-4" />{label}</Link>)}
           </nav>
+
+          {view === 'overview' && <>
+          <section className="teacher-page-intro">
+            <div><p>TEACHING PULSE</p><h2>先看今天最需要处理的教学信号</h2><span>概览只保留关键指标与快捷入口，学生明细、复核和内容编辑分别进入独立页面。</span></div>
+            <Link href={withPreview('/teacher/students')}>进入学生管理 <ChevronRight className="w-4 h-4" /></Link>
+          </section>
           <section id="teacher-overview" className="teacher-overview-section scroll-mt-24">
             {overview ? (
               <div className="teacher-metric-grid">
@@ -324,13 +349,29 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
                 <article><span className="teacher-metric-icon metric-warm"><Radar className="w-5 h-5" /></span><div><strong>{overview.weakestGate ? `Gate ${overview.weakestGate.stepNo}` : `${medianProgress} / 8`}</strong><small>{overview.weakestGate ? '班级薄弱点' : '中位进度'}</small></div></article>
               </div>
             ) : <div className="teacher-metric-loading">正在加载班级概览…</div>}
-            <label className="teacher-search inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card border border-border text-xs font-bold focus-within:ring-2 focus-within:ring-primary/30">
-              <Search className="w-3.5 h-3.5" />
-              <input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="搜索姓名 / 学号" className="bg-transparent border-none focus:outline-none w-32 placeholder:text-muted-foreground/60" />
-            </label>
           </section>
+          <section className="teacher-route-cards" aria-label="教师常用工作入口">
+            <Link href={withPreview('/teacher/students')}><span><Users /></span><div><small>学生管理</small><h3>按专业、年级、班级定位学生</h3><p>查看八步进度、AI 评价证据与个人学习轨迹。</p></div><ChevronRight /></Link>
+            <Link href={withPreview('/teacher/reviews')}><span><Scale /></span><div><small>待办处理</small><h3>{overview?.pendingReviews ?? '—'} 条记录等待复核</h3><p>集中处理成绩异议与教师最终认定。</p></div><ChevronRight /></Link>
+            <Link href={withPreview('/teacher/content')}><span><BookOpenText /></span><div><small>课程建设</small><h3>维护八步实验内容</h3><p>编辑评分点、Gate 规则与案例素材后校验发布。</p></div><ChevronRight /></Link>
+          </section>
+          </>}
+
           {error && <div className="rounded-xl bg-destructive/10 text-destructive text-xs font-bold px-4 py-3 flex items-center gap-2"><CircleAlert className="w-4 h-4" /> {error}</div>}
-          <section id="student-progress" className="scroll-mt-24 grid lg:grid-cols-[400px_1fr] gap-5 items-start">
+
+          {view === 'students' && <>
+          <section className="teacher-page-intro compact">
+            <div><p>STUDENT DIRECTORY</p><h2>按学籍维度快速定位目标学生</h2><span>筛选范围来自学习通身份与课程成员数据；未返回的字段会归入“待同步”，不使用猜测值。</span></div>
+          </section>
+          <section className="teacher-filter-bar" aria-label="学生筛选">
+            <label className="teacher-search"><Search /><input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="搜索姓名或学号" /></label>
+            <label><span>专业</span><select value={majorFilter} onChange={(event) => setMajorFilter(event.target.value)}><option value="">全部专业</option>{overview?.dimensions.majors.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label><span>年级</span><select value={gradeFilter} onChange={(event) => setGradeFilter(event.target.value)}><option value="">全部年级</option>{overview?.dimensions.grades.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label><span>班级</span><select value={classFilter} onChange={(event) => setClassFilter(event.target.value)}><option value="">全部班级</option>{overview?.dimensions.classes.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <button type="button" onClick={() => { setFilter(''); setMajorFilter(''); setGradeFilter(''); setClassFilter(''); }}>重置</button>
+            <strong>{filtered.length} 名学生</strong>
+          </section>
+          <section id="student-progress" className="scroll-mt-24 grid lg:grid-cols-[420px_1fr] gap-5 items-start">
             <div className="rounded-2xl bg-card/90 backdrop-blur border border-border/60 shadow-card p-5">
               <div className="flex items-center justify-between">
                 <h2 className="font-extrabold text-sm flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> 学生文字推演进度 · 8 Gate</h2>
@@ -346,7 +387,8 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
                         <span className="w-9 h-9 shrink-0 rounded-full bg-primary-container text-primary font-black flex items-center justify-center text-sm">{student.name.charAt(0)}</span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2 text-sm font-extrabold">{student.name}<span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${badge.className}`}>{badge.text}</span></span>
-                          <span className="block text-xs text-muted-foreground mt-0.5">学号 {student.studentNo || '—'} · 完成 {student.gates.filter((gate) => gate.status === 'passed').length} / 8 步</span>
+                          <span className="block text-xs text-muted-foreground mt-0.5">{student.majorName} · {student.gradeName} · {student.className}</span>
+                          <span className="block text-[11px] text-muted-foreground/80 mt-0.5">学号 {student.studentNo || '—'} · 完成 {student.gates.filter((gate) => gate.status === 'passed').length} / 8 步</span>
                         </span>
                       </div>
                       <div className="mt-2 flex gap-1.5">
@@ -367,7 +409,8 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
                     <span className="w-11 h-11 rounded-full bg-primary-container text-primary font-black flex items-center justify-center text-lg">{selected.name.charAt(0)}</span>
                     <div>
                       <p className="font-extrabold flex items-center gap-2">{selected.name}<span className={`px-2 py-0.5 rounded-full text-xs font-bold ${statusBadge(selected).className}`}>{statusBadge(selected).text}</span></p>
-                      <p className="text-xs text-muted-foreground mt-0.5">学号 {selected.studentNo || '—'} · 完成 {selected.gates.filter((gate) => gate.status === 'passed').length} / 8 步</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{selected.majorName} · {selected.gradeName} · {selected.className}</p>
+                      <p className="text-[11px] text-muted-foreground/80 mt-0.5">学号 {selected.studentNo || '—'} · 完成 {selected.gates.filter((gate) => gate.status === 'passed').length} / 8 步</p>
                     </div>
                     <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground"><History className="w-4 h-4 text-primary" /> 全过程留痕</span>
                   </div>
@@ -388,9 +431,16 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
               )}
             </div>
           </section>
-          <GradeReviewPanel preview={preview} />
-          <ContentManager preview={preview} />
-          <IntegrationStatusPanel preview={preview} />
+          </>}
+
+          {view === 'reviews' && <>
+            <section className="teacher-page-intro compact"><div><p>REVIEW DESK</p><h2>成绩复核与最终认定</h2><span>集中处理学生异议，保留理由、教师意见与最终分数的完整证据链。</span></div></section>
+            <GradeReviewPanel preview={preview} />
+          </>}
+          {view === 'content' && <>
+            <section className="teacher-page-intro compact"><div><p>COURSE STUDIO</p><h2>八步课程内容与发布</h2><span>内容编辑从教学分析中独立出来，保存草稿、规则校验和正式发布在同一条工作流内完成。</span></div></section>
+            <ContentManager preview={preview} />
+          </>}
         </main>
       </div>
       {toast && <div className="fixed left-1/2 -translate-x-1/2 bottom-8 z-[80] px-4 py-2.5 rounded-xl bg-inverse text-inverse-foreground text-xs font-bold shadow-dialog">{toast}</div>}

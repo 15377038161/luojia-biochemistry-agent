@@ -20,6 +20,9 @@ export interface ChaoxingUserInfo {
   orgName: string;
   role: ChaoxingRole[];
   loginNames: string[];
+  majorName: string;
+  gradeName: string;
+  className: string;
 }
 
 /** 超星不返回头像，avatar 是按 uid 拼出的派生字段，只能用于展示。 */
@@ -97,6 +100,19 @@ function getStringArray(value: unknown): string[] {
   return value
     .map((item) => (typeof item === 'string' || typeof item === 'number' ? String(item).trim() : ''))
     .filter(Boolean);
+}
+
+function getAcademicString(source: Record<string, unknown>, keys: string[]): string {
+  const direct = getString(source, keys);
+  if (direct) return direct;
+  for (const containerKey of ['studentInfo', 'schoolInfo', 'unitInfo', 'departmentInfo']) {
+    const nested = asRecord(source[containerKey]);
+    if (nested) {
+      const value = getString(nested, keys);
+      if (value) return value;
+    }
+  }
+  return '';
 }
 
 function getRoles(value: unknown): ChaoxingRole[] {
@@ -303,6 +319,9 @@ async function fetchIdentity(
     orgName: getString(userInfo, ['orgName', 'schoolname']),
     role: getRoles(userInfo.role),
     loginNames: getStringArray(userInfo.loginNames),
+    majorName: getAcademicString(userInfo, ['majorName', 'major', 'specialtyName', 'specialityName']),
+    gradeName: getAcademicString(userInfo, ['gradeName', 'grade', 'entranceYear', 'enrollmentYear']),
+    className: getAcademicString(userInfo, ['className', 'clazzName', 'administrativeClassName']),
     avatar: getAvatarUrl(userInfo, uid),
   };
 }

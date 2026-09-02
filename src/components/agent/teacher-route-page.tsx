@@ -3,14 +3,16 @@ import { notFound, redirect } from 'next/navigation';
 import TeacherAgent from '@/components/agent/teacher-agent';
 import { getSessionUser } from '@/lib/supabase-auth';
 
-export default async function TeacherRoutePage({ preview = false }: { preview?: boolean }) {
+type TeacherView = 'overview' | 'students' | 'reviews' | 'content';
+
+export default async function TeacherRoutePage({ preview = false, view = 'overview' }: { preview?: boolean; view?: TeacherView }) {
   if (preview) {
     if (process.env.ENABLE_UI_PREVIEW !== 'true') notFound();
-    return <TeacherAgent displayName="陈思盈老师" demo preview />;
+    return <TeacherAgent displayName="陈思盈老师" demo preview view={view} />;
   }
 
   const session = await getSessionUser(await cookies());
   if (!session) redirect('/');
   if (!session.user.capabilities.teacherWorkspace) redirect('/student/map');
-  return <TeacherAgent displayName={session.user.profile.displayName} demo={session.user.provider === 'demo'} />;
+  return <TeacherAgent displayName={session.user.profile.displayName} demo={session.user.provider === 'demo'} view={view} />;
 }

@@ -117,6 +117,9 @@ function normalizeUser(user: User): SessionUser {
       orgName: getString([chaoxing], ['orgName']),
       role: getRoles(chaoxing, 'role'),
       loginNames: getStringArray(chaoxing, 'loginNames'),
+      majorName: getString([chaoxing], ['majorName']),
+      gradeName: getString([chaoxing], ['gradeName']),
+      className: getString([chaoxing], ['className']),
     },
     profile: {
       displayName: getString([userMetadata], ['full_name', 'display_name']) || name || uid || openid || '用户',
