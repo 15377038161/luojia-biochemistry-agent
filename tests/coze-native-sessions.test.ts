@@ -56,7 +56,7 @@ test('教师体验恢复查询只限定 agent_role=teacher', async () => {
 
 test('教师体验会话服务端原子创建：会话 + 8 条 step_states + system 消息', async () => {
   const { client, calls, pushResponse } = createFakeSupabase();
-  pushResponse({ id: 'session-1', current_step: 1, completed_at: null, student_id: 'teacher-1' }); // insert agent_sessions
+  pushResponse({ id: 'session-1', current_step: 1, completed_at: null }); // insert agent_sessions
   pushResponse({ count: 8 }); // insert step_states
   pushResponse({ count: 1 }); // insert agent_messages
   const session = await createTeacherPracticeSession(client as never, 'teacher-1');
@@ -66,6 +66,8 @@ test('教师体验会话服务端原子创建：会话 + 8 条 step_states + sys
   const sessionInsert = tableCalls(calls, 'agent_sessions').find((call) => call.operation === 'insert');
   assert.ok(sessionInsert, '必须插入 agent_sessions');
   const insertPayload = sessionInsert.payload as Record<string, unknown>;
+  assert.equal(insertPayload.user_id, 'teacher-1');
+  assert.ok(!('student_id' in insertPayload), '必须只写生产库真实字段 user_id，不得依赖 student_id 别名列');
   assert.equal(insertPayload.agent_role, 'teacher');
   assert.equal(insertPayload.current_step, 1);
   assert.equal(insertPayload.class_id, PRACTICE_CLASS_ID);

@@ -75,7 +75,6 @@ export async function createTeacherPracticeSession(
     .from('agent_sessions')
     .insert({
       user_id: userId,
-      student_id: userId,
       experiment_id: EXPERIMENT_ID,
       class_id: PRACTICE_CLASS_ID,
       agent_role: 'teacher',
