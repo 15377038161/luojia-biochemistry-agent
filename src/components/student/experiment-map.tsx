@@ -56,14 +56,11 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
     if (progress?.status === 'active' && progress.attemptCount > 0) return 'revise';
     if (progress?.status === 'active' || progress?.status === 'teacher_review') return 'cur';
     if (stepId === currentStep && !completed) return 'cur';
-    return 'lock';
+    return 'cur';
   }
 
   function handleNode(stepId: number) {
-    const state = nodeState(stepId);
-    if (state === 'cur' || state === 'revise') { onOpenStep(stepId); return; }
-    if (state === 'done') { onOpenStep(stepId); return; }
-    showToast(`步骤${stepId}将在通过前一步 Gate 后解锁`);
+    onOpenStep(stepId);
   }
 
   const doneCount = steps.filter((step) => step.status === 'passed').length;
@@ -79,7 +76,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
         onClick={() => handleNode(stepId)}
         className={`map-node map-node-${state} absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer`}
         style={NODE_POSITIONS[stepId - 1]}
-        aria-label={`步骤${stepId} ${catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]} ${state === 'done' ? '已完成' : state === 'revise' ? '待修订' : state === 'cur' ? '进行中' : '未解锁'}`}
+        aria-label={`步骤${stepId} ${catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]} ${state === 'done' ? '已完成' : state === 'revise' ? '待修订' : '可进入'}`}
       >
         <span className="map-node-visual">
           <StepIllustration stepId={stepId} />
@@ -88,7 +85,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
           {state === 'lock' && <span className="map-node-status is-locked"><Lock aria-hidden /></span>}
           {state === 'cur' && <span className="map-current-ring" aria-hidden />}
         </span>
-        <span className="map-node-copy"><strong>{catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]}</strong><small>{state === 'done' ? '已通过 · 可回看' : state === 'revise' ? '待修订 · 查看点评' : state === 'cur' ? '当前任务 · 点击进入' : '完成上一关后解锁'}</small></span>
+        <span className="map-node-copy"><strong>{catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]}</strong><small>{state === 'done' ? '已通过 · 可回看' : state === 'revise' ? '待修订 · 查看点评' : '点击进入'}</small></span>
       </button>
     );
   }
@@ -106,7 +103,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
           </div>
           <p className="student-map-progress">
             {practiceMode && <><span className="text-secondary">教师独立体验</span><span className="text-border">·</span></>}
-            <span className="text-success">已完成 {doneCount} 步</span><span className="text-border">·</span><span className="text-primary">{completed ? '全部完成' : `当前：步骤${currentStep} ${currentMeta?.shortTitle || ''}`}</span><span className="text-border">·</span><span className="text-muted-foreground">待解锁 {lockCount} 步</span>
+            <span className="text-success">已完成 {doneCount} 步</span><span className="text-border">·</span><span className="text-primary">{completed ? '全部完成' : `当前：步骤${currentStep} ${currentMeta?.shortTitle || ''}`}</span><span className="text-border">·</span><span className="text-success">全部开放</span>
           </p>
           {demo && <span className="student-preview-badge">开发预览</span>}
           {practiceMode && <Link href="/teacher/dashboard" className="student-map-teacher-return">返回教学分析</Link>}
@@ -137,7 +134,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
             {[1, 2, 3, 4, 5, 6, 7, 8].map((stepId) => {
               const state = nodeState(stepId);
               return (
-                <button key={stepId} type="button" onClick={() => handleNode(stepId)} aria-label={`移动端 步骤${stepId} ${NODE_LABELS[stepId - 1]} ${state === 'done' ? '已完成' : state === 'revise' ? '待修订' : state === 'cur' ? '进行中' : '未解锁'}`} className={`mobile-route-card mobile-route-card-${state} relative text-left cursor-pointer`}>
+                <button key={stepId} type="button" onClick={() => handleNode(stepId)} aria-label={`移动端 步骤${stepId} ${NODE_LABELS[stepId - 1]} ${state === 'done' ? '已完成' : state === 'revise' ? '待修订' : '可进入'}`} className={`mobile-route-card mobile-route-card-${state} relative text-left cursor-pointer`}>
                   <span className="mobile-route-icon">
                     <StepIllustration stepId={stepId} />
                     <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center ${state === 'lock' ? 'bg-border text-foreground' : state === 'done' ? 'bg-success text-primary-foreground' : 'bg-primary text-primary-foreground'}`}>{stepId}</span>
@@ -145,7 +142,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
                   </span>
                   <span className="mobile-route-copy">
                     <span className="block text-xs font-bold leading-tight">{catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]}</span>
-                    <span className="mobile-route-state">{state === 'done' ? '已通过 · 可回看' : state === 'revise' ? '待修订 · 查看点评' : state === 'cur' ? '当前任务 · 点击进入' : '通过前一步后解锁'}</span>
+                    <span className="mobile-route-state">{state === 'done' ? '已通过 · 可回看' : state === 'revise' ? '待修订 · 查看点评' : '点击进入'}</span>
                   </span>
                 </button>
               );

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inspector } from 'react-dev-inspector';
 import { SupabaseConfigProvider } from '@/lib/supabase-config-inject';
+import { RoleSwitchFab } from '@/components/shared/role-switch-fab';
 import './globals.css';
 import './ui-system.css';
 
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <SupabaseConfigProvider disabled={isUiPreview}>
           {isDev && <Inspector />}
           {children}
+          <RoleSwitchFab />
         </SupabaseConfigProvider>
       </body>
     </html>
