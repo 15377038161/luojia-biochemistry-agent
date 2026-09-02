@@ -3,6 +3,7 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, FileImage, LoaderCircle, Plus, Save, Send, ShieldCheck, Upload, X } from 'lucide-react';
 import type { ExperimentStep } from '@/domain/agent';
+import { clientErrorMessage } from '@/lib/client-request';
 import {
   defaultCourseContent,
   type ContentValidation,
@@ -37,7 +38,7 @@ export default function ContentManager({ preview = false }: Props) {
       if (!response.ok || !payload.ok || !payload.data?.payload) throw new Error(payload.error?.message || '加载课程内容失败');
       setContent(payload.data.payload); setDraft(payload.data.draft ?? null);
       setValidation(payload.data.validation ?? validateCourseContent(payload.data.payload));
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : '加载课程内容失败'); }
+    } catch (reason) { setMessage(clientErrorMessage(reason, '加载课程内容失败')); }
     finally { setBusy(''); }
   }
 
@@ -81,7 +82,7 @@ export default function ContentManager({ preview = false }: Props) {
         setDraft(payload.data.draft); setValidation(payload.data.validation ?? validateCourseContent(content));
       }
       setMessage('草稿已保存，学生当前绑定版本不会受到影响。');
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : '保存草稿失败'); }
+    } catch (reason) { setMessage(clientErrorMessage(reason, '保存草稿失败')); }
     finally { setBusy(''); }
   }
 
@@ -101,7 +102,7 @@ export default function ContentManager({ preview = false }: Props) {
       }
       setDraft({ ...draft, status: 'published' });
       setMessage(`内容 V${draft.version} 已发布；已开始的会话仍使用原版本。`);
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : '发布失败'); }
+    } catch (reason) { setMessage(clientErrorMessage(reason, '发布失败')); }
     finally { setBusy(''); }
   }
 
@@ -125,7 +126,7 @@ export default function ContentManager({ preview = false }: Props) {
       };
       commit({ ...content, assets: [...content.assets, asset] });
       setMessage('素材已加入当前草稿，保存后生效。');
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : '上传素材失败'); }
+    } catch (reason) { setMessage(clientErrorMessage(reason, '上传素材失败')); }
     finally { setBusy(''); }
   }
 

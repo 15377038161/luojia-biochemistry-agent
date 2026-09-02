@@ -12,6 +12,7 @@ import type { CourseContentPayload } from '@/domain/course-content';
 import { defaultCourseContent } from '@/domain/course-content';
 import { dispatchChaoxingTaskflow } from '@/lib/chaoxing-taskflow-client';
 import type { ChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
+import { clientErrorMessage } from '@/lib/client-request';
 
 interface Props {
   displayName: string;
@@ -80,7 +81,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
       }
       setLoading(false);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '实验会话加载失败');
+      setError(clientErrorMessage(reason, '实验会话加载失败'));
       setLoading(false);
     }
   }, [practiceMode]);
@@ -121,7 +122,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
         }
       }
     } catch (reason) {
-      setReportError(reason instanceof Error ? reason.message : '学习报告生成失败');
+      setReportError(clientErrorMessage(reason, '学习报告生成失败'));
     } finally {
       setReportBusy(false);
     }

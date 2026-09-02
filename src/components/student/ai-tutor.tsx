@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Bot, LoaderCircle, Send, Sparkles } from 'lucide-react';
 import type { AgentMessage, ApiResult, ExperimentStep } from '@/domain/agent';
+import { clientErrorMessage } from '@/lib/client-request';
 
 interface Props {
   sessionId: string;
@@ -39,7 +40,7 @@ export default function AiTutor({ sessionId, step, mode, preview = false }: Prop
       setReply(answer?.content || '暂时没有收到回复，请稍后再试。');
       setQuestion('');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'AI 助教暂时无法回答');
+      setError(clientErrorMessage(reason, 'AI 助教暂时无法回答'));
     } finally {
       setBusy(false);
     }

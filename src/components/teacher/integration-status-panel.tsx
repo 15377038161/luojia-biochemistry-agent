@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CircleCheckBig, CloudCog, LoaderCircle, RefreshCw, TriangleAlert } from 'lucide-react';
 import type { IntegrationStatus, IntegrationStatusItem } from '@/lib/integration-status';
+import { clientErrorMessage } from '@/lib/client-request';
 
 interface Props { preview?: boolean }
 
@@ -46,7 +47,7 @@ export default function IntegrationStatusPanel({ preview = false }: Props) {
       if (syncResponse.ok && syncPayload.counts) setSummary(syncPayload);
       else setError(syncPayload.error || '无法读取同步队列状态');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '无法读取服务状态');
+      setError(clientErrorMessage(reason, '无法读取服务状态'));
     }
   }
 

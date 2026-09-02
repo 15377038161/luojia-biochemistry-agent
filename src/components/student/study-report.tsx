@@ -6,6 +6,7 @@ import type { ApiResult, DimensionScores } from '@/domain/agent';
 import type { StudentReportData } from '@/app/api/student/report-data/route';
 import { useSwipeDismiss } from '@/hooks/use-swipe-dismiss';
 import StudentTopbar from '@/components/student/student-topbar';
+import { clientErrorMessage } from '@/lib/client-request';
 
 interface Props {
   name: string;
@@ -108,7 +109,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
         if (!payload.ok) throw new Error(payload.error.message);
         if (!cancelled) setData(payload.data);
       } catch (reason) {
-        if (!cancelled) setError(reason instanceof Error ? reason.message : '报告数据加载失败');
+        if (!cancelled) setError(clientErrorMessage(reason, '报告数据加载失败'));
       }
     })();
     return () => { cancelled = true; };

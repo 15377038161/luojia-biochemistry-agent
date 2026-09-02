@@ -13,6 +13,7 @@ import { isTutorAllowedWorkstationStage } from '@/lib/tutor';
 import StepReviewReport from '@/components/student/step-review-report';
 import { dispatchChaoxingTaskflow } from '@/lib/chaoxing-taskflow-client';
 import type { ChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
+import { clientErrorMessage } from '@/lib/client-request';
 
 const STAGE_LABELS = ['任务与原理', '知识检验', '分步文字推演', 'AI 点评与本步报告'];
 const STAGE_MOBILE_LABELS = ['任务', '检验', '推演', '报告'];
@@ -160,7 +161,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
       } else {
         setSyncNotice('本次记录已保存；非正式学生会话不会写入超星。');
       }
-    } catch (reason) { setError(reason instanceof Error ? reason.message : '评阅失败，请稍后重试'); }
+    } catch (reason) { setError(clientErrorMessage(reason, '评阅失败，请稍后重试')); }
     finally { setBusy(false); }
   }
 

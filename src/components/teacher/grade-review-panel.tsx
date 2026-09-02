@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { CheckCircle2, LoaderCircle, RefreshCw, Scale, TriangleAlert } from 'lucide-react';
+import { clientErrorMessage } from '@/lib/client-request';
 
 interface ReviewView {
   id: string;
@@ -63,7 +64,7 @@ export default function GradeReviewPanel({ preview = false }: Props) {
       const next = normalize(payload.data);
       setReviews(next);
       setSelectedId((current) => current || next[0]?.id || '');
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : '加载成绩异议失败'); }
+    } catch (reason) { setMessage(clientErrorMessage(reason, '加载成绩异议失败')); }
   }
 
   useEffect(() => { void load(); }, [preview]);
@@ -84,7 +85,7 @@ export default function GradeReviewPanel({ preview = false }: Props) {
       }
       setReviews((current) => current.map((item) => item.id === selected.id ? { ...item, status: accepted ? 'accepted' : 'rejected', resolution: resolution.trim() } : item));
       setResolution(''); setOverrideScore(''); setMessage('复核结果已记录。');
-    } catch (reason) { setMessage(reason instanceof Error ? reason.message : '提交复核失败'); }
+    } catch (reason) { setMessage(clientErrorMessage(reason, '提交复核失败')); }
     finally { setBusy(false); }
   }
 

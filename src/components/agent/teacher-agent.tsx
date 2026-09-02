@@ -12,6 +12,7 @@ import BrandLockup from '@/components/brand-lockup';
 import ContentManager from '@/components/teacher/content-manager';
 import GradeReviewPanel from '@/components/teacher/grade-review-panel';
 import IntegrationStatusPanel from '@/components/teacher/integration-status-panel';
+import { clientErrorMessage } from '@/lib/client-request';
 
 interface Props { displayName: string; demo: boolean; preview?: boolean }
 
@@ -130,7 +131,7 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
       setOverview(payload.data);
       setSelectedId((current) => current || payload.data.students[0]?.sessionId || null);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '加载班级数据失败');
+      setError(clientErrorMessage(reason, '加载班级数据失败'));
     }
   }, [preview]);
 
@@ -193,7 +194,7 @@ export default function TeacherAgent({ displayName, demo, preview = false }: Pro
       setReviewText(''); setToast('复核已记录');
       await loadOverview();
     } catch (reason) {
-      setToast(reason instanceof Error ? reason.message : '提交复核失败');
+      setToast(clientErrorMessage(reason, '提交复核失败'));
     } finally { setReviewBusy(false); }
   }
 
