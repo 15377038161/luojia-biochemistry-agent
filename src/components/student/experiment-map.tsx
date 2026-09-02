@@ -32,12 +32,13 @@ interface Props {
   completed: boolean;
   demo?: boolean;
   practiceMode?: boolean;
+  canSwitchToTeacher?: boolean;
   onOpenStep: (stepId: number) => void;
   onOpenReport: () => void;
   onLogout?: () => void;
 }
 
-export default function ExperimentMap({ steps, catalog = experimentSteps, currentStep, completed, demo = false, practiceMode = false, onOpenStep, onOpenReport, onLogout }: Props) {
+export default function ExperimentMap({ steps, catalog = experimentSteps, currentStep, completed, demo = false, practiceMode = false, canSwitchToTeacher = false, onOpenStep, onOpenReport, onLogout }: Props) {
   const [toast, setToast] = useState('');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -94,7 +95,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
 
   return (
     <div className="lab-map-page min-h-screen flex flex-col text-foreground font-sans">
-      <StudentTopbar title="八步文字推演" subtitle="重组蛋白表达与纯化" onOpenReport={onOpenReport} onLogout={onLogout} />
+      <StudentTopbar title="八步文字推演" subtitle="重组蛋白表达与纯化" onOpenReport={onOpenReport} onLogout={onLogout} showTeacherSwitch={canSwitchToTeacher} />
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-12">
         <section className="student-map-hero mt-5 sm:mt-7 text-left">

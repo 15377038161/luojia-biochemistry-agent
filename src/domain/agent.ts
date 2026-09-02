@@ -84,6 +84,7 @@ export interface ExperimentStep {
   shortTitle: string;
   context: string;
   goal: string;
+  principle: string;
   keyPoints: Array<{
     id: string;
     dimension: keyof DimensionScores;

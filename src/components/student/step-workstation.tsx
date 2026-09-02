@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpen, Check, CircleAlert, CircleHelp, Flag, LoaderCircle, PenLine, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Check, CircleAlert, CircleHelp, Flag, GraduationCap, LoaderCircle, PenLine, Save } from 'lucide-react';
 import type { ApiResult, StudentSessionView, TextEvaluation } from '@/domain/agent';
 import type { ExperimentStep } from '@/domain/agent';
 import { experimentSteps } from '@/domain/experiment';
@@ -33,6 +33,7 @@ interface Props {
   stepId: number;
   catalog?: ExperimentStep[];
   preview?: boolean;
+  canSwitchToTeacher?: boolean;
   onBack: () => void;
   onSessionUpdate: (view: StudentSessionView) => void;
   onOpenReport?: () => void;
@@ -74,7 +75,7 @@ function previewEvaluation(step: ExperimentStep): TextEvaluation {
   };
 }
 
-export default function StepWorkstation({ session, stepId, catalog = experimentSteps, preview = false, onBack, onSessionUpdate, onOpenReport }: Props) {
+export default function StepWorkstation({ session, stepId, catalog = experimentSteps, preview = false, canSwitchToTeacher = false, onBack, onSessionUpdate, onOpenReport }: Props) {
   const step = catalog.find((item) => item.id === stepId) ?? experimentSteps[stepId - 1];
   const quiz = getStepQuiz(stepId);
   const [stage, setStage] = useState(0);
@@ -170,7 +171,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
   return (
     <div className="workstation-shell watercolor-student-task text-foreground font-sans">
       <PageBackground />
-      <StudentTopbar title={`步骤 ${stepId} · ${step.shortTitle}`} subtitle={`阶段 ${stage + 1} / ${STAGE_LABELS.length} · ${STAGE_LABELS[stage]}`} onBack={onBack} backLabel="实验地图" onOpenReport={onOpenReport} />
+      <StudentTopbar title={`步骤 ${stepId} · ${step.shortTitle}`} subtitle={`阶段 ${stage + 1} / ${STAGE_LABELS.length} · ${STAGE_LABELS[stage]}`} onBack={onBack} backLabel="实验地图" onOpenReport={onOpenReport} showTeacherSwitch={canSwitchToTeacher} />
       <div className="workstation-layout mx-auto max-w-[1260px] px-4 sm:px-6 py-5 pb-16 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
         <main className="min-w-0 max-w-4xl">
         <header className="workstation-step-heading flex flex-wrap items-center gap-3">
@@ -203,6 +204,10 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
               <p className="text-xs font-black text-primary bg-card/80 border border-primary/30 rounded-full px-2.5 py-1 inline-flex items-center gap-1"><BookOpen className="w-3 h-3" /> 引导级 · 任务情境</p>
               <h2 className="text-2xl font-bold tracking-tight mt-2">你在哪里？要回答什么问题？</h2>
               <p className="mt-2 text-sm leading-relaxed">{step.context}本步目标：{step.goal}</p>
+            </div>
+            <div className="rounded-2xl bg-card/90 border border-secondary/30 shadow-card p-5 mt-5">
+              <h3 className="text-sm font-extrabold flex items-center gap-2"><GraduationCap className="w-4 h-4 text-secondary" /> 原理讲解</h3>
+              <p className="mt-3 text-sm leading-relaxed text-foreground/90">{step.principle}</p>
             </div>
             <div className="grid lg:grid-cols-2 gap-5 mt-5">
               {(() => {

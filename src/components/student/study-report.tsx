@@ -19,6 +19,7 @@ interface Props {
   onClose: () => void;
   standalone?: boolean;
   practiceMode?: boolean;
+  canSwitchToTeacher?: boolean;
 }
 
 interface GradeData {
@@ -88,7 +89,7 @@ function radarPoints(values: number[], radius: number): string {
   }).join(' ');
 }
 
-export default function StudyReport({ name, sessionId, preview, markdown, markdownBusy, markdownError, syncNotice = '', onClose, standalone = false, practiceMode = false }: Props) {
+export default function StudyReport({ name, sessionId, preview, markdown, markdownBusy, markdownError, syncNotice = '', onClose, standalone = false, practiceMode = false, canSwitchToTeacher = false }: Props) {
   const [data, setData] = useState<StudentReportData | null>(null);
   const [error, setError] = useState('');
   const [grade, setGrade] = useState<GradeData | null>(preview ? { id: 'preview-grade', process_score: 86, contribution_points: 8.6, status: 'provisional', review: null } : null);
@@ -193,7 +194,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
 
   return (
     <div className={standalone ? 'report-page-shell watercolor-student-report min-h-screen' : 'fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4'}>
-      {standalone && <StudentTopbar title="学习报告" subtitle="八步证据与五维能力" onBack={onClose} backLabel="实验地图" reportActive />}
+      {standalone && <StudentTopbar title="学习报告" subtitle="八步证据与五维能力" onBack={onClose} backLabel="实验地图" reportActive showTeacherSwitch={canSwitchToTeacher} />}
       {!standalone && <button type="button" aria-label="关闭学习报告" onClick={onClose} className="absolute inset-0 bg-foreground/40 cursor-default" />}
       <section className={standalone ? 'report-page-card relative w-[calc(100%_-_2rem)] max-w-5xl mx-auto my-5 rounded-3xl bg-card/92 border border-border shadow-card p-5 sm:p-8' : 'report-sheet relative w-full max-w-3xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-card border border-border shadow-dialog p-5 sm:p-8'}>
         {!standalone && <button type="button" aria-label="向下滑动关闭学习报告" className="sheet-swipe-handle" {...swipeDismiss}><span /></button>}

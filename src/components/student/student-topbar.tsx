@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, FileText, LogOut } from 'lucide-react';
+import { ArrowLeft, FileText, GraduationCap, LogOut } from 'lucide-react';
 import BrandLockup from '@/components/brand-lockup';
 
 interface Props {
@@ -12,9 +12,10 @@ interface Props {
   onOpenReport?: () => void;
   reportActive?: boolean;
   onLogout?: () => void;
+  showTeacherSwitch?: boolean;
 }
 
-export default function StudentTopbar({ title, subtitle, onBack, backLabel = '返回', onOpenReport, reportActive = false, onLogout }: Props) {
+export default function StudentTopbar({ title, subtitle, onBack, backLabel = '返回', onOpenReport, reportActive = false, onLogout, showTeacherSwitch = false }: Props) {
   return (
     <header className="student-topbar">
       <div className="student-topbar-inner">
@@ -32,6 +33,11 @@ export default function StudentTopbar({ title, subtitle, onBack, backLabel = '�
           <small>{subtitle}</small>
         </div>
         <div className="student-topbar-actions">
+          {showTeacherSwitch && (
+            <Link href="/teacher/dashboard" className="student-topbar-teacher-switch" aria-label="切换到教师端">
+              <GraduationCap aria-hidden /><span>教师端</span>
+            </Link>
+          )}
           {onOpenReport && (
             <button type="button" onClick={onOpenReport} className={reportActive ? 'is-active' : ''} aria-label="打开学习报告">
               <FileText aria-hidden /><span>学习报告</span>

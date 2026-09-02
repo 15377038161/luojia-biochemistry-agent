@@ -19,6 +19,7 @@ interface Props {
   demo?: boolean;
   preview?: boolean;
   practiceMode?: boolean;
+  canSwitchToTeacher?: boolean;
   routeBase?: string;
   initialStep?: number;
   reportPage?: boolean;
@@ -51,7 +52,7 @@ const PREVIEW_REPORT_MARKDOWN = `# 学习报告（功能预览）
 - 操作描述：SOP 步骤完整
 - 科学决策：Gate 判定理由充分`;
 
-export default function StudentAgent({ displayName, demo = false, preview = false, practiceMode = false, routeBase, initialStep, reportPage = false }: Props) {
+export default function StudentAgent({ displayName, demo = false, preview = false, practiceMode = false, canSwitchToTeacher = false, routeBase, initialStep, reportPage = false }: Props) {
   const router = useRouter();
   const [session, setSession] = useState<StudentSessionView | null>(preview ? buildPreviewSession(displayName) : null);
   const [loading, setLoading] = useState(!preview);
@@ -180,6 +181,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
         stepId={activeStep}
         catalog={courseContent.steps}
         preview={preview}
+        canSwitchToTeacher={canSwitchToTeacher}
         onOpenReport={openReport}
         onBack={goToMap}
         onSessionUpdate={setSession}
@@ -207,6 +209,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
           onClose={closeReport}
           standalone
           practiceMode={practiceMode}
+          canSwitchToTeacher={canSwitchToTeacher}
         />
       </div>
     );
@@ -222,6 +225,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
         completed={session.completed}
         demo={demo}
         practiceMode={practiceMode}
+        canSwitchToTeacher={canSwitchToTeacher}
         onOpenStep={goToStep}
         onOpenReport={openReport}
         onLogout={demo ? undefined : () => void handleLogout()}
@@ -238,6 +242,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
           syncNotice={reportSyncNotice}
           onClose={closeReport}
           practiceMode={practiceMode}
+          canSwitchToTeacher={canSwitchToTeacher}
         />
       )}
     </div>

@@ -18,5 +18,5 @@ export default async function StudentRoutePage({ preview = false, stepId, report
   const session = await getSessionUser(await cookies());
   if (!session) redirect('/');
   if (!session.user.capabilities.studentWorkspace) redirect('/auth/error?reason=forbidden');
-  return <StudentAgent displayName={session.user.profile.displayName} demo={session.user.provider === 'demo'} practiceMode={session.user.capabilities.teacherPractice} routeBase="/student" initialStep={stepId} reportPage={reportPage} />;
+  return <StudentAgent displayName={session.user.profile.displayName} demo={session.user.provider === 'demo'} practiceMode={session.user.capabilities.teacherPractice} canSwitchToTeacher={session.user.capabilities.teacherWorkspace} routeBase="/student" initialStep={stepId} reportPage={reportPage} />;
 }

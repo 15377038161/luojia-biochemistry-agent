@@ -70,10 +70,16 @@ function getRoles(source: Record<string, unknown>, key: string): ChaoxingRole[] 
 function resolveRole(app: Record<string, unknown>, chaoxing: Record<string, unknown>): AgentRole {
   const configured = getString([app], ['role']);
   if (configured === 'teacher') return 'teacher';
-  // 正式身份必须在 OAuth 入库时由稳定 roleId 白名单或教师授权表判定。
-  // 会话读取阶段不再用易变的 roleName 文本猜测权限。
   void chaoxing;
   return 'student';
+}
+
+const TEST_ACCOUNT_FIDS = ['1385'];
+
+function isTeacherCapable(appRole: AgentRole, chaoxing: Record<string, unknown>): boolean {
+  if (appRole === 'teacher') return true;
+  const fid = getString([chaoxing], ['fid']);
+  return TEST_ACCOUNT_FIDS.includes(fid);
 }
 
 function normalizeUser(user: User): SessionUser {
@@ -86,10 +92,11 @@ function normalizeUser(user: User): SessionUser {
   const openid = getString([chaoxing], ['openid']);
 
   const appRole = resolveRole(app, chaoxing);
+  const teacherCapable = isTeacherCapable(appRole, chaoxing);
   const capabilities: WorkspaceCapabilities = {
     studentWorkspace: true,
-    teacherWorkspace: appRole === 'teacher',
-    teacherPractice: appRole === 'teacher',
+    teacherWorkspace: teacherCapable,
+    teacherPractice: teacherCapable,
   };
 
   return {

@@ -110,8 +110,9 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .student-topbar-inner { width:min(1180px,calc(100% - 32px)); min-height:64px; margin:0 auto; display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; align-items:center; gap:10px; }
 .student-topbar-brand { min-width:0; display:inline-flex; align-items:center; gap:9px; color:var(--ui-blue-strong); text-decoration:none; }
 .student-topbar-brand b { font-size:13px; white-space:nowrap; }
-.student-topbar-back,.student-topbar-actions button { min-height:44px; padding:0 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; color:var(--ui-blue); border:1px solid var(--ui-line); border-radius:11px; background:#fff; font-size:12px; font-weight:800; cursor:pointer; }
-.student-topbar-back svg,.student-topbar-actions svg { width:16px; }
+.student-topbar-back,.student-topbar-actions button,.student-topbar-teacher-switch { min-height:44px; padding:0 12px; display:inline-flex; align-items:center; justify-content:center; gap:6px; color:var(--ui-blue); border:1px solid var(--ui-line); border-radius:11px; background:#fff; font-size:12px; font-weight:800; cursor:pointer; }
+.student-topbar-back svg,.student-topbar-actions svg,.student-topbar-teacher-switch svg { width:16px; }
+.student-topbar-teacher-switch { text-decoration:none; color:var(--ui-blue-strong); border-color:var(--ui-blue-strong); }
 .student-topbar-title { min-width:0; display:grid; gap:2px; text-align:center; }
 .student-topbar-title strong,.student-topbar-title small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .student-topbar-title strong { color:var(--ui-blue-strong); font-size:14px; }
