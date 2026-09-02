@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { Check, Flag, Lock, Play } from 'lucide-react';
+import { Check, Flag, Play } from 'lucide-react';
 import type { ExperimentStep, StepProgress } from '@/domain/agent';
 import { experimentSteps } from '@/domain/experiment';
 import StudentTopbar from '@/components/student/student-topbar';
@@ -19,7 +19,7 @@ const NODE_POSITIONS = [
   { left: '17.5%', top: '75%' },
 ];
 
-type NodeState = 'done' | 'cur' | 'revise' | 'lock';
+type NodeState = 'done' | 'cur' | 'revise' | 'open';
 
 function StepIllustration({ stepId }: { stepId: number }) {
   return <svg aria-hidden viewBox="0 0 120 96" className="step-illustration"><use href={`/illustrations/step-icons-v4.svg#step-${stepId}`} /></svg>;
@@ -56,7 +56,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
     if (progress?.status === 'active' && progress.attemptCount > 0) return 'revise';
     if (progress?.status === 'active' || progress?.status === 'teacher_review') return 'cur';
     if (stepId === currentStep && !completed) return 'cur';
-    return 'cur';
+    return 'open';
   }
 
   function handleNode(stepId: number) {
@@ -64,7 +64,6 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
   }
 
   const doneCount = steps.filter((step) => step.status === 'passed').length;
-  const lockCount = Math.max(0, 8 - doneCount - (completed ? 0 : 1));
   const currentMeta = experimentSteps.find((step) => step.id === currentStep);
 
   function renderNode(stepId: number) {
@@ -82,7 +81,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
           <StepIllustration stepId={stepId} />
           <span className="map-node-number">{stepId}</span>
           {state === 'done' && <span className="map-node-status is-done"><Check aria-hidden /></span>}
-          {state === 'lock' && <span className="map-node-status is-locked"><Lock aria-hidden /></span>}
+          {/* lock state removed — all steps open */}
           {state === 'cur' && <span className="map-current-ring" aria-hidden />}
         </span>
         <span className="map-node-copy"><strong>{catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]}</strong><small>{state === 'done' ? '已通过 · 可回看' : state === 'revise' ? '待修订 · 查看点评' : '点击进入'}</small></span>
@@ -137,8 +136,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
                 <button key={stepId} type="button" onClick={() => handleNode(stepId)} aria-label={`移动端 步骤${stepId} ${NODE_LABELS[stepId - 1]} ${state === 'done' ? '已完成' : state === 'revise' ? '待修订' : '可进入'}`} className={`mobile-route-card mobile-route-card-${state} relative text-left cursor-pointer`}>
                   <span className="mobile-route-icon">
                     <StepIllustration stepId={stepId} />
-                    <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center ${state === 'lock' ? 'bg-border text-foreground' : state === 'done' ? 'bg-success text-primary-foreground' : 'bg-primary text-primary-foreground'}`}>{stepId}</span>
-                    {state === 'lock' && <span className="mobile-route-lock"><Lock aria-hidden /></span>}
+                    <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center ${state === 'done' ? 'bg-success text-primary-foreground' : 'bg-primary text-primary-foreground'}`}>{stepId}</span>
                   </span>
                   <span className="mobile-route-copy">
                     <span className="block text-xs font-bold leading-tight">{catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]}</span>

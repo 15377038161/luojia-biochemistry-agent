@@ -151,6 +151,7 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .lab-map-page .map-node-revise { border-color:#e8b36f!important; background:#fffaf1!important; }
 .lab-map-page .map-node-done { border-color:#abd1c2!important; }
 .lab-map-page .map-node-lock { opacity:.62; filter:saturate(.45); }
+.lab-map-page .map-node-open { border-color:rgba(18,63,112,.22)!important; }
 .map-node-status { position:absolute; right:-5px; top:-5px; width:21px; height:21px; display:grid; place-items:center; border:2px solid #fff; border-radius:50%; }
 .map-node-status svg { width:11px; }
 .map-node-status.is-done { color:#fff; background:var(--ui-green); }
