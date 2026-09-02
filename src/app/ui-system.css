@@ -309,6 +309,111 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
   .production-route-flow,.map-current-ring,.mobile-route-line,.unified-entry-art::before,.science-orbit,.science-bubble { animation:none!important; }
 }
 
+/* 学生端最终视觉规范：统一控件状态、层级与空间节奏。 */
+:root {
+  --student-ink: #102f46;
+  --student-muted: #607789;
+  --student-brand: #176b5c;
+  --student-brand-dark: #0d4d43;
+  --student-accent: #d97b52;
+  --student-surface: #fffdf8;
+  --student-surface-soft: #f4f8f5;
+  --student-line: #d7e4e2;
+  --student-focus: rgba(23,107,92,.28);
+  --student-shadow: 0 12px 30px rgba(16,47,70,.08);
+  --student-shadow-hover: 0 18px 38px rgba(16,47,70,.14);
+}
+
+.student-agent-app,
+.lab-map-page,
+.workstation-shell,
+.report-page-shell { color: var(--student-ink); }
+
+/* Button hierarchy: primary > secondary > text, with a single four-state contract. */
+.student-agent-app button,
+.lab-map-page button,
+.workstation-shell button,
+.report-page-shell button { transition: color .16s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease; }
+.student-agent-app button:focus-visible,
+.lab-map-page button:focus-visible,
+.workstation-shell button:focus-visible,
+.report-page-shell button:focus-visible { outline: 3px solid var(--student-focus); outline-offset: 2px; }
+.student-agent-app button:not(:disabled):active,
+.lab-map-page button:not(:disabled):active,
+.workstation-shell button:not(:disabled):active,
+.report-page-shell button:not(:disabled):active { transform: translateY(1px); }
+.student-agent-app button:disabled,
+.lab-map-page button:disabled,
+.workstation-shell button:disabled,
+.report-page-shell button:disabled { cursor: not-allowed; opacity: .48; filter: saturate(.7); box-shadow: none!important; }
+
+.student-topbar-back,
+.student-topbar-actions button,
+.student-topbar-teacher-switch,
+.workstation-footer button:first-child,
+.draft-save-button,
+.report-page-card button:not(.grade-appeal-form button) {
+  border: 1px solid var(--student-line)!important;
+  border-radius: 12px!important;
+  background: var(--student-surface)!important;
+  color: var(--student-ink)!important;
+  box-shadow: 0 2px 0 rgba(16,47,70,.04)!important;
+  font-weight: 800;
+}
+.student-topbar-back:hover,
+.student-topbar-actions button:hover,
+.student-topbar-teacher-switch:hover,
+.workstation-footer button:first-child:hover,
+.draft-save-button:hover,
+.report-page-card button:not(.grade-appeal-form button):hover { border-color: #a9c6c0!important; background: var(--student-surface-soft)!important; box-shadow: var(--student-shadow)!important; transform: translateY(-1px); }
+.student-topbar-actions button.is-active,
+.workstation-footer button:last-child,
+.grade-appeal-form button { border: 1px solid var(--student-brand-dark)!important; border-radius: 12px!important; color: #fff!important; background: var(--student-brand)!important; box-shadow: 0 5px 0 var(--student-brand-dark)!important; font-weight: 900; }
+.student-topbar-actions button.is-active:hover,
+.workstation-footer button:last-child:hover,
+.grade-appeal-form button:not(:disabled):hover { background: #21816e!important; box-shadow: 0 7px 14px rgba(13,77,67,.2)!important; transform: translateY(-1px); }
+.grade-appeal-form button:disabled { color: var(--student-muted)!important; background: #e7eeeb!important; border-color: var(--student-line)!important; }
+
+.student-map-hero,
+.desktop-route-board,
+.workstation-layout>aside:first-child,
+.workstation-card,
+.workstation-shell main>section,
+.workstation-feedback-rail>div,
+.report-page-card,
+.report-sheet { border-color: var(--student-line)!important; background: rgba(255,253,248,.94)!important; box-shadow: var(--student-shadow)!important; }
+.student-map-hero { padding: clamp(24px,4vw,38px)!important; border-radius: 22px!important; }
+.student-map-heading h1 { color: var(--student-ink)!important; letter-spacing: -.02em!important; }
+.student-map-heading>span { max-width: 680px; color: var(--student-muted)!important; line-height: 1.8!important; }
+.student-map-progress { border-color: var(--student-line)!important; background: var(--student-surface-soft)!important; }
+.lab-map-page .map-node { border-color: var(--student-line)!important; border-radius: 16px!important; background: var(--student-surface)!important; box-shadow: 0 8px 20px rgba(16,47,70,.07)!important; }
+.lab-map-page .map-node:hover,.lab-map-page .map-node:focus-visible { border-color: #9fc6bb!important; box-shadow: var(--student-shadow-hover)!important; }
+.lab-map-page .map-node-cur { border-color: #db9b7d!important; box-shadow: 0 0 0 3px rgba(217,123,82,.14), var(--student-shadow)!important; }
+.lab-map-page .map-node-revise { border-color: #e3bd83!important; background: #fffaf1!important; }
+.lab-map-page .map-node-copy strong { color: var(--student-ink)!important; }
+
+.workstation-layout { gap: 18px!important; }
+.workstation-step-heading { min-height: 82px!important; border-radius: 16px!important; }
+.workstation-shell main>section { padding: 22px!important; }
+.stage-strip button { min-height: 48px!important; border: 1px solid var(--student-line)!important; background: var(--student-surface)!important; color: var(--student-muted)!important; font-weight: 800!important; }
+.stage-strip button:hover { border-color: #a9c6c0!important; color: var(--student-brand)!important; background: var(--student-surface-soft)!important; }
+.stage-strip button.bg-primary { border-color: var(--student-brand-dark)!important; background: var(--student-brand)!important; color: #fff!important; box-shadow: 0 4px 0 var(--student-brand-dark)!important; }
+.workstation-shell textarea,.workstation-shell input { min-height: 46px; border-color: var(--student-line)!important; background: #fff!important; color: var(--student-ink)!important; }
+.workstation-shell textarea:focus,.workstation-shell input:focus { border-color: #76aa9d!important; box-shadow: 0 0 0 3px var(--student-focus)!important; outline: 0; }
+.workstation-footer { padding: 12px 18px!important; border-color: var(--student-line)!important; background: rgba(255,253,248,.97)!important; box-shadow: 0 -8px 24px rgba(16,47,70,.08)!important; }
+
+.report-page-card { padding: clamp(22px,4vw,42px)!important; border-radius: 22px!important; }
+.student-report-tabs { border-color: var(--student-line)!important; background: var(--student-surface)!important; box-shadow: 0 8px 22px rgba(16,47,70,.07)!important; }
+.student-report-tabs button[aria-current="page"] { background: var(--student-brand)!important; box-shadow: 0 4px 0 var(--student-brand-dark)!important; }
+
+@media (max-width: 767px) {
+  .student-map-hero { padding: 21px 18px!important; border-radius: 16px!important; }
+  .workstation-shell main>section { padding: 16px!important; }
+  .workstation-footer { padding: 9px 12px calc(9px + env(safe-area-inset-bottom))!important; }
+  .workstation-footer button { min-height: 48px!important; }
+  .report-page-card { padding: 18px 14px!important; border-radius: 16px!important; }
+}
+
 @keyframes production-route-flow { to { stroke-dashoffset:-36; } }
 @keyframes lab-hero-glow { 0%,100% { opacity:.42; transform:scale(.92); } 50% { opacity:.78; transform:scale(1.07); } }
 @keyframes lab-hero-liquid { to { transform:translateX(32px); } }
