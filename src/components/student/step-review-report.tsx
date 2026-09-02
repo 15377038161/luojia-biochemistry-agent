@@ -49,6 +49,30 @@ export default function StepReviewReport({ step, evaluation, answers, syncNotice
         </div>
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-2">
+        <article className="rounded-2xl border border-primary/25 bg-primary-container/25 p-5">
+          <h3 className="flex items-center gap-2 text-base font-extrabold"><Lightbulb className="h-5 w-5 text-primary" />推荐修订答案</h3>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-7">{evaluation.improvedAnswer || '本次评阅没有生成推荐修订答案，请根据逐项点评补齐条件、依据、判断与后续动作。'}</p>
+        </article>
+        <article className="rounded-2xl border border-secondary/25 bg-secondary-container/20 p-5">
+          <h3 className="flex items-center gap-2 text-base font-extrabold"><BookCheck className="h-5 w-5 text-secondary" />参考答案与原理</h3>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-7">{evaluation.standardAnswer || '本次评阅没有生成完整参考答案。'}</p>
+          <details className="mt-3 rounded-lg border border-secondary/20 bg-card/60 p-3 text-xs leading-6">
+            <summary className="cursor-pointer font-black text-secondary">展开知识讲解</summary>
+            <p className="mt-2 whitespace-pre-wrap">{evaluation.knowledgeExplanation || '暂无补充知识讲解。'}</p>
+          </details>
+        </article>
+      </div>
+
+      <div className="rounded-2xl border border-border/70 bg-card/90 p-5 shadow-card">
+        <h3 className="flex items-center gap-2 text-base font-extrabold"><Flag className="h-5 w-5 text-primary" />点评结论与下一步</h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-3 text-sm leading-7">
+          <p className="rounded-xl bg-muted/60 p-3"><b>推理点评：</b>{evaluation.reasoningReview || '请结合逐项证据检查自己的判断链条。'}</p>
+          <p className="rounded-xl bg-muted/60 p-3"><b>下一步动作：</b>{evaluation.nextAction || summary.actions[0]}</p>
+          <p className="rounded-xl bg-muted/60 p-3"><b>本步优势：</b>{evaluation.strengths.length > 0 ? evaluation.strengths.join('；') : summary.strengths.join('；')}</p>
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-border/70 bg-card/90 p-5 shadow-card">
         <h3 className="flex items-center gap-2 text-base font-extrabold"><BarChart3 className="h-5 w-5 text-secondary" />{summary.title}</h3>
         <div className="mt-4 grid gap-2 sm:grid-cols-5">{DIMENSIONS.map((item) => <div key={item.key} className="rounded-xl bg-muted/60 p-3 text-xs"><p className="font-bold">{item.label}</p><p className="mt-1 text-lg font-black text-primary">{evaluation.scores[item.key]}<span className="text-xs font-normal text-muted-foreground">/{item.max}</span></p><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-card"><div className="h-full rounded-full bg-primary" style={{ width: `${evaluation.scores[item.key] / item.max * 100}%` }} /></div></div>)}</div>

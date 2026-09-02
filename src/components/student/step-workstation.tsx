@@ -8,8 +8,7 @@ import { experimentSteps } from '@/domain/experiment';
 import { getStepQuiz } from '@/domain/quiz';
 import PageBackground from '@/components/page-background';
 import StudentTopbar from '@/components/student/student-topbar';
-import AiTutor from '@/components/student/ai-tutor';
-import { isTutorAllowedWorkstationStage } from '@/lib/tutor';
+import GlobalAiTutor from '@/components/student/global-ai-tutor';
 import StepReviewReport from '@/components/student/step-review-report';
 import { dispatchChaoxingTaskflow } from '@/lib/chaoxing-taskflow-client';
 import type { ChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
@@ -172,14 +171,14 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
     <div className="workstation-shell watercolor-student-task text-foreground font-sans">
       <PageBackground />
       <StudentTopbar title={`步骤 ${stepId} · ${step.shortTitle}`} subtitle={`阶段 ${stage + 1} / ${STAGE_LABELS.length} · ${STAGE_LABELS[stage]}`} onBack={onBack} backLabel="实验地图" onOpenReport={onOpenReport} showTeacherSwitch={canSwitchToTeacher} />
-      <div className="workstation-layout mx-auto max-w-[1260px] px-4 sm:px-6 py-5 pb-16 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
-        <main className="min-w-0 max-w-4xl">
+      <div className="workstation-layout mx-auto max-w-[1500px] px-4 sm:px-6 py-4 pb-8">
+        <main className="student-stage-canvas min-w-0">
         <header className="workstation-step-heading flex flex-wrap items-center gap-3">
           <div className="step-heading-copy"><p>当前学习任务</p><h1>{step.goal}</h1></div>
           <span className={`step-gate-state ${gatePassed ? 'is-passed' : 'is-pending'}`}><Flag aria-hidden />Gate {stepId} · {gatePassed ? '已通过' : '待通过'}</span>
         </header>
 
-        <section className="workstation-card mt-4 rounded-2xl p-3">
+        <section className="workstation-card student-stage-navigation mt-4 rounded-2xl p-3">
           <div className="stage-strip flex flex-wrap gap-1.5">
             {STAGE_LABELS.map((label, index) => {
               const Icon = STAGE_ICONS[index];
@@ -199,7 +198,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
         </section>
 
         {stage === 0 && (
-          <section className="mt-4">
+          <section className="student-stage-panel student-stage-panel-task mt-4">
             <div className="rounded-2xl bg-primary-container/40 border border-primary/20 p-5">
               <p className="text-xs font-black text-primary bg-card/80 border border-primary/30 rounded-full px-2.5 py-1 inline-flex items-center gap-1"><BookOpen className="w-3 h-3" /> 引导级 · 任务情境</p>
               <h2 className="text-2xl font-bold tracking-tight mt-2">你在哪里？要回答什么问题？</h2>
@@ -240,7 +239,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
         )}
 
         {stage === 1 && (
-          <section className="mt-4 rounded-2xl bg-card/90 border border-border/60 shadow-card p-6">
+          <section className="student-stage-panel student-stage-panel-quiz mt-4 rounded-2xl bg-card/90 border border-border/60 shadow-card p-6">
             <p className="text-xs font-black text-primary bg-primary-container/60 border border-primary/30 rounded-full px-2.5 py-1 inline-flex items-center gap-1"><CircleHelp className="w-3 h-3" /> 引导级 · 知识检验</p>
             <h2 className="text-lg font-bold mt-2">答对全部题目，解锁「分步文字推演」</h2>
             <p className="mt-1 text-xs text-muted-foreground">先确认基础概念，再用文字说明每个操作步骤与判断理由。</p>
@@ -275,7 +274,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
         )}
 
         {stage === 2 && (
-          <section className="mt-4 rounded-2xl bg-card/90 border border-border/60 shadow-card p-5">
+          <section className="student-stage-panel student-stage-panel-simulation mt-4 rounded-2xl bg-card/90 border border-border/60 shadow-card p-5">
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-xs font-black text-primary-foreground bg-secondary border border-secondary/40 rounded-full px-2.5 py-1 inline-flex items-center gap-1"><PenLine className="w-3 h-3" /> 推演级 · 分步描述</p>
               <div className="ml-auto flex items-center gap-2 text-xs font-bold">
@@ -292,7 +291,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                   className="text-xs px-3 py-1.5 rounded-full border border-primary/40 text-primary bg-primary-container hover:opacity-80 transition-opacity cursor-pointer">一键填入演示描述（仅预览）</button>
               </div>
             )}
-            <div className="mt-4 space-y-3">
+            <div className="student-answer-grid mt-4">
               {step.keyPoints.map((point, index) => {
                 const text = descs[point.id] || '';
                 const described = text.trim().length >= MIN_DESC_LENGTH;
@@ -338,19 +337,15 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
           </section>
         )}
 
-        {stage === 3 && evaluation && <StepReviewReport step={step} evaluation={evaluation} answers={descs} syncNotice={syncNotice} onRevise={() => setStage(2)} onBack={onBack} />}
+        {stage === 3 && evaluation && <section className="student-stage-panel student-stage-panel-review"><StepReviewReport step={step} evaluation={evaluation} answers={descs} syncNotice={syncNotice} onRevise={() => setStage(2)} onBack={onBack} /></section>}
           <footer className="workstation-footer mt-6 flex items-center justify-between gap-2">
             <button type="button" onClick={() => goTo(stage - 1)} disabled={stage === 0} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-muted-foreground shadow-card disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer hover:bg-muted transition-colors"><ArrowLeft className="w-4 h-4" /> 上一阶段</button>
             {stage === 2 ? <button type="button" aria-label="保存文字推演草稿" onClick={saveDraft} className="draft-save-button inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-card border border-border text-xs font-bold text-secondary shadow-card"><Save className="w-4 h-4" /><span className="hidden sm:inline">保存草稿</span></button> : <p className="hidden sm:block text-xs font-semibold text-muted-foreground">阶段 {stage + 1} / {STAGE_LABELS.length} · {STAGE_LABELS[stage]}</p>}
             <button type="button" onClick={() => goTo(stage + 1)} disabled={stage >= STAGE_LABELS.length - 1 || !stageUnlocked(stage + 1)} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold shadow-card disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors">下一阶段 <ArrowRight className="w-4 h-4" /></button>
           </footer>
         </main>
-        {(stage === 0 || stage === 3) && (
-          <aside className="workstation-feedback-rail lg:sticky lg:top-6">
-            <AiTutor sessionId={session.sessionId} step={step} mode={stage === 3 ? 'review' : 'task'} preview={preview} />
-          </aside>
-        )}
       </div>
+      {(stage === 0 || stage === 3) && <GlobalAiTutor sessionId={session.sessionId} step={step} mode={stage === 3 ? 'review' : 'task'} messages={session.messages} preview={preview} />}
     </div>
   );
 }
