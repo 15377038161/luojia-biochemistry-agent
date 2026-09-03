@@ -297,25 +297,18 @@ html, body { background:#fff9f1; color:#173b6b; }
   .teacher-overview-section { grid-template-columns:1fr; }.teacher-metric-grid { grid-template-columns:1fr 1fr;gap:10px; }.teacher-metric-grid article { min-height:88px;padding:14px;gap:10px; }.teacher-metric-icon { width:44px;height:44px;border-radius:15px; }.teacher-metric-grid article strong { font-size:19px; }.teacher-search { width:100%; }.teacher-search input { flex:1;width:auto!important; }
 }
 
-/* 学生端 V11：桌面单屏工作台 + 全局可拖拽 AI 助教。 */
+/* 学生端 V11：桌面工作台（纵向堆叠，对齐原型 step1.html）。 */
 @media (min-width:1024px) {
-  .watercolor-student-task { min-height:100svh; overflow:hidden; }
+  .watercolor-student-task { min-height:100svh; }
   .watercolor-student-task .student-topbar { position:relative; z-index:70; }
-  .watercolor-student-task .workstation-layout { height:calc(100svh - 72px); max-width:1500px; padding:12px 24px 16px !important; }
-  .student-stage-canvas { height:100%; display:grid; grid-template-columns:220px minmax(0,1fr); grid-template-rows:auto minmax(0,1fr) auto; gap:12px 18px; }
-  .student-stage-canvas > .workstation-step-heading { grid-column:1/-1; min-height:58px; margin:0; padding:5px 8px 10px !important; }
-  .student-stage-canvas > .student-stage-navigation { grid-column:1; grid-row:2; align-self:stretch; margin:0 !important; padding:14px !important; }
-  .student-stage-navigation .stage-strip { height:100%; display:flex; flex-direction:column; gap:8px; overflow:visible; }
-  .student-stage-navigation .stage-strip button { width:100%; min-height:58px; padding:10px 12px; justify-content:flex-start; border-radius:13px !important; text-align:left; }
-  .student-stage-navigation .stage-strip button .stage-label-desktop { white-space:normal; line-height:1.4; }
-  .student-stage-navigation > p { margin-top:10px; padding:10px; border-radius:10px; background:#fff7e8; line-height:1.55; }
-  .student-stage-canvas > .student-stage-panel { grid-column:2; grid-row:2; min-width:0; max-height:100%; margin:0 !important; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
-  .student-stage-canvas > .workstation-footer { grid-column:1/-1; grid-row:3; position:static; min-height:54px; margin:0 !important; padding:6px 8px !important; border:1px solid var(--notebook-line); border-radius:14px; box-shadow:0 8px 22px rgba(23,59,107,.06); }
-  .student-stage-panel-task { padding:0 !important; display:grid; grid-template-columns:minmax(0,1.18fr) minmax(280px,.82fr); grid-auto-rows:min-content; gap:12px; background:transparent !important; border:0 !important; box-shadow:none !important; }
-  .student-stage-panel-task > div { margin:0 !important; padding:18px !important; }
-  .student-stage-panel-task > div:first-child { grid-row:span 2; }
-  .student-stage-panel-task > div:nth-child(3) { grid-column:2; display:grid; grid-template-columns:1fr; gap:12px; }
-  .student-stage-panel-task > div:nth-child(3) > div { padding:15px !important; }
+  .watercolor-student-task .workstation-layout { max-width:1500px; padding:12px 24px 16px !important; }
+  .student-stage-canvas { display:grid; grid-template-columns:minmax(0,1fr); gap:12px 18px; }
+  .student-stage-canvas > .workstation-step-heading { grid-column:1; min-height:58px; margin:0; padding:5px 8px 10px !important; }
+  .student-stage-canvas > .student-stage-navigation { grid-column:1; margin:0 !important; padding:14px !important; }
+  .student-stage-canvas > .student-stage-panel { grid-column:1; min-width:0; margin:0 !important; }
+  .student-stage-canvas > .workstation-footer { grid-column:1; position:static; min-height:54px; margin:0 !important; padding:6px 8px !important; border:1px solid var(--notebook-line); border-radius:14px; box-shadow:0 8px 22px rgba(23,59,107,.06); }
+  .student-stage-panel-task { padding:0 !important; display:grid; gap:14px; background:transparent !important; border:0 !important; box-shadow:none !important; }
+  .student-stage-panel-task > div { margin:0 !important; }
   .student-stage-panel-task h2 { font-size:clamp(20px,2vw,28px) !important; }
   .student-stage-panel-quiz { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:12px; padding:18px !important; }
   .student-stage-panel-quiz > p,.student-stage-panel-quiz > h2 { grid-column:1/-1; margin-top:0 !important; }
@@ -505,15 +498,6 @@ html, body, button, input, textarea { font-family: var(--notebook-font); }
 .notebook-map-page .map-node-done,
 .notebook-map-page .mobile-route-card-done { border-color: #a9d0ba !important; }
 
-.workstation-shell main > header::before {
-  content: "实验探险册";
-  display: inline-block;
-  margin-right: 8px;
-  color: var(--notebook-blue);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .08em;
-}
 .workstation-shell .stage-strip button,
 .workstation-footer button,
 .teacher-app button,

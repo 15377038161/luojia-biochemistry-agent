@@ -73,6 +73,10 @@ export interface GradeSummary {
   review_required_steps: number[];
   status: GradeStatus;
   calculated_at: string;
+  // 新增：报告改版字段
+  loss_analysis: string; // 失分点解析：汇总所有步骤的 missing_points / incorrect 项，说明扣分原因与影响
+  knowledge_gaps: string; // 知识点掌握短板：从五维度识别薄弱维度，并从 reasoning_review 中提取共性问题
+  improvement_suggestions: string; // 针对性提升建议：根据薄弱维度与失分原因给出具体学习路径（不超过 5 条）
 }
 
 const DIMENSION_MAX: DimensionScores = { knowledge: 20, operation: 30, decision: 20, troubleshooting: 15, analysis: 15 };
@@ -178,6 +182,37 @@ export function computeGradeSummary(facts: GradingFacts): GradeSummary {
   else if (facts.hasPendingAppeal) status = 'appealed';
   else if (reviewRequiredSteps.length > 0) status = 'review_required';
 
+  // 生成报告改版字段
+  const lossPoints: string[] = [];
+  const knowledgeIssues: string[] = [];
+  for (const report of stepReports) {
+    if (report.missing_points && Array.isArray(report.missing_points) && report.missing_points.length > 0) {
+      lossPoints.push(`【${report.short_title}】缺失要点：${report.missing_points.length} 项`);
+    }
+    if (report.reasoning_review) {
+      const lines = report.reasoning_review.split(/[。\n]/).filter((line) => line.trim().length > 10);
+      if (lines.length > 0) knowledgeIssues.push(`【${report.short_title}】${lines[0].trim()}`);
+    }
+  }
+
+  const weakDimensions = dimensions.filter((dim) => dim.score / dim.max < 0.7).map((dim) => dim.label);
+  const knowledgeGaps = weakDimensions.length > 0 ? `薄弱维度：${weakDimensions.join('、')}。${knowledgeIssues.slice(0, 3).join('；')}。` : '各维度掌握均衡。';
+
+  const suggestions: string[] = [];
+  if (weakDimensions.length > 0) {
+    suggestions.push(`重点加强 ${weakDimensions[0]} 维度，复习相关知识点的底层原理与应用场景`);
+  }
+  if (lossPoints.length > 0) {
+    suggestions.push(`逐一回看失分步骤的标准答案与知识点讲解，补齐缺失要点`);
+  }
+  if (processScore < 7) {
+    suggestions.push(`提升实验步骤的描述完整度，关键参数（温度、浓度、时间）与操作顺序需明确交代`);
+  }
+  if (dimensions.find((d) => d.key === 'analysis' && d.score / d.max < 0.6)) {
+    suggestions.push(`强化数据解读能力，练习从案例数据推导结论、识别异常并推测后续影响`);
+  }
+  if (suggestions.length === 0) suggestions.push('继续保持，可适当挑战更高难度的实验设计题');
+
   return {
     total_score: Math.round(totalScore * 10) / 10,
     process_score: processScore,
@@ -188,6 +223,9 @@ export function computeGradeSummary(facts: GradingFacts): GradeSummary {
     review_required_steps: reviewRequiredSteps,
     status,
     calculated_at: new Date().toISOString(),
+    loss_analysis: lossPoints.length > 0 ? lossPoints.join('；') : '各步骤掌握良好，未发现明显失分点。',
+    knowledge_gaps: knowledgeGaps,
+    improvement_suggestions: suggestions.slice(0, 5).join('；'),
   };
 }
 

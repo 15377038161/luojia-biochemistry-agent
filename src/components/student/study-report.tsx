@@ -309,6 +309,46 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
               </div>
             </div>}
 
+            {/* 新增三个详细展示 section */}
+            {reportTab === 'overview' && data.lossAnalysis && data.lossAnalysis.length > 0 && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
+              <h4 className="font-extrabold flex items-center gap-2 text-sm"><CircleAlert className="w-5 h-5 text-destructive" /> 失分点解析</h4>
+              <div className="mt-4 space-y-3">
+                {data.lossAnalysis.map((item, idx) => (
+                  <div key={idx} className="rounded-lg border border-border/40 p-3 space-y-1.5">
+                    <p className="text-xs font-bold flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-destructive/10 text-destructive flex items-center justify-center text-[10px] font-extrabold shrink-0">{idx + 1}</span>
+                      <span>{item.label}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed pl-7">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>}
+
+            {reportTab === 'overview' && data.knowledgeGaps && data.knowledgeGaps.length > 0 && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
+              <h4 className="font-extrabold flex items-center gap-2 text-sm"><ScanSearch className="w-5 h-5 text-warning" /> 知识点掌握短板</h4>
+              <div className="mt-4 space-y-3">
+                {data.knowledgeGaps.map((item, idx) => (
+                  <div key={idx} className="rounded-lg border border-border/40 p-3 space-y-1.5">
+                    <p className="text-xs font-bold">{item.concept}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{item.gap}</p>
+                  </div>
+                ))}
+              </div>
+            </div>}
+
+            {reportTab === 'overview' && data.improvementSuggestions && data.improvementSuggestions.length > 0 && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
+              <h4 className="font-extrabold flex items-center gap-2 text-sm"><Lightbulb className="w-5 h-5 text-primary" /> 针对性提升建议</h4>
+              <div className="mt-4 space-y-3">
+                {data.improvementSuggestions.map((item, idx) => (
+                  <div key={idx} className="rounded-lg border border-border/40 p-3 space-y-1.5">
+                    <p className="text-xs font-bold">{item.dimension}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{item.suggestion}</p>
+                  </div>
+                ))}
+              </div>
+            </div>}
+
             {reportTab === 'gates' && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
               <h4 className="font-extrabold flex items-center gap-2 text-sm"><BadgeCheck className="w-5 h-5 text-success" /> 八步 Gate 记录</h4>
               <ol className="mt-4 space-y-3">

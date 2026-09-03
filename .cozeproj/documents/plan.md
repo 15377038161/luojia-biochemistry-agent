@@ -1,84 +1,111 @@
-# 学生端「任务与原理」工作台排版重设计
+# AI 点评系统全面优化方案
 
 ## 概述
 
-针对 `src/components/student/step-workstation.tsx` 中 stage 0（任务与原理）工作台的三处排版问题——标题区（L176）、五阶段导航（L181）、任务情境面板（L201）——进行视觉与信息层级重设计。目标平台为 **web**，沿用项目既有「科学探险手账」设计基线（`DESIGN.md` V10，珞珈蓝 `#002554` / 珞珈绿 `#115740` / 暖白 `#FFFAF2`），不改变数据模型与交互逻辑，只优化布局、间距、信息分层。
+针对当前 AI 点评系统的四大核心问题（评测逻辑失准、答案解析不足、报告过于简单、缺知识点检验），进行全面重构。涉及 prompt 工程、数据模型扩展、UI 重设计、新增独立检验流程。平台：web（Next.js 16 + React 19 + TypeScript 5）。
 
 ## 技术方案
 
 | 维度 | 选择 | 理由 |
 |------|------|------|
-| 设计来源 | design-canvas 原型（web） | 设计引导已开启，原型 HTML 是唯一视觉标准 |
-| 变更范围 | 仅 stage 0 + 共用标题区/阶段导航 | 用户点名 L176/L181/L201，最小必要改动 |
-| 组件选型 | 原生元素 + shadcn/ui（Card/Badge） | 遵循项目既有 shadcn 规范，避免为排版引入新依赖 |
-| 样式落地 | 原型 `@theme` 变量迁移至 `globals.css` | 设计引导强制要求，变量名按 shadcn 映射 |
-| 交互逻辑 | 不变（goTo/stageUnlocked/gatePassed 复用） | 只重排版，不动状态机与数据流 |
+| 评测 Prompt | 重写 `coze-workflows.ts` 中 TEXT_SCHEMA + 评测指令 | 现有 schema 已有 detailedIssues / reasoningReview / knowledgeExplanation 字段，补强指令避免虚判 |
+| 答案解析 | 扩展 `standardAnswer` / `improvedAnswer` / `knowledgeExplanation` 生成指令 | 三字段已存在，现在生成内容过简，需强制详尽度要求 |
+| 报告升级 | 在 `study-report.tsx` 增加失分点、短板、雷达图（已有）、提升建议展示 | 雷达图已实现，只需补充文字分析展示 |
+| 知识点检验 | 新建 `/student/quiz` 路由 + `quiz-session` 表 + AI 出题 workflow + 单页答题 UI | 当前无检验功能，需从零建立题库生成、答题与批改闭环 |
 
 ## 功能模块
 
-### 1. 标题区（L176-179）
+### 模块 1：评测逻辑优化
 
-现状问题：`step.goal` 长句直接作为 `<h1>`，与"当前学习任务"小字、Gate 标签挤在一行。
+**职责**：让 AI 点评真正聚焦知识点掌握、实验细节理解、数据解读清晰度，避免误判。
 
-重设计：
-- 顶部左侧：步骤序号徽章（`Step {stepId}` + 阶段名）作为视觉锚点
-- 主标题 `h1`：使用短标题（`step.title`），副标题放 `step.goal`（`text-muted-foreground`）
-- 右侧：Gate 状态徽章（已通过=绿/待通过=蓝，配 `Flag` 图标）与标题基线对齐
+**核心改动**：
+- 重写 `src/lib/coze-workflows.ts` 中的 `evaluateText` 函数的 system prompt，强调：
+  - 必须逐条对照 rubric 要点检查学生答案是否覆盖
+  - coveredPoints 必须引用学生原文作证据，无证据不得标记为"已掌握"
+  - missingPoints / incorrectPoints / ambiguousPhrases 三类必须准确分类，不得因"看起来懂"就跳过
+  - detailedIssues 数组必须为每个缺失/错误/模糊项生成一条记录，含 dimension / evidence / impact / action / check
+- 在 prompt 中加入反例与正例对比（"❌ 学生写'跑个胶看看'→不能判定为操作描述清晰；✅ 学生写'12% SDS-PAGE，恒压 120V 电泳 90 分钟'→操作描述清晰"）
+- 加入"三必查"清单：知识点是否说清原理、实验步骤是否可复现、数据解读是否有推理链
 
-### 2. 五阶段导航（L181-198）
+**数据字段**：无需新增字段，充分利用现有 `evaluations.result` JSONB 中的 detailedIssues / reasoningReview / coveredPoints / missingPoints
 
-现状问题：5 个胶囊按钮 `flex-wrap` 平铺，无进度条式视觉锚点，完成/当前/禁用区分度不足。
+### 模块 2：参考答案与原理解析升级
 
-重设计：
-- 横向步骤条（桌面端 single-row，移动端纵向/横向滚动），每步 = 序号 + 图标 + 名称
-- 已完成步骤显示对勾标记，当前步骤高亮描边，未解锁弱化置灰
-- 保留 `railHint` 提示（warning 色，行内警示）
+**职责**：所有环节的 standardAnswer / improvedAnswer / knowledgeExplanation 必须详尽到可作教材。
 
-### 3. 任务情境面板（L201-238，含原理讲解与理论概要）
+**核心改动**：
+- 在 `evaluateText` prompt 中加入生成指令：
+  - `standardAnswer`：必须包含本步所有 rubric 要点的完整答案，按"为什么这么做→怎么做→怎么判断做好了"三段展开，包含具体参数、原理依据、注意事项
+  - `improvedAnswer`：在学生原答案基础上，保留学生表达风格，只补齐缺失、纠正错误、消除模糊，标注修改处（如"【补充】超声功率 200W，工作 3s / 间隔 5s，循环 10 次"）
+  - `knowledgeExplanation`：拆解本步核心知识点的底层逻辑（如"SDS-PAGE 为什么用 SDS？→统一负电荷→消除电荷差异→只按分子量分离"），关联前置知识（如"前置：蛋白质一级结构决定分子量"）与后续知识（如"后续：Western Blot 依赖 SDS-PAGE 分离结果"），常见误区（如"❌ 误以为 SDS 本身有还原性"），2-5 句展开
 
-现状问题：任务情境、原理讲解、理论概要三块平铺堆叠；`principle` 为一大段文字、无分段；理论概要点密集。
+**数据字段**：现有字段足够，只改生成内容
 
-重设计：
-- **任务情境卡片**：顶部标签 `引导级 · 任务情境`，正文拆分为「情境」与「本步目标」两个可读块
-- **原理讲解卡片**：`principle` 分段渲染（按语义拆为多个 `<p>` 或加小标题），提升长文可读性
-- **理论概要**：两列 grid 卡片，每张卡片标题 + 要点列表，视觉区分「知识理解」与「决策」维度
+### 模块 3：学习报告功能改版
+
+**职责**：从"极简单题得分"升级为"完整学习诊断报告"，独立页面展示。
+
+**核心改动**：
+- **数据层**（`src/lib/services/grading.ts` 的 `buildLearningReportContent`）：
+  - 补充失分点解析：从所有 evaluations.result.detailedIssues 聚合，按 dimension 分组，每组列出 top 3 高频问题 + 对应步骤 + evidence
+  - 补充知识点短板：从所有 evaluations.result.missingPoints 聚合，列出重复缺失的知识点（如"缺失超声参数" 出现 3 次）
+  - 补充提升建议：针对每个维度的最低分项，生成 1-2 条可执行建议（如"操作描述维度：下次提交前检查每个步骤是否包含参数、时间、温度"）
+- **UI 层**（`src/components/student/study-report.tsx`）：
+  - 五维雷达图已有，保留
+  - 在雷达图下方新增三个 section：
+    - "失分点解析"：按维度分组，每组列出问题 + 步骤 + 证据摘录 + 影响
+    - "知识点掌握短板"：列出重复缺失的知识点 + 出现次数 + 对应步骤
+    - "针对性提升建议"：每个维度一条建议，含具体检查点
+  - 报告已是独立页面（`/student/report`），无需额外调整路由
+
+**数据字段**：`learning_reports.content` JSONB 扩展 `detailedIssues` / `knowledgeGaps` / `improvementSuggestions` 三个键
+
+### 模块 4：知识点检验页面重构
+
+**职责**：全新建立"知识点检验"闭环——AI 出题 → 单页答题 → 统一批改 → 答案解析。
+
+**核心改动**：
+- **数据模型**（新建迁移 `supabase/migrations/YYYYMMDD_quiz_system.sql`）：
+  ```sql
+  CREATE TABLE quiz_sessions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL REFERENCES auth.users(id),
+    step_no int NOT NULL,
+    questions jsonb NOT NULL, -- [{id, question, answer, rubric}]
+    answers jsonb, -- {question_id: user_answer}
+    results jsonb, -- {question_id: {correct, feedback, explanation}}
+    completed_at timestamptz,
+    created_at timestamptz DEFAULT now()
+  );
+  CREATE INDEX idx_quiz_sessions_user_step ON quiz_sessions(user_id, step_no);
+  ```
+- **AI 出题 workflow**（`src/lib/coze-workflows.ts` 新增 `generateQuiz`）：
+  - 输入：步骤号 + 该步核心知识点（从 experimentSteps[stepNo].keyPoints 提取）
+  - 输出：3-5 道题，每道题含 question / correctAnswer / rubric（评分标准）
+  - Prompt 要求：题目覆盖本步核心概念、实验细节、数据解读，避免死记硬背，每题附详细解析（原理 + 常见误区）
+  - 题目池：每次生成不同题目（通过 temperature=0.8 + 种子随机化），存入 quiz_sessions.questions
+- **答题 UI**（`src/app/student/quiz/[sessionId]/page.tsx` + `src/components/student/quiz-page.tsx`）：
+  - 单页只展示一道题（题号 + 题目 + 输入框）
+  - 底部："提交本题" 按钮 → 提交后跳转下一题（不显示答案）
+  - 最后一题提交后 → "查看答案与解析" 按钮 → 跳转答案页
+- **批改与解析**（`src/app/api/student/quiz/submit/route.ts`）：
+  - 收集所有 answers → 逐题对照 correctAnswer 评分 → 生成 results
+  - 答案页展示：每题一行（题目 + 用户答案 + 正确答案 + 详细解析 + 得分）
+
+**数据字段**：新表 `quiz_sessions`（含 questions / answers / results 三个 JSONB 字段）
 
 ## 是否有原型设计
 
-是
+否（纯功能增强，UI 沿用现有设计系统）
 
 ## 实施步骤
 
-- **阶段一：原型设计** — 加载 `design-canvas` 技能，基于现有 `step1.html` 原型重绘 stage 0 工作台（标题区/阶段导航/任务情境面板）的新布局，作为唯一视觉标准。
-- **阶段二：代码开发** — 将原型 `@theme` 变量迁移至 `globals.css`，按原型重写 `step-workstation.tsx` 的标题区、阶段导航、任务情境面板，并补充对应样式。
-- **阶段三：一致性校验** — 运行 `design-canvas` 的一致性检查脚本（CSS 变量迁移完整性 + 源码风格一致性），修复不一致项。
-- **阶段四：预览验收** — 拉起预览，在 student 端 stage 0 实际走一遍主路径，确认排版与原型一致。
-
-## 页面规格
-
-### 全局导航
-
-##### @nav(web-topbar)
-> type: topbar
-> platform: web
-
-- @page(/) 首页
-- @page(/student/map) 实验地图
-
-### 页面详情
-
-##### @page(/student/map) 实验地图（含步骤工作台 stage 0）
-
-**核心职责**：作为学生端实验操作主界面，展示八步实验地图，进入某一步后显示该步工作台；stage 0 为「任务与原理」。
-**访问路径**：首页进入实验地图 / 地图点击站点进入步骤工作台。
-**布局**：顶部学生顶栏（含头像、教师端切换按钮）→ 步骤标题区 → 五阶段导航条 → 当前阶段内容区（stage 0 = 任务情境卡片 + 原理讲解卡片 + 理论概要两列卡片）。
-
-**交互说明**
-
-| 元素 | 动作 | 响应 | 传参 | 备注 |
-|------|------|------|------|------|
-| 阶段导航按钮 | 点击 | 切换当前 stage 并渲染对应内容 | index | 未解锁不可点 |
-| 任务情境卡片 | 阅读 | 无跳转，展示情境与目标 | — | stage 0 |
-| 原理讲解卡片 | 阅读 | 无跳转，分段展示 principle | — | stage 0 |
-| 理论概要卡片 | 阅读 | 无跳转，展示要点列表 | — | stage 0 |
-| 教师端切换按钮 | 点击 | 切换到教师端 | — | 仅教师/测试账号可见 |
+1. **评测 Prompt 重写**（coze-workflows.ts evaluateText 指令 + schema 注释强化）
+2. **答案解析升级**（同一文件，补充 standardAnswer / improvedAnswer / knowledgeExplanation 生成指令）
+3. **报告数据层扩展**（grading.ts buildLearningReportContent 聚合 detailedIssues / gaps / suggestions）
+4. **报告 UI 改版**（study-report.tsx 新增三个 section）
+5. **知识点检验数据模型**（新建迁移创建 quiz_sessions 表）
+6. **AI 出题 workflow**（coze-workflows.ts 新增 generateQuiz 函数）
+7. **答题 UI 与批改 API**（新建 /student/quiz 路由 + quiz-page 组件 + submit API）
+8. **集成测试与验证**（预览环境走完整流程：提交步骤 → 看点评详细度 → 生成报告 → 做知识点检验）

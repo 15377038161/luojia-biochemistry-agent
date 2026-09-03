@@ -34,6 +34,9 @@ export interface StudentReportData {
   steps: ReportStepRow[];
   weakest: Array<{ label: string; count: number }>;
   latestFeedback: string;
+  lossAnalysis?: Array<{ label: string; detail: string }>;
+  knowledgeGaps?: Array<{ concept: string; gap: string }>;
+  improvementSuggestions?: Array<{ dimension: string; suggestion: string }>;
 }
 
 const DIMENSION_KEYS: Array<keyof DimensionScores> = ['knowledge', 'operation', 'decision', 'troubleshooting', 'analysis'];
