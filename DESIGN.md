@@ -17,6 +17,7 @@
 - 首页使用 AI 生成并压缩的明亮二维卡通实验场景，不含人物或性别指向；以 EGFP 荧光瓶、试管、细胞小助手、珞樱花和校园屋檐形成记忆点，HTML 只叠加课程标签与数据徽章。
 - 内容页使用暖白实验记录纸、细线框和克制阴影，避免把长文本评阅做成娱乐化游戏。
 - 学生端像“探险路线与实验记录册”，教师端像“同一本记录册的批阅工作台”。
+- 八步地图桌面端固定使用生化实验群岛插画：八座岛依次承载基因与引物、载体构建、转化诱导、SDS-PAGE、纯化选择、蛋白纯化、纯度验证、浓度测定，并通过桥梁形成从 Start 到 Finish 的连续路线。插画只负责空间叙事，网页热区负责点击和 Gate 状态。
 - 品牌标记由 `BrandLockup` 统一输出；首页只显示武汉大学校徽，学习通图标只在登录按钮和需要说明平台身份的场景出现。
 - 图标只使用 Lucide 或课程 SVG；不以 emoji 代替功能图标。装饰花朵不承担交互语义。
 
@@ -48,5 +49,7 @@
 - 联合品牌组件：`src/components/brand-lockup.tsx`
 - 首页实验插画：`src/components/lab-hero-visual.tsx`
 - AI 主视觉素材：`public/illustrations/biochem-hero-cartoon-v4.webp`
+- 正式八步地图素材：`public/illustrations/biochem-experiment-island-map-v1.png`
+- 八步地图交互层：`src/components/student/experiment-map.tsx`（桌面端 8 个岛屿热区；移动端保留可读的步骤卡）
 - 动态背景：`src/components/page-background.tsx`
 - 入口、学生页头、教师页头分别复用上述组件，不保留另一套活动视觉系统。

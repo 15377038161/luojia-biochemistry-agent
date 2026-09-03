@@ -166,6 +166,20 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .mobile-route-lock { position:absolute; right:-3px; bottom:-3px; width:18px; height:18px; display:grid; place-items:center; color:#586b79; border:2px solid #fff; border-radius:50%; background:#e6eaeb; }
 .mobile-route-lock svg { width:9px; }
 
+/* 正式八步群岛地图：插画承载空间路线，网页热区承载交互与状态。 */
+.island-route-board { min-height:0!important; padding:0!important; overflow:hidden; background:#dff3f5!important; }
+.island-route-canvas { position:relative; width:100%; aspect-ratio:3/2; overflow:hidden; border-radius:calc(var(--ui-radius-lg) - 1px); }
+.island-route-image { z-index:0; object-fit:cover; }
+.island-map-hotspot { position:absolute; z-index:2; width:22%; height:25%; padding:0; transform:translate(-50%,-50%); cursor:pointer; border:0; border-radius:44%; outline:none; background:transparent; }
+.island-map-focus { position:absolute; inset:5%; display:block; border:2px solid transparent; border-radius:44%; transition:border-color .18s ease,box-shadow .18s ease,background .18s ease; }
+.island-map-focus>svg { position:absolute; right:7%; top:7%; width:27px; height:27px; padding:5px; color:#fff; border:2px solid #fff; border-radius:50%; background:var(--ui-green); box-shadow:0 5px 14px rgba(0,37,84,.22); }
+.island-map-hotspot:hover .island-map-focus,.island-map-hotspot:focus-visible .island-map-focus { border-color:rgba(0,37,84,.62); box-shadow:0 0 0 5px rgba(255,255,255,.70),0 12px 28px rgba(0,37,84,.16); background:rgba(255,255,255,.06); }
+.island-map-hotspot-cur .island-map-focus { border-color:var(--ui-coral); box-shadow:0 0 0 5px rgba(255,255,255,.78),0 0 0 9px rgba(221,113,135,.24); animation:production-current-ring 1.6s ease-out infinite; }
+.island-map-hotspot-revise .island-map-focus { border-color:var(--ui-gold); box-shadow:0 0 0 5px rgba(255,255,255,.72); }
+.island-map-label { position:absolute; left:50%; bottom:-7px; min-width:132px; max-width:190px; padding:8px 11px; display:grid; gap:1px; transform:translate(-50%,6px); pointer-events:none; opacity:0; color:var(--ui-blue-strong); border:1px solid rgba(0,37,84,.14); border-radius:11px; background:rgba(255,253,248,.95); box-shadow:0 9px 24px rgba(0,37,84,.16); backdrop-filter:blur(8px); transition:opacity .18s ease,transform .18s ease; }
+.island-map-label strong { font-size:10px; color:var(--ui-green); }.island-map-label small { overflow:hidden; font-size:12px; font-weight:900; text-overflow:ellipsis; white-space:nowrap; }.island-map-label em { color:var(--ui-muted); font-size:9px; font-style:normal; font-weight:800; }
+.island-map-hotspot:hover .island-map-label,.island-map-hotspot:focus-visible .island-map-label,.island-map-hotspot-cur .island-map-label { transform:translate(-50%,0); opacity:1; }
+
 /* 分步任务：桌面双栏，移动端单列。 */
 .workstation-shell { min-height:100svh; padding-bottom:82px; }
 .workstation-shell::before { display:none; }

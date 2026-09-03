@@ -1,23 +1,23 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import { Check, Flag, Play } from 'lucide-react';
+import { Check } from 'lucide-react';
 import type { ExperimentStep, StepProgress } from '@/domain/agent';
 import { experimentSteps } from '@/domain/experiment';
 import StudentTopbar from '@/components/student/student-topbar';
 
 const NODE_LABELS = ['获取目标基因与设计引物', '构建pET28表达载体', '质粒转化与IPTG诱导表达', 'PAGE验证蛋白表达', '选择纯化方法', '蛋白纯化操作', '验证纯化是否达标', '测量蛋白质浓度'];
-const NODE_POSITIONS = [
-  { left: '17.5%', top: '25%' },
-  { left: '37.5%', top: '25%' },
-  { left: '57.5%', top: '25%' },
-  { left: '77.5%', top: '25%' },
-  { left: '77.5%', top: '75%' },
-  { left: '57.5%', top: '75%' },
-  { left: '37.5%', top: '75%' },
-  { left: '17.5%', top: '75%' },
-];
+const ISLAND_NODE_POSITIONS = [
+  { left: '29%', top: '19%' },
+  { left: '55%', top: '19%' },
+  { left: '84%', top: '19%' },
+  { left: '84%', top: '53%' },
+  { left: '51%', top: '53%' },
+  { left: '18%', top: '53%' },
+  { left: '31%', top: '82%' },
+  { left: '66%', top: '83%' },
+] as const;
 
 type NodeState = 'done' | 'cur' | 'revise' | 'open';
 
@@ -39,17 +39,6 @@ interface Props {
 }
 
 export default function ExperimentMap({ steps, catalog = experimentSteps, currentStep, completed, demo = false, practiceMode = false, canSwitchToTeacher = false, onOpenStep, onOpenReport, onLogout }: Props) {
-  const [toast, setToast] = useState('');
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
-
-  function showToast(text: string) {
-    setToast(text);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setToast(''), 2400);
-  }
-
   function nodeState(stepId: number): NodeState {
     const progress = steps.find((item) => item.stepId === stepId);
     if (completed || progress?.status === 'passed') return 'done';
@@ -66,25 +55,23 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
   const doneCount = steps.filter((step) => step.status === 'passed').length;
   const currentMeta = experimentSteps.find((step) => step.id === currentStep);
 
-  function renderNode(stepId: number) {
+  function renderIslandHotspot(stepId: number) {
     const state = nodeState(stepId);
     return (
       <button
         key={stepId}
         type="button"
         onClick={() => handleNode(stepId)}
-        className={`map-node map-node-${state} absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer`}
-        style={NODE_POSITIONS[stepId - 1]}
+        className={`island-map-hotspot island-map-hotspot-${state}`}
+        style={ISLAND_NODE_POSITIONS[stepId - 1]}
         aria-label={`步骤${stepId} ${catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]} ${state === 'done' ? '已完成' : state === 'revise' ? '待修订' : '可进入'}`}
       >
-        <span className="map-node-visual">
-          <StepIllustration stepId={stepId} />
-          <span className="map-node-number">{stepId}</span>
-          {state === 'done' && <span className="map-node-status is-done"><Check aria-hidden /></span>}
-          {/* lock state removed — all steps open */}
-          {state === 'cur' && <span className="map-current-ring" aria-hidden />}
+        <span className="island-map-focus" aria-hidden>{state === 'done' && <Check />}</span>
+        <span className="island-map-label">
+          <strong>步骤 {stepId}</strong>
+          <small>{catalog[stepId - 1]?.shortTitle ?? NODE_LABELS[stepId - 1]}</small>
+          <em>{state === 'done' ? '已通过 · 可回看' : state === 'revise' ? '待修订 · 查看点评' : '点击进入'}</em>
         </span>
-        <span className="map-node-copy"><strong>{catalog[stepId - 1]?.title ?? NODE_LABELS[stepId - 1]}</strong><small>{state === 'done' ? '已通过 · 可回看' : state === 'revise' ? '待修订 · 查看点评' : '点击进入'}</small></span>
       </button>
     );
   }
@@ -108,22 +95,10 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
           {practiceMode && <Link href="/teacher/dashboard" className="student-map-teacher-return">返回教学分析</Link>}
         </section>
 
-        <section className="desktop-route-board relative mt-6 hidden md:block p-4">
-          <div className="relative w-full" style={{ aspectRatio: '1200/560' }}>
-            <svg viewBox="0 0 1200 560" className="absolute inset-0 w-full h-full" fill="none" aria-hidden>
-              <path className="production-route-shadow" d="M 60 140 C 250 80 410 198 585 140 S 890 82 970 160 C 1040 238 1000 390 890 420 C 690 470 460 352 285 420 C 185 456 125 432 60 420" strokeLinecap="round" />
-              <path className="production-route-main" d="M 60 140 C 250 80 410 198 585 140 S 890 82 970 160 C 1040 238 1000 390 890 420 C 690 470 460 352 285 420 C 185 456 125 432 60 420" strokeLinecap="round" />
-              <path className="production-route-flow" d="M 60 140 C 250 80 410 198 585 140 S 890 82 970 160 C 1040 238 1000 390 890 420 C 690 470 460 352 285 420 C 185 456 125 432 60 420" strokeLinecap="round" />
-            </svg>
-            <div className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ left: '5%', top: '25%' }}>
-              <span className="w-10 h-10 rounded-full bg-secondary text-primary-foreground flex items-center justify-center shadow-card"><Play className="w-4 h-4" /></span>
-              <span className="mt-1 text-xs font-black text-secondary">开始</span>
-            </div>
-            <div className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ left: '5%', top: '75%' }}>
-              <span className="w-10 h-10 rounded-full bg-destructive text-primary-foreground flex items-center justify-center shadow-card"><Flag className="w-4 h-4" /></span>
-              <span className="mt-1 text-xs font-black text-destructive">完成</span>
-            </div>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(renderNode)}
+        <section className="desktop-route-board island-route-board relative mt-6 hidden md:block">
+          <div className="island-route-canvas">
+            <Image src="/illustrations/biochem-experiment-island-map-v1.png" alt="重组蛋白表达与纯化八步群岛实验地图" fill priority sizes="(max-width: 1200px) 100vw, 1152px" className="island-route-image" />
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(renderIslandHotspot)}
           </div>
         </section>
 
@@ -148,8 +123,6 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
           </div>
         </section>
       </main>
-
-      <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] px-5 py-3 rounded-xl bg-foreground text-background text-xs font-bold shadow-dialog transition-opacity duration-300 pointer-events-none ${toast ? 'opacity-100' : 'opacity-0'}`} role="status">{toast}</div>
     </div>
   );
 }
