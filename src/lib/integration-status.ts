@@ -1,5 +1,6 @@
 import { getChaoxingLoginOptions } from '@/lib/chaoxing-client';
 import { getChaoxingFormConfigurationStatus } from '@/lib/chaoxing-sync';
+import { hasCompleteSupabaseConfiguration } from '@/lib/supabase-client';
 
 export type IntegrationState = 'ready' | 'fixture' | 'pending' | 'configured' | 'error';
 
@@ -25,9 +26,7 @@ export function getIntegrationStatus(): IntegrationStatus {
     && getChaoxingLoginOptions().configured;
   const fixture = process.env.ENABLE_AI_FIXTURE === 'true';
   const cozeManaged = hasValue('COZE_PROJECT_ENV') || hasValue('COZE_PROJECT_DOMAIN_DEFAULT');
-  const supabaseReady = hasValue('COZE_SUPABASE_URL')
-    && hasValue('COZE_SUPABASE_ANON_KEY')
-    && hasValue('COZE_SUPABASE_SERVICE_ROLE_KEY');
+  const supabaseReady = hasCompleteSupabaseConfiguration();
   const formStatus = getChaoxingFormConfigurationStatus();
 
   return {

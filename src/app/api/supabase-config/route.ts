@@ -12,7 +12,9 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ url, anonKey });
+    return NextResponse.json({ url, anonKey }, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
   } catch (error) {
     console.error('Failed to get Supabase config:', error);
     return NextResponse.json(

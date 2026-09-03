@@ -1,4 +1,6 @@
 import { createHash } from 'crypto';
+import { config as loadDotEnv } from 'dotenv';
+import { pathToFileURL } from 'url';
 import { experimentSteps } from '../src/domain/experiment';
 import { courseImageQuestions } from '../src/domain/media';
 import { getSupabaseAdminClient } from '../src/lib/supabase-client';
@@ -6,7 +8,9 @@ import { getSupabaseAdminClient } from '../src/lib/supabase-client';
 const EXPERIMENT_ID = '10000000-0000-4000-8000-000000000003';
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
-const instruments = [
+loadDotEnv({ path: '.env.local', quiet: true });
+
+export const instruments = [
   { name: '超声波破碎仪', image_path: '/course-assets/sonicator.jpg', purpose: '低温间歇超声破碎菌体', applicable_steps: [4], safety_points: ['佩戴听力防护', '探头不得空载', '全程低温并间歇工作'], source_ref: '07 图片/仪器设备/超声波破碎仪.jpg' },
   { name: '高速冷冻离心机', image_path: '/course-assets/refrigerated-centrifuge.jpg', purpose: '低温分离裂解上清和沉淀', applicable_steps: [4, 5, 6], safety_points: ['转子配平', '确认转子额定转速', '停稳后开盖'], source_ref: '07 图片/仪器设备/高速冷冻离心机.jpg' },
   { name: '微量核酸蛋白质定量分析仪', image_path: '/course-assets/nanodrop.jpg', purpose: '用微量样品测量紫外吸收和蛋白浓度', applicable_steps: [8], safety_points: ['使用匹配空白', '避免气泡和样品残留'], source_ref: '07 图片/仪器设备/微量核酸蛋白质定量分析仪.jpg' },
@@ -14,7 +18,7 @@ const instruments = [
   { name: '分光光度计', image_path: '/course-assets/spectrophotometer.jpg', purpose: '测量样品在指定波长的吸光度', applicable_steps: [8], safety_points: ['比色皿方向一致', '使用正确空白'], source_ref: '07 图片/仪器设备/分光光度计.jpg' },
 ];
 
-async function main() {
+export async function seedAgentContent() {
   const supabase = getSupabaseAdminClient();
   for (const step of experimentSteps) {
     const { data: stepRow, error: stepError } = await supabase.from('experiment_steps').upsert({
@@ -97,4 +101,10 @@ async function main() {
   console.log(`已导入${experimentSteps.length}个步骤、${chunks.length}个知识块、${courseImageQuestions.length}道图片题。`);
 }
 
-main().catch((error) => { console.error(error); process.exitCode = 1; });
+const entryFile = process.argv[1];
+if (entryFile && import.meta.url === pathToFileURL(entryFile).href) {
+  seedAgentContent().catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
