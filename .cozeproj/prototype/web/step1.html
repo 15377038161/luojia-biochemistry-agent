@@ -243,6 +243,32 @@ textarea{font-family:var(--hand);font-size:16px;line-height:28px;
           <p class="mt-2 text-sm leading-relaxed">你已完成步骤③：把重组 pET28 质粒转入 BL21(DE3)，并用 IPTG 诱导目标蛋白表达。示范蛋白为 <b>GFP（约 27 kDa）</b>——菌液已经微微泛绿，但「看起来表达了」不算数。</p>
           <p class="mt-2 text-sm leading-relaxed font-bold text-primary">本步骤要回答两个问题：① 目标蛋白真的表达了吗？② 它在上清（可溶）还是沉淀（包涵体）？——这个答案直接决定步骤⑤选哪条纯化路线。</p>
         </div>
+
+        <div class="rounded-2xl bg-surface/90 border border-secondary/30 shadow-card p-5 mt-5">
+          <div class="flex flex-wrap items-center gap-2">
+            <h3 class="text-sm font-extrabold flex items-center gap-2"><i data-lucide="lightbulb" class="w-4 h-4 text-secondary"></i> 原理讲解 · 这一步为什么这么做</h3>
+            <span class="ml-auto text-xs font-bold text-secondary bg-secondary-container border border-secondary/30 rounded-full px-2.5 py-1">核心机制</span>
+          </div>
+          <div class="mt-3 grid gap-3">
+            <div class="flex gap-3">
+              <span class="shrink-0 w-6 h-6 rounded-full bg-secondary-container text-secondary text-xs font-black flex items-center justify-center">1</span>
+              <p class="text-sm leading-relaxed text-on-surface/90"><b>SDS 统一负电荷</b>——按约 1.4:1 质量比与蛋白结合，掩盖天然电荷差异，让迁移只由分子量决定。</p>
+            </div>
+            <div class="flex gap-3">
+              <span class="shrink-0 w-6 h-6 rounded-full bg-secondary-container text-secondary text-xs font-black flex items-center justify-center">2</span>
+              <p class="text-sm leading-relaxed text-on-surface/90"><b>还原剂打开二硫键</b>——DTT / β-巯基乙醇使蛋白完全变性为线性分子，消除结构差异。</p>
+            </div>
+            <div class="flex gap-3">
+              <span class="shrink-0 w-6 h-6 rounded-full bg-secondary-container text-secondary text-xs font-black flex items-center justify-center">3</span>
+              <p class="text-sm leading-relaxed text-on-surface/90"><b>分子筛分离</b>——变性蛋白在聚丙烯酰胺凝胶中按分子量筛分，与 Marker 对比定位目标条带。</p>
+            </div>
+            <div class="flex gap-3">
+              <span class="shrink-0 w-6 h-6 rounded-full bg-secondary-container text-secondary text-xs font-black flex items-center justify-center">4</span>
+              <p class="text-sm leading-relaxed text-on-surface/90"><b>上清 vs 沉淀</b>——目标条带在可溶组分即「可溶表达」，在不溶沉淀即「包涵体」，直接决定步骤⑤纯化路线。</p>
+            </div>
+          </div>
+        </div>
+
         <div class="grid lg:grid-cols-2 gap-5 mt-5">
           <div class="rounded-2xl bg-surface/90 border border-outline-variant/60 shadow-card p-5">
             <h3 class="text-sm font-extrabold flex items-center gap-2"><i data-lucide="book-open" class="w-4 h-4 text-primary"></i> 理论概要 · SDS-PAGE 原理</h3>
