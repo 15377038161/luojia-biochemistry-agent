@@ -1,7 +1,16 @@
 import { NextRequest } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
+import { getSessionUser } from '@/lib/supabase-auth';
 import { ok, fail, errorFromUnknown } from '@/lib/api-result';
-import { generateQuizQuestions } from '@/lib/coze-workflows';
+import { generateQuizQuestions, type QuizQuestion } from '@/lib/coze-workflows';
+
+interface QuizQuestionRow {
+  id: string;
+  question_text: string;
+  options: QuizQuestion['options'];
+  correct_option_id: string;
+  explanation: string;
+}
 
 /**
  * POST /api/student/quiz/start
@@ -11,27 +20,20 @@ import { generateQuizQuestions } from '@/lib/coze-workflows';
  */
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabaseAdminClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ code: 'UNAUTHORIZED', message: '未登录' }), {
-        status: 401,
-      });
+    const identity = await getSessionUser(req.cookies);
+    if (!identity) {
+      return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
     }
+    const supabase = getSupabaseAdminClient();
 
-    const body = await req.json();
+    const body = (await req.json()) as { stepNo?: unknown };
     const stepNo = Number(body.stepNo);
-    if (!stepNo || stepNo < 1 || stepNo > 8) {
-      return new Response(
-        JSON.stringify({ code: 'INVALID_PARAM', message: 'stepNo 必须是 1-8 的整数' }),
-        { status: 400 },
-      );
+    if (!Number.isInteger(stepNo) || stepNo < 1 || stepNo > 8) {
+      return fail({ code: 'VALIDATION_ERROR', message: 'stepNo 必须是 1-8 的整数', retryable: false });
     }
 
     // 从题库随机抽题（优先），若无题库则现场 AI 生成
-    let questions: any[];
+    let questions: QuizQuestion[];
     const { data: poolQuestions } = await supabase
       .from('quiz_questions')
       .select('*')
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
     if (poolQuestions && poolQuestions.length >= 5) {
       // 从题库随机抽 5 道
       const shuffled = poolQuestions.sort(() => Math.random() - 0.5);
-      questions = shuffled.slice(0, 5).map((q) => ({
+      questions = (shuffled as QuizQuestionRow[]).slice(0, 5).map((q) => ({
         question_id: q.id,
         question_text: q.question_text,
         options: q.options,
@@ -74,12 +76,12 @@ export async function POST(req: NextRequest) {
     const { data: session, error: insertError } = await supabase
       .from('quiz_sessions')
       .insert({
-        user_id: user.id,
+        user_id: identity.user.id,
         step_no: stepNo,
         questions,
         answers: {},
         results: null,
-        completed_at: null,
+        status: 'in_progress',
       })
       .select('id, questions')
       .single();

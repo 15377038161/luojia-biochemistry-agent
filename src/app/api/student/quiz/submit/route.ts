@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
+import { getSessionUser } from '@/lib/supabase-auth';
 import { ok, fail, errorFromUnknown } from '@/lib/api-result';
 import type { QuizQuestion } from '@/lib/coze-workflows';
 
@@ -11,15 +12,11 @@ import type { QuizQuestion } from '@/lib/coze-workflows';
  */
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabaseAdminClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ code: 'UNAUTHORIZED', message: '未登录' }), {
-        status: 401,
-      });
+    const identity = await getSessionUser(req.cookies);
+    if (!identity) {
+      return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
     }
+    const supabase = getSupabaseAdminClient();
 
     const body = await req.json();
     const { session_id, answers } = body as {
@@ -28,29 +25,23 @@ export async function POST(req: NextRequest) {
     };
 
     if (!session_id || !answers || typeof answers !== 'object') {
-      return new Response(
-        JSON.stringify({ code: 'INVALID_PARAM', message: 'session_id 和 answers 必填' }),
-        { status: 400 },
-      );
+      return fail({ code: 'VALIDATION_ERROR', message: 'session_id 和 answers 必填', retryable: false });
     }
 
     // 读取 quiz_session（含完整题目）
     const { data: session, error: fetchError } = await supabase
       .from('quiz_sessions')
-      .select('id, user_id, questions, completed_at')
+      .select('id, user_id, questions, status')
       .eq('id', session_id)
-      .eq('user_id', user.id)
+      .eq('user_id', identity.user.id)
       .single();
 
     if (fetchError || !session) {
       return fail(errorFromUnknown(fetchError || new Error('会话不存在')), '读取测验会话失败');
     }
 
-    if (session.completed_at) {
-      return new Response(
-        JSON.stringify({ code: 'ALREADY_COMPLETED', message: '该测验已提交，不可重复提交' }),
-        { status: 400 },
-      );
+    if (session.status === 'graded') {
+      return fail({ code: 'STATE_INVALID', message: '该测验已提交，不可重复提交', retryable: false });
     }
 
     const questions = session.questions as QuizQuestion[];
@@ -72,17 +63,27 @@ export async function POST(req: NextRequest) {
     const total = questions.length;
 
     // 更新 quiz_session
-    const { error: updateError } = await supabase
+    const completedAt = new Date().toISOString();
+    const { data: updatedSession, error: updateError } = await supabase
       .from('quiz_sessions')
       .update({
         answers,
         results,
-        completed_at: new Date().toISOString(),
+        status: 'graded',
+        submitted_at: completedAt,
+        graded_at: completedAt,
       })
-      .eq('id', session_id);
+      .eq('id', session_id)
+      .eq('user_id', identity.user.id)
+      .eq('status', 'in_progress')
+      .select('id')
+      .maybeSingle();
 
     if (updateError) {
       return fail(errorFromUnknown(updateError));
+    }
+    if (!updatedSession) {
+      return fail({ code: 'STATE_INVALID', message: '测验状态已变化，请刷新后重试。', retryable: false });
     }
 
     return ok({ results, score, total });

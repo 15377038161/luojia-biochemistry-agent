@@ -40,7 +40,7 @@ export default function QuizPage() {
     fetch(`/api/student/quiz/session?session_id=${sessionId}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.code === 'OK' && data.data) {
+        if (data.ok && data.data) {
           setQuestions(data.data.questions || []);
           setAnswers(data.data.answers || {});
           if (data.data.results) {
@@ -50,7 +50,7 @@ export default function QuizPage() {
             setTotal(data.data.results.length);
           }
         } else {
-          setError(data.message || '加载测验失败');
+          setError(data.error?.message || '加载测验失败');
         }
         setLoading(false);
       })
@@ -93,13 +93,13 @@ export default function QuizPage() {
         body: JSON.stringify({ session_id: sessionId, answers }),
       });
       const data = await res.json();
-      if (data.code === 'OK') {
+      if (data.ok) {
         setResults(data.data.results);
         setScore(data.data.score);
         setTotal(data.data.total);
         setCurrentIndex(0); // 重置到第一题展示答案
       } else {
-        alert(data.message || '提交失败');
+        alert(data.error?.message || '提交失败');
       }
     } catch (err) {
       alert(clientErrorMessage(err, '加载失败'));
