@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpen, Check, CircleAlert, CircleHelp, Flag, GraduationCap, LoaderCircle, PenLine, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Check, CircleAlert, CircleHelp, Flag, Lightbulb, LoaderCircle, PenLine, Save } from 'lucide-react';
 import type { ApiResult, StudentSessionView, TextEvaluation } from '@/domain/agent';
 import type { ExperimentStep } from '@/domain/agent';
 import { experimentSteps } from '@/domain/experiment';
@@ -166,6 +166,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
   }
 
   const gatePassed = evaluation?.decision === 'pass';
+  const principlePoints = step.principle.split('。').map((part) => part.trim()).filter(Boolean).map((part) => `${part}。`);
 
   return (
     <div className="workstation-shell watercolor-student-task text-foreground font-sans">
@@ -174,7 +175,11 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
       <div className="workstation-layout mx-auto max-w-[1500px] px-4 sm:px-6 py-4 pb-8">
         <main className="student-stage-canvas min-w-0">
         <header className="workstation-step-heading flex flex-wrap items-center gap-3">
-          <div className="step-heading-copy"><p>当前学习任务</p><h1>{step.goal}</h1></div>
+          <span className="shrink-0 w-9 h-9 rounded-full bg-secondary text-primary-foreground text-sm font-black flex items-center justify-center" aria-hidden>{STEP_BADGES[stepId - 1]}</span>
+          <div className="step-heading-copy">
+            <h1>{step.title}</h1>
+            <p>{step.goal}</p>
+          </div>
           <span className={`step-gate-state ${gatePassed ? 'is-passed' : 'is-pending'}`}><Flag aria-hidden />Gate {stepId} · {gatePassed ? '已通过' : '待通过'}</span>
         </header>
 
@@ -186,7 +191,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
               const active = stage === index;
               return (
                 <button key={label} type="button" onClick={() => goTo(index)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors cursor-pointer ${active ? 'bg-primary text-primary-foreground border-primary' : unlocked ? 'bg-card text-foreground border-border hover:bg-muted' : 'bg-muted text-muted-foreground border-border/60'}`}>
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${active ? 'bg-primary text-primary-foreground border-primary' : unlocked ? 'bg-card text-foreground border-border hover:bg-muted' : 'bg-muted text-muted-foreground border-border/60'}`}>
                   <Icon className="w-3.5 h-3.5" />
                   <span className="stage-label-desktop">{index + 1} {label}</span>
                   <span className="stage-label-mobile">{STAGE_MOBILE_LABELS[index]}</span>
@@ -202,11 +207,22 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
             <div className="rounded-2xl bg-primary-container/40 border border-primary/20 p-5">
               <p className="text-xs font-black text-primary bg-card/80 border border-primary/30 rounded-full px-2.5 py-1 inline-flex items-center gap-1"><BookOpen className="w-3 h-3" /> 引导级 · 任务情境</p>
               <h2 className="text-2xl font-bold tracking-tight mt-2">你在哪里？要回答什么问题？</h2>
-              <p className="mt-2 text-sm leading-relaxed">{step.context}本步目标：{step.goal}</p>
+              <p className="mt-2 text-sm leading-relaxed">{step.context}</p>
+              <p className="mt-2 text-sm leading-relaxed font-bold text-primary">本步目标：{step.goal}</p>
             </div>
             <div className="rounded-2xl bg-card/90 border border-secondary/30 shadow-card p-5 mt-5">
-              <h3 className="text-sm font-extrabold flex items-center gap-2"><GraduationCap className="w-4 h-4 text-secondary" /> 原理讲解</h3>
-              <p className="mt-3 text-sm leading-relaxed text-foreground/90">{step.principle}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-extrabold flex items-center gap-2"><Lightbulb className="w-4 h-4 text-secondary" /> 原理讲解 · 这一步为什么这么做</h3>
+                <span className="ml-auto shrink-0 text-xs font-bold text-secondary bg-secondary-container border border-secondary/30 rounded-full px-2.5 py-1">核心机制</span>
+              </div>
+              <div className="mt-3 grid gap-3">
+                {principlePoints.map((point, index) => (
+                  <div key={index} className="flex gap-3">
+                    <span className="shrink-0 w-6 h-6 rounded-full bg-secondary-container text-secondary text-xs font-black flex items-center justify-center">{index + 1}</span>
+                    <p className="text-sm leading-relaxed text-foreground/90">{point}</p>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="grid lg:grid-cols-2 gap-5 mt-5">
               {(() => {

@@ -185,15 +185,15 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .workstation-shell::before { display:none; }
 .workstation-step-heading { min-height:74px; padding:14px 16px; border:1px solid var(--ui-line)!important; border-radius:var(--ui-radius)!important; background:rgba(255,253,248,.92)!important; box-shadow:none!important; }
 .step-heading-copy { min-width:0; flex:1; }
-.workstation-step-heading h1 { margin:3px 0 0; color:var(--ui-blue-strong); font-size:16px; line-height:1.45; }
-.workstation-step-heading p { margin:0; color:var(--ui-green); font-size:10px; font-weight:900; letter-spacing:.1em; }
+.workstation-step-heading h1 { margin:0; color:var(--ui-blue-strong); font-size:16px; line-height:1.45; font-weight:800; }
+.workstation-step-heading p { margin:3px 0 0; color:var(--ui-muted); font-size:12px; font-weight:500; letter-spacing:0; line-height:1.55; }
 .step-gate-state { margin-left:auto; min-height:34px; padding:0 10px; display:inline-flex; align-items:center; gap:5px; border:1px solid; border-radius:10px; font-size:11px; font-weight:900; }
 .step-gate-state svg { width:14px; }
 .step-gate-state.is-passed { color:var(--ui-green); border-color:#b9d9ce; background:#edf7f3; }
 .step-gate-state.is-pending { color:#9b6423; border-color:#ead0a9; background:#fff7e9; }
 .workstation-card,.workstation-shell main>section,.workstation-feedback-rail>div { border:1px solid var(--ui-line)!important; border-radius:var(--ui-radius)!important; background:rgba(255,253,248,.94)!important; box-shadow:0 7px 22px rgba(18,63,112,.055)!important; }
 .workstation-card { padding:8px!important; }
-.stage-strip { display:grid!important; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px!important; overflow:visible!important; }
+.stage-strip { display:grid!important; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px!important; overflow:visible!important; }
 .stage-strip button { min-width:0!important; min-height:44px!important; padding:0 8px!important; justify-content:center; border-radius:10px!important; font-size:11px!important; }
 .workstation-shell textarea,.workstation-shell input { border:1px solid var(--ui-line)!important; border-radius:10px!important; background:#fff!important; font-family:inherit!important; font-size:14px!important; }
 .workstation-footer { border-color:var(--ui-line)!important; background:rgba(255,253,248,.97)!important; }
