@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { ok, fail, errorFromUnknown } from '@/lib/api-result';
-import { generateQuizQuestions, type QuizQuestion } from '@/lib/coze-workflows';
+import type { QuizQuestion } from '@/lib/coze-workflows';
 
 interface QuizQuestionRow {
   id: string;
@@ -22,7 +22,7 @@ function normalizedQuestionText(value: string): string {
 
 /**
  * POST /api/student/quiz/start
- * 开始知识点检验：生成题目并创建 quiz_session
+ * 开始知识点检验：从教师已发布题库抽取未做题并创建 quiz_session
  * Body: { stepNo: number }
  * Response: { session_id: string, questions: QuizQuestion[] }
  */
@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       .from('quiz_questions')
       .select('*')
       .eq('step_no', stepNo)
+      .eq('status', 'published')
       .order('id', { ascending: false })
       .limit(300);
     if (poolError) throw poolError;
@@ -79,27 +80,7 @@ export async function POST(req: NextRequest) {
       }));
 
     if (questions.length < 5) {
-      const needed = 5 - questions.length;
-      const result = await generateQuizQuestions(stepNo, Math.max(needed + 3, 5));
-      const existingTexts = new Set([...(poolQuestions ?? []).map((q) => normalizedQuestionText(String(q.question_text))), ...seenTexts]);
-      const generated = result.data.filter((q) => !existingTexts.has(normalizedQuestionText(q.question_text))).slice(0, needed);
-      for (let index = 0; index < generated.length; index += 1) {
-        const q = generated[index];
-        const { error } = await supabase.from('quiz_questions').insert({
-          id: q.question_id,
-          step_no: stepNo,
-          dimension: ['knowledge', 'detail', 'data'][index % 3],
-          question_text: q.question_text,
-          options: q.options,
-          correct_option_id: q.correct_option_id,
-          explanation: q.explanation,
-        });
-        if (error) throw error;
-      }
-      questions.push(...generated);
-    }
-    if (questions.length < 5) {
-      return fail({ code: 'AI_OUTPUT_INVALID', message: '暂时无法生成足够的不重复题目，请稍后重试。', retryable: true }, undefined, 503);
+      return fail({ code: 'STATE_INVALID', message: '本步骤暂无足够的未做发布题，请联系教师补充并发布题库。', retryable: false }, undefined, 409);
     }
 
     // 创建 quiz_session

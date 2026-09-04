@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, FileImage, LoaderCircle, Plus, Save, Send, ShieldCheck, Upload, X } from 'lucide-react';
 import type { ExperimentStep } from '@/domain/agent';
 import { clientErrorMessage } from '@/lib/client-request';
+import QuestionBankManager from '@/components/teacher/question-bank-manager';
 import {
   defaultCourseContent,
   type ContentValidation,
@@ -14,7 +15,7 @@ import {
 
 interface DraftRecord { id: string; version: number; status: string; updated_at?: string }
 interface Props { preview?: boolean; initialStep?: number; focused?: boolean }
-type EditorSection = 'theory' | 'sop' | 'rubric' | 'resources' | 'preview';
+type EditorSection = 'theory' | 'sop' | 'rubric' | 'resources' | 'quiz' | 'preview';
 
 function copyDefault(): CourseContentPayload {
   return JSON.parse(JSON.stringify(defaultCourseContent())) as CourseContentPayload;
@@ -153,7 +154,7 @@ export default function ContentManager({ preview = false, initialStep = 1, focus
 
       <div className="teacher-editor-sections" role="tablist" aria-label="内容编辑分区">
         {([
-          ['theory', '理论与任务'], ['sop', 'SOP参数与安全'], ['rubric', '评分与 Gate'], ['resources', '资料与设备'], ['preview', '预览发布'],
+          ['theory', '理论与任务'], ['sop', 'SOP参数与安全'], ['rubric', '评分与 Gate'], ['resources', '资料与设备'], ['quiz', '知识检验题库'], ['preview', '预览发布'],
         ] as Array<[EditorSection, string]>).map(([key, label]) => <button key={key} type="button" role="tab" aria-selected={section === key} onClick={() => setSection(key)} className={section === key ? 'is-active' : ''}>{label}</button>)}
       </div>
 
@@ -188,6 +189,7 @@ export default function ContentManager({ preview = false, initialStep = 1, focus
             <div className="teacher-content-subsection"><h3>五维评分点</h3>{step.keyPoints.map((point, index) => <article key={point.id}><span>{point.dimension}</span><input aria-label={`${point.dimension}评分点`} value={point.label} onChange={(event) => updatePoint(index, 'label', event.target.value)} /><textarea aria-label={`${point.dimension}提示`} rows={2} value={point.hints[0]} onChange={(event) => updatePoint(index, 'hint', event.target.value)} /></article>)}</div>
             <div className="teacher-content-subsection"><h3>Gate 检查规则</h3>{step.gates.map((gate, index) => <article key={gate.id}><input aria-label="Gate规则" value={gate.label} onChange={(event) => updateGate(index, 'label', event.target.value)} /><textarea aria-label="Gate指导" rows={2} value={gate.guidance} onChange={(event) => updateGate(index, 'guidance', event.target.value)} /></article>)}</div>
           </div>}
+          {section === 'quiz' && <QuestionBankManager stepNo={step.id} preview={preview} />}
           {section === 'preview' && <div className="teacher-content-fields teacher-content-preview">
             <span className="teacher-content-version">步骤 {step.id} · {step.shortTitle}</span>
             <h3>{step.title}</h3><p>{step.context}</p><p><b>学习目标：</b>{step.goal}</p>
@@ -196,14 +198,14 @@ export default function ContentManager({ preview = false, initialStep = 1, focus
         </div>
       )}
 
-      <div className={`teacher-validation ${validation.valid ? 'is-valid' : 'is-invalid'}`}>
+      {section !== 'quiz' && <><div className={`teacher-validation ${validation.valid ? 'is-valid' : 'is-invalid'}`}>
         {validation.valid ? <><CheckCircle2 aria-hidden /><span><b>发布校验通过</b><small>八步连续、五维完整、Gate 与来源均可追溯。</small></span></> : <><ShieldCheck aria-hidden /><span><b>还有 {validation.errors.length} 项需要修正</b><small>{validation.errors.slice(0, 3).join('；')}</small></span></>}
       </div>
       <div className="teacher-content-actions">
         <button type="button" onClick={() => void save()} disabled={Boolean(busy)}><Save aria-hidden />{busy === 'save' ? '保存中…' : '保存草稿'}</button>
         <button type="button" className="is-primary" onClick={() => void publish()} disabled={Boolean(busy) || !validation.valid}><Send aria-hidden />{busy === 'publish' ? '发布中…' : '校验并发布'}</button>
       </div>
-      {message && <p className="teacher-panel-message">{message}</p>}
+      {message && <p className="teacher-panel-message">{message}</p>}</>}
     </section>
   );
 }

@@ -16,6 +16,9 @@
   - `supabase/migrations/202609031501_quiz_seed.sql`（首批题库数据）
   - `supabase/migrations/202609031502_quiz_access_lockdown.sql`（题库仅允许完成身份校验的服务端访问）
   - `supabase/migrations/202609031503_quiz_service_only_policies.sql`（删除已废弃的题库浏览器直连策略）
+  - `supabase/migrations/202609040004_teacher_quiz_authoring.sql`（教师预制题库草稿、审核发布与归档状态）
+  - `supabase/migrations/202609040005_quiz_creator_index.sql`（题目创建教师外键覆盖索引）
+  - `supabase/migrations/202609040006_quiz_seed_steps_3_8_reviewed.sql`（步骤3—8已审核首轮基础题）
 - 以下两份迁移**从未在任何共享数据库（开发/生产）执行**（已用 `to_regclass`/`information_schema` 双库只读核实），已从仓库删除，代码不再依赖其中任何对象：
   - `202608230001_unified_agent_v2.sql`（session_mode、content_version_id、teacher_role_grants、content_drafts、grade_components、grade_review_requests、v2 系列函数）
   - `202608240001_chaoxing_sync_contract.sql`（sync_outbox.external_record_id 列）
@@ -121,6 +124,6 @@
 用户客户端（cookie 会话）可写：`agent_sessions`（本人）、`agent_messages`（本人会话）、`learning_reports`（本人会话）、`teacher_reviews`（授权教师）。
 必须走服务端 service-role 客户端：`step_states`、`content_versions`、`event_logs`、`sync_outbox`（服务端先完成归属与权限校验）。
 
-知识检验的 `quiz_questions` 与 `quiz_sessions` 同样只走服务端：路由先从 Cookie 校验当前用户，再用 service-role 读取题目或更新且强制匹配 `user_id`。会话字段以 `status`（`in_progress` / `submitted` / `graded`）、`submitted_at`、`graded_at` 为准，不存在 `completed_at`。
+知识检验的 `quiz_questions` 与 `quiz_sessions` 同样只走服务端：路由先从 Cookie 校验当前用户，再用 service-role 读取题目或更新且强制匹配 `user_id`。教师可通过服务端让 AI 生成 `draft` 题并逐题编辑，只有 `published` 题会进入学生抽题池，`archived` 题不再使用；学生开考接口不调用模型。会话字段以 `status`（`in_progress` / `submitted` / `graded`）、`submitted_at`、`graded_at` 为准，不存在 `completed_at`。
 
 Supabase Security Advisor 对 `ai_jobs`、`event_logs`、`audit_logs`、`sync_outbox`、`external_identities` 的“RLS 已开启但无策略”提示属于预期：这些表已对 `anon` / `authenticated` 收回表权限，只允许 service-role。业务 RPC 为保证多表原子写入保留 `SECURITY DEFINER`，函数体逐一校验 `auth.uid()`、会话归属或教师授权；`202609030002_function_execute_lockdown.sql` 已收回 `PUBLIC` / `anon` 的执行权，仅允许 `authenticated` 调用。
