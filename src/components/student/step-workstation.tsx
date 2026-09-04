@@ -482,7 +482,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                         <ArrowLeft className="w-4 h-4" /> 上一题
                       </button>
                       <button onClick={submitQuizAnswer} disabled={!quizSelectedOption || busy}
-                        className="flex-1 ml-2 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-black shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:opacity-95 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed transition-all">
+                        className="flex-1 ml-2 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground text-base font-black border-2 border-primary/30 hover:bg-primary-container hover:text-primary hover:border-primary transition-colors disabled:bg-muted disabled:text-muted-foreground disabled:border-border disabled:cursor-not-allowed">
                         {busy ? (
                           <><LoaderCircle className="w-4 h-4 animate-spin" /> 提交中…</>
                         ) : isLast ? (
@@ -519,7 +519,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                         <p className="text-sm font-black">答题结果</p>
                         <p className="text-xs text-muted-foreground mt-0.5">答对 {correctCount} / {quizResults.length} 题 · 答题解析</p>
                       </div>
-                      <button onClick={() => setStage(2)} className="shrink-0 inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-black hover:opacity-90 transition-opacity">
+                      <button onClick={() => setStage(2)} className="shrink-0 inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-primary-container text-primary text-xs font-black border border-primary/30 hover:bg-primary hover:text-primary-foreground transition-colors">
                         继续 <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -600,12 +600,12 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                       <span className="text-xs text-muted-foreground font-bold">{reviewIndex + 1} / {quizResults.length}</span>
                       {onReviewLast ? (
                         <button onClick={() => setStage(2)}
-                          className="inline-flex items-center gap-1.5 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-black shadow-lg shadow-primary/25 hover:opacity-95 transition-opacity">
+                          className="inline-flex items-center gap-1.5 px-5 py-3 rounded-xl bg-primary-container text-primary text-sm font-black border border-primary/30 hover:bg-primary hover:text-primary-foreground transition-colors">
                           进入分步推演 <ArrowRight className="w-4 h-4" />
                         </button>
                       ) : (
                         <button onClick={() => setReviewIndex(reviewIndex + 1)}
-                          className="inline-flex items-center gap-1.5 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-black shadow-lg shadow-primary/25 hover:opacity-95 transition-opacity">
+                          className="inline-flex items-center gap-1.5 px-5 py-3 rounded-xl bg-primary-container text-primary text-sm font-black border border-primary/30 hover:bg-primary hover:text-primary-foreground transition-colors">
                           下一题 <ArrowRight className="w-4 h-4" />
                         </button>
                       )}
@@ -673,7 +673,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
 
             <div className="mt-6 flex flex-col items-center">
               <button type="button" onClick={submitEvaluation} disabled={busy || !descComplete || !isCurrent}
-                className={`w-full max-w-xl rounded-xl px-5 py-4 text-base font-black inline-flex items-center justify-center gap-2 shadow-lg transition-all ${busy || !descComplete || !isCurrent ? 'bg-muted text-muted-foreground cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-secondary to-primary text-primary-foreground shadow-secondary/30 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer'}`}>
+                className={`w-full max-w-xl rounded-xl px-5 py-4 text-base font-black inline-flex items-center justify-center gap-2 border-2 transition-colors ${busy || !descComplete || !isCurrent ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'bg-primary text-primary-foreground border-primary/30 hover:bg-primary-container hover:text-primary hover:border-primary cursor-pointer'}`}>
                 {busy && <LoaderCircle className="w-5 h-5 animate-spin" />}
                 {busy ? 'AI 正在逐项评阅并生成报告…' : !isCurrent ? '仅当前步骤可提交' : !descComplete ? `请完成全部 ${step.keyPoints.length} 步描述后提交（${describedCount}/${step.keyPoints.length}）` : '提交作答，让 AI 生成点评报告 →'}
               </button>
