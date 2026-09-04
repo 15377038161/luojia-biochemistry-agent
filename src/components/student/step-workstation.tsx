@@ -111,6 +111,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [quizResults, setQuizResults] = useState<Array<{ question_id: string; is_correct: boolean; user_answer: string; correct_answer: string; explanation: string }>>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [reviewIndex, setReviewIndex] = useState(0);
   const [quizLoading, setQuizLoading] = useState(false);
   const [quizReloadKey, setQuizReloadKey] = useState(0);
   const [showExecutionDetails, setShowExecutionDetails] = useState(true);
@@ -126,8 +127,10 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
       setQuizQuestions(previewQuizQuestions(step));
       setQuizCurrentIndex(0);
       setQuizSelectedOption('');
+      setQuizAnswers({});
       setQuizResults([]);
       setQuizCompleted(false);
+      setReviewIndex(0);
       setQuizLoading(false);
       return;
     }
@@ -140,8 +143,10 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
           setQuizQuestions(data.data.questions);
           setQuizCurrentIndex(0);
           setQuizSelectedOption('');
+          setQuizAnswers({});
           setQuizResults([]);
           setQuizCompleted(false);
+          setReviewIndex(0);
         } else if (!cancelled) {
           setError(data.error?.message || '加载题目失败');
         }
@@ -492,100 +497,116 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
             {quizCompleted && (() => {
               const correctCount = quizResults.filter((r) => r.is_correct).length;
               const pct = Math.round((correctCount / quizResults.length) * 100);
-              const scoreColor = pct >= 80 ? 'text-success' : pct >= 60 ? 'text-secondary' : 'text-destructive';
-              const scoreBg = pct >= 80 ? 'bg-success/10 border-success/30' : pct >= 60 ? 'bg-secondary/10 border-secondary/30' : 'bg-destructive/10 border-destructive/30';
+              const onReviewLast = reviewIndex >= quizResults.length - 1;
+              const onReviewFirst = reviewIndex <= 0;
+              const result = quizResults[reviewIndex];
+              const q = quizQuestions.find((x) => x.question_id === result?.question_id);
+              if (!result || !q) return null;
+              const userOpt = q.options.find((o) => o.id === result.user_answer);
+              const correctOpt = q.options.find((o) => o.id === result.correct_answer);
               return (
-                <section className="mt-5 mx-auto max-w-2xl space-y-4 pb-28">
-                  {/* 成绩卡片 */}
-                  <div className={`rounded-2xl border ${scoreBg} p-6 shadow-card`}>
-                    <div className="flex items-center gap-4">
-                      <div className={`w-16 h-16 rounded-2xl bg-card flex items-center justify-center shadow-sm`}>
-                        <span className={`text-2xl font-black ${scoreColor}`}>{pct}</span>
+                <section className="mt-5 pb-28">
+                  <div className="mx-auto max-w-2xl">
+                    {/* 成绩总结条 */}
+                    <div className="mb-5 rounded-2xl bg-card border border-border shadow-card p-4 flex items-center gap-4">
+                      <div className={`shrink-0 w-14 h-14 rounded-xl flex items-center justify-center ${result.is_correct || pct >= 60 ? 'bg-primary/10' : 'bg-destructive/10'}`}>
+                        <span className={`text-xl font-black ${pct >= 80 ? 'text-success' : pct >= 60 ? 'text-secondary' : 'text-destructive'}`}>{pct}<span className="text-xs">分</span></span>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-black text-foreground">答题完成</p>
-                        <p className="mt-1 text-xs text-muted-foreground">共 {quizResults.length} 题，答对 {correctCount} 题，答错 {quizResults.length - correctCount} 题</p>
-                        <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
-                          <div className={`h-full rounded-full transition-all duration-700 ${pct >= 80 ? 'bg-success' : pct >= 60 ? 'bg-secondary' : 'bg-destructive'}`} style={{ width: `${pct}%` }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black">答题结果</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">答对 {correctCount} / {quizResults.length} 题 · 答题解析</p>
+                      </div>
+                      <button onClick={() => setStage(2)} className="shrink-0 inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-black hover:opacity-90 transition-opacity">
+                        继续 <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* 题号导航 */}
+                    <div className="flex items-center justify-center gap-2 mb-5 flex-wrap">
+                      {quizResults.map((r, idx) => {
+                        const isCurrent = idx === reviewIndex;
+                        return (
+                          <button key={r.question_id} onClick={() => setReviewIndex(idx)}
+                            className={`inline-flex items-center justify-center w-9 h-9 rounded-lg text-xs font-black transition-all ${isCurrent ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''} ${r.is_correct ? 'bg-success/15 text-success hover:bg-success/25' : 'bg-destructive/15 text-destructive hover:bg-destructive/25'}`}>
+                            {r.is_correct ? <Check className="w-4 h-4" /> : <span>{idx + 1}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* 题目卡片 */}
+                    <div className="rounded-2xl bg-card border border-border shadow-card overflow-hidden">
+                      <div className={`px-6 py-4 border-b border-border flex items-center gap-3 ${result.is_correct ? 'bg-success/5' : 'bg-destructive/5'}`}>
+                        <span className={`shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-black ${result.is_correct ? 'bg-success text-success-foreground' : 'bg-destructive text-destructive-foreground'}`}>
+                          {result.is_correct ? <Check className="w-3.5 h-3.5" /> : <CircleAlert className="w-3.5 h-3.5" />}
+                          {result.is_correct ? '回答正确' : '回答错误'}
+                        </span>
+                        <span className="text-sm font-black">第 {reviewIndex + 1} 题 / 共 {quizResults.length} 题</span>
+                        <span className="ml-auto text-[11px] font-bold text-muted-foreground">单选题</span>
+                      </div>
+
+                      <div className="p-6">
+                        <p className="text-base font-bold leading-7">{q.question_text}</p>
+
+                        <div className="mt-5 space-y-2.5">
+                          {q.options.map((option) => {
+                            const isUser = option.id === result.user_answer;
+                            const isCorrect = option.id === result.correct_answer;
+                            let optStyle = 'border-border bg-card';
+                            let letterStyle = 'bg-muted text-muted-foreground border-muted';
+                            let tailIcon = null;
+                            if (isCorrect) {
+                              optStyle = 'border-success bg-success/5';
+                              letterStyle = 'bg-success text-success-foreground border-success';
+                              tailIcon = <Check className="w-5 h-5 text-success shrink-0" />;
+                            } else if (isUser && !isCorrect) {
+                              optStyle = 'border-destructive bg-destructive/5';
+                              letterStyle = 'bg-destructive text-destructive-foreground border-destructive';
+                              tailIcon = <span className="shrink-0 text-destructive text-lg font-black leading-none">✗</span>;
+                            }
+                            return (
+                              <div key={option.id} className={`rounded-xl border-2 px-4 py-3.5 flex items-start gap-3 ${optStyle}`}>
+                                <span className={`shrink-0 mt-0.5 w-8 h-8 rounded-lg border-2 flex items-center justify-center text-sm font-black ${letterStyle}`}>{option.id}</span>
+                                <span className="text-sm leading-6 flex-1 pt-0.5">{option.text}</span>
+                                {tailIcon && <span className="mt-1">{tailIcon}</span>}
+                              </div>
+                            );
+                          })}
                         </div>
+
+                        <div className="mt-5 rounded-xl bg-primary-container/30 border border-primary/15 p-4">
+                          <p className="text-xs font-black text-primary flex items-center gap-1.5"><Lightbulb className="w-4 h-4" /> 题目解析</p>
+                          <p className="mt-2 text-sm leading-7 text-foreground/85">{result.explanation}</p>
+                        </div>
+
+                        {!result.is_correct && (
+                          <div className="mt-3 rounded-xl bg-destructive/5 border border-destructive/20 p-4">
+                            <p className="text-xs font-black text-destructive flex items-center gap-1.5"><CircleAlert className="w-4 h-4" /> 易错提醒</p>
+                            <p className="mt-1.5 text-sm leading-7 text-foreground/85">你选择了 <b className="text-destructive">{result.user_answer}. {userOpt?.text}</b>，正确答案应为 <b className="text-success">{result.correct_answer}. {correctOpt?.text}</b>。{result.explanation.split('。')[0]}。</p>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <p className="mt-4 text-sm text-foreground/80 leading-relaxed">下面是每题的正确答案与详细解析，建议仔细阅读错题解析巩固相关知识点。</p>
-                    <button onClick={() => setStage(2)} className="mt-4 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-black shadow-md hover:shadow-lg hover:opacity-95 transition-all">
-                      继续学习，进入分步推演 <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
 
-                  {/* 答题详情 */}
-                  <div className="space-y-3">
-                    {quizResults.map((result, index) => {
-                      const q = quizQuestions[index];
-                      const userOpt = q?.options.find((o) => o.id === result.user_answer);
-                      const correctOpt = q?.options.find((o) => o.id === result.correct_answer);
-                      return (
-                        <div key={result.question_id} className={`rounded-2xl border bg-card shadow-sm overflow-hidden ${result.is_correct ? 'border-success/30' : 'border-destructive/30'}`}>
-                          {/* 题头 */}
-                          <div className={`px-5 py-3 flex items-center gap-3 border-b border-border ${result.is_correct ? 'bg-success/5' : 'bg-destructive/5'}`}>
-                            <span className={`shrink-0 inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-md text-xs font-black ${result.is_correct ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
-                              {result.is_correct ? <Check className="w-3.5 h-3.5" /> : <CircleAlert className="w-3.5 h-3.5" />}
-                              {result.is_correct ? '回答正确' : '回答错误'}
-                            </span>
-                            <span className="text-sm font-black text-foreground">第 {index + 1} 题</span>
-                            <span className="ml-auto text-[11px] font-bold text-muted-foreground">单选题</span>
-                          </div>
-
-                          <div className="p-5">
-                            {/* 题干 */}
-                            <p className="text-sm font-bold leading-7 text-foreground">{q?.question_text}</p>
-
-                            {/* 选项列表 */}
-                            <div className="mt-4 space-y-2">
-                              {q?.options.map((option) => {
-                                const isUser = option.id === result.user_answer;
-                                const isCorrect = option.id === result.correct_answer;
-                                let optStyle = 'border-border bg-card text-foreground';
-                                let letterStyle = 'bg-muted text-muted-foreground border-border';
-                                let iconEl = null;
-                                if (isCorrect) {
-                                  optStyle = 'border-success bg-success/5 text-foreground';
-                                  letterStyle = 'bg-success text-success-foreground border-success';
-                                  iconEl = <Check className="w-4 h-4 text-success shrink-0" />;
-                                } else if (isUser && !isCorrect) {
-                                  optStyle = 'border-destructive bg-destructive/5 text-foreground';
-                                  letterStyle = 'bg-destructive text-destructive-foreground border-destructive';
-                                  iconEl = <span className="shrink-0 text-destructive text-xs font-black">✗</span>;
-                                }
-                                return (
-                                  <div key={option.id} className={`rounded-xl border-2 px-4 py-3 flex items-start gap-3 ${optStyle}`}>
-                                    <span className={`shrink-0 mt-0.5 w-7 h-7 rounded-lg border-2 flex items-center justify-center text-xs font-black ${letterStyle}`}>{option.id}</span>
-                                    <span className="text-sm leading-6 flex-1 pt-0.5">{option.text}</span>
-                                    {iconEl && <span className="mt-1">{iconEl}</span>}
-                                  </div>
-                                );
-                              })}
-                            </div>
-
-                            {/* 答案对比 */}
-                            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                              <div className="rounded-lg bg-muted/50 p-3">
-                                <p className="text-[11px] font-black text-muted-foreground uppercase tracking-wider">你的答案</p>
-                                <p className={`mt-1 text-sm font-bold ${result.is_correct ? 'text-success' : 'text-destructive'}`}>{result.user_answer}. {userOpt?.text || '—'}</p>
-                              </div>
-                              <div className="rounded-lg bg-success/5 p-3 border border-success/20">
-                                <p className="text-[11px] font-black text-success uppercase tracking-wider">正确答案</p>
-                                <p className="mt-1 text-sm font-bold text-success">{result.correct_answer}. {correctOpt?.text || '—'}</p>
-                              </div>
-                            </div>
-
-                            {/* 解析 */}
-                            <div className="mt-3 rounded-lg bg-primary-container/30 border border-primary/15 p-4">
-                              <p className="text-[11px] font-black text-primary uppercase tracking-wider flex items-center gap-1.5"><Lightbulb className="w-3.5 h-3.5" /> 题目解析</p>
-                              <p className="mt-2 text-xs leading-relaxed text-foreground/85">{result.explanation}</p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {/* 上下题切换 */}
+                    <div className="mt-5 flex items-center justify-between gap-3">
+                      <button onClick={() => setReviewIndex(reviewIndex - 1)} disabled={onReviewFirst}
+                        className="inline-flex items-center gap-1.5 px-5 py-3 rounded-xl bg-card border border-border text-sm font-bold text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                        <ArrowLeft className="w-4 h-4" /> 上一题
+                      </button>
+                      <span className="text-xs text-muted-foreground font-bold">{reviewIndex + 1} / {quizResults.length}</span>
+                      {onReviewLast ? (
+                        <button onClick={() => setStage(2)}
+                          className="inline-flex items-center gap-1.5 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-black shadow-lg shadow-primary/25 hover:opacity-95 transition-opacity">
+                          进入分步推演 <ArrowRight className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button onClick={() => setReviewIndex(reviewIndex + 1)}
+                          className="inline-flex items-center gap-1.5 px-5 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-black shadow-lg shadow-primary/25 hover:opacity-95 transition-opacity">
+                          下一题 <ArrowRight className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </section>
               );
