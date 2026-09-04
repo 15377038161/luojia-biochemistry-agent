@@ -74,12 +74,8 @@ function resolveRole(app: Record<string, unknown>, chaoxing: Record<string, unkn
   return 'student';
 }
 
-const TEST_ACCOUNT_FIDS = ['1385'];
-
-function isTeacherCapable(appRole: AgentRole, chaoxing: Record<string, unknown>): boolean {
-  if (appRole === 'teacher') return true;
-  const fid = getString([chaoxing], ['fid']);
-  return TEST_ACCOUNT_FIDS.includes(fid);
+function isTeacherCapable(appRole: AgentRole): boolean {
+  return appRole === 'teacher';
 }
 
 function normalizeUser(user: User): SessionUser {
@@ -92,7 +88,7 @@ function normalizeUser(user: User): SessionUser {
   const openid = getString([chaoxing], ['openid']);
 
   const appRole = resolveRole(app, chaoxing);
-  const teacherCapable = isTeacherCapable(appRole, chaoxing);
+  const teacherCapable = isTeacherCapable(appRole);
   const capabilities: WorkspaceCapabilities = {
     studentWorkspace: true,
     teacherWorkspace: teacherCapable,

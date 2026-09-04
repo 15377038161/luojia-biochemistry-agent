@@ -13,6 +13,10 @@ export async function POST(request: NextRequest) {
     const query = body.query?.trim() || '';
     if (!body.sessionId || query.length < 2 || query.length > 1000) return fail({ code: 'VALIDATION_ERROR', message: '请输入2—1000字的查询。', retryable: false });
     const { supabase } = createSupabaseRouteClient(request);
+    const { data: teacherSession, error: teacherSessionError } = await supabase.from('agent_sessions')
+      .select('id,user_id,agent_role').eq('id', body.sessionId).maybeSingle();
+    if (teacherSessionError) throw teacherSessionError;
+    if (!teacherSession || teacherSession.user_id !== identity.user.id || teacherSession.agent_role !== 'teacher') throw new Error('FORBIDDEN');
     const answer = await answerTeacherQuery(supabase, query);
     const rows = [
       { session_id: body.sessionId, role: 'user', kind: 'question', step_no: null, content: query, metadata: {} },

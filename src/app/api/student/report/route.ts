@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     const { data: evaluations, error: evaluationError } = await supabase
       .from('evaluations')
-      .select('step_no,decision,confidence,result,step_attempts!inner(answer)')
+      .select('step_no,decision,confidence,total_score,result,step_attempts!inner(answer)')
       .eq('step_attempts.session_id', session.id)
       .order('created_at', { ascending: true });
     if (evaluationError) throw evaluationError;
@@ -79,8 +79,16 @@ export async function POST(request: NextRequest) {
         answer: String(answer ?? ''),
         decision: attempt?.decision ?? 'revise',
         confidence: Number(attempt?.confidence) || 0,
+        score: Number(attempt?.total_score) || 0,
+        evaluation: attempt?.result ?? null,
+        resource_refs: [{ label: `${step.shortTitle}课程资料`, source: step.source }],
       };
     });
+
+    const admin = getSupabaseAdminClient();
+    const { data: experimentProfile, error: profileError } = await admin.from('student_experiment_profiles')
+      .select('target_gene,sequence_source,accession,cloning_strategy,design_snapshot').eq('session_id', session.id).maybeSingle();
+    if (profileError) throw profileError;
 
     const report = await generateReport({
       student_name: identity.user.profile.displayName ?? '学生',
@@ -95,22 +103,16 @@ export async function POST(request: NextRequest) {
         })),
       })),
       attempts,
-      constraints: '用中文生成总学习报告；必须覆盖八步证据、知识理解、操作描述、科学决策、问题解决、结果分析与判断、改进建议与教师确认事项。',
+      experiment_profile: experimentProfile ?? { target_gene: 'EGFP', sequence_source: 'recommended', cloning_strategy: 'recombination' },
+      constraints: '用中文生成总学习报告；逐步引用学生原文和评阅证据，覆盖优势、失分点、参数遗漏、推理链、知识短板、误差分析、改写答案、五维能力、可执行建议与教师确认事项。推荐资料只能使用每步resource_refs，不得生成外部链接。',
     });
-    const sections = normalizeStudyReport(report.data) as unknown as Record<string, unknown>;
-    const markdown = [
-      `# 学习报告（${identity.user.profile.displayName ?? '学生'}）`,
-      '',
-      ...attempts.map((attempt) => `## ${attempt.step_no}. ${attempt.title}`),
-      '',
-      String((sections as { summary?: string }).summary ?? ''),
-    ].join('\n');
+    const normalizedReport = normalizeStudyReport(report.data);
+    const markdown = normalizedReport.markdown;
 
     // 统一成绩计算入口：总报告 content.grading 与成绩页、教师复核共用同一模块。
-    const admin = getSupabaseAdminClient();
     const facts = await loadGradingFacts(admin, session.id);
     const summary = computeGradeSummary(facts);
-    const content = buildLearningReportContent(summary, sections, facts.finalization);
+    const content = buildLearningReportContent(summary, normalizedReport as unknown as Record<string, unknown>, facts.finalization);
 
     const { data, error } = await supabase.rpc('record_learning_report', {
       target_session: session.id,

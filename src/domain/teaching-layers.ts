@@ -1,0 +1,14 @@
+import type { ExperimentStep } from '@/domain/agent';
+
+type TeachingLayer = Pick<ExperimentStep, 'sopParameters' | 'safetyNotes' | 'decisionTree' | 'instruments' | 'scientificPractice'>;
+
+export const teachingLayers: Record<number, TeachingLayer> = {
+  1: { sopParameters: ['引物特异区18–25 bp，GC 40–60%，Tm 55–65℃且引物对差值≤3℃', '重组克隆同源臂15–25 bp；PCR产物用Marker核对预期大小'], safetyNotes: ['PCR分区操作并使用滤芯枪头，避免模板污染', '观察凝胶时使用防护罩，优先蓝光切胶'], decisionTree: ['单一预期条带→纯化并进入载体构建', '无条带→检查模板、引物、退火温度和酶活', '杂带→提高退火温度或优化引物特异性'], instruments: ['PCR仪', '核酸电泳仪', '蓝光/凝胶成像系统'], scientificPractice: '序列、引物参数和胶图都要可追溯；不以“应该能扩增”代替实验数据。' },
+  2: { sopParameters: ['载体完全线性化并纯化后按说明书摩尔比组装', '重组产物转入DH5α并用卡那霉素筛选', '菌落PCR/诊断酶切初筛，Sanger测序终确认'], safetyNotes: ['核酸染料与抗生素废物分类收集', '热激和离心前确认管盖闭合'], decisionTree: ['阴性对照无菌落且样品有菌落→验证克隆', '初筛正确但测序异常→重新挑克隆', '无菌落→检查线性化、片段比例和感受态效率'], instruments: ['恒温金属浴', '生物安全柜', '摇床', '微量离心机'], scientificPractice: '“长出菌落”不等于构建成功；方向、读码框和序列必须形成闭环证据。' },
+  3: { sopParameters: ['OD600达到0.6–0.8时加入IPTG', '以0.1–0.5 mM IPTG、16–25℃、12–18 h作为低温表达起点', '保留未诱导与空载体对照'], safetyNotes: ['执行无菌规范并对含抗生素培养物灭活处置', '摇瓶装量不超过容积20%'], decisionTree: ['目标条带增强且上清占优→天然纯化', '表达高但沉淀占优→降低温度/IPTG并延长时间', '无表达→检查质粒、抗性、菌株与诱导链'], instruments: ['分光光度计', '恒温摇床', '低温离心机'], scientificPractice: '一次只改变一个诱导变量，并保留对照，才能把现象归因到条件变化。' },
+  4: { sopParameters: ['全程冰上间歇超声，示例工作3 s/停5 s，总时长按体积优化', '4℃高速离心并分别保留上清和沉淀', '等量上样，记录凝胶浓度、电压与运行时间'], safetyNotes: ['超声探头不接触管壁，佩戴听力防护', '丙烯酰胺单体和染色废液按化学品规范处置'], decisionTree: ['上清目标条带更强→可溶表达', '沉淀更强→优化诱导或选择变性路线', '无目标条带→核对Marker、对照与上样量'], instruments: ['超声破碎仪', '低温离心机', 'SDS-PAGE电泳槽', '凝胶成像系统'], scientificPractice: '可溶性结论必须来自同批样品上清/沉淀的等量比较。' },
+  5: { sopParameters: ['结合体系pH 7.4–8.0、NaCl 300–500 mM', '结合/洗涤咪唑20–60 mM，洗脱咪唑250–500 mM', '包涵体路线需评估变性纯化与复性'], safetyNotes: ['含镍树脂和废液按重金属废物处理', '避免EDTA等螯合剂破坏固定相'], decisionTree: ['上清含目标蛋白→天然Ni-NTA', '沉淀为主且优化无效→变性纯化和复性', '结合失败→调整pH/盐/咪唑并验证标签'], instruments: ['层析柱', 'pH计', '低温操作平台'], scientificPractice: '纯化方法由步骤4证据决定，不能先选方法再忽略样品状态。' },
+  6: { sopParameters: ['按平衡→上样→洗涤→洗脱→透析顺序操作', '咪唑梯度示例20–40/40–60/250–500 mM', '保留上样、流穿、洗涤和各洗脱组分'], safetyNotes: ['柱床保持液面，避免干柱和气泡', '组分明确标号并低温保存'], decisionTree: ['流穿有目标蛋白→降流速/上样量并检查标签', '洗涤丢失→降低洗涤咪唑', '洗脱杂带多→增强洗涤或增加二次纯化'], instruments: ['Ni-NTA层析装置', '蠕动泵或重力柱', '透析装置'], scientificPractice: '留样是定位损失的前提；没有过程组分就无法解释收率下降。' },
+  7: { sopParameters: ['SDS-PAGE等量上样并避免过载', 'ImageJ以相同背景校正计算灰度占比', '必要时用抗His/目标蛋白抗体确认身份'], safetyNotes: ['转膜设备断电后开盖', '染色、脱色与显影试剂分类收集'], decisionTree: ['预期分子量且纯度≥90%→达标', '杂带多→优化洗涤或增加SEC/离子交换', '降解明显→加强低温和蛋白酶抑制'], instruments: ['SDS-PAGE系统', '转膜仪', '成像仪', 'ImageJ'], scientificPractice: '纯度、身份和完整性是三个结论，必须用匹配的方法分别证明。' },
+  8: { sopParameters: ['设置空白、标准梯度和至少技术复孔', '标准曲线R²≥0.99且样品落在线性范围', '由回归方程计算并乘稀释倍数，报告均值与离散程度'], safetyNotes: ['酶标板避免气泡、指纹和交叉污染', '显色试剂按化学品说明处置'], decisionTree: ['线性合格且复孔一致→计算浓度', '超出线性范围→稀释后重测', '复孔差异大→排查气泡、干扰物并交叉验证'], instruments: ['酶标仪/分光光度计', '微量移液器', '96孔板'], scientificPractice: '报告原始吸光度、回归方程、R²、稀释倍数和不确定性，让结论可复算。' },
+};

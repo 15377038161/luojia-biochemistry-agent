@@ -85,6 +85,11 @@ export interface ExperimentStep {
   context: string;
   goal: string;
   principle: string;
+  sopParameters: string[];
+  safetyNotes: string[];
+  decisionTree: string[];
+  instruments: string[];
+  scientificPractice: string;
   keyPoints: Array<{
     id: string;
     dimension: keyof DimensionScores;

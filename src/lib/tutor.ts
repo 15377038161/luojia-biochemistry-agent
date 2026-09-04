@@ -27,3 +27,12 @@ export function assertTutorStage(stage: unknown): TutorLearningStage {
   }
   return stage;
 }
+
+export function isPeerDataRequest(question: string): boolean {
+  const normalized = question.replace(/\s+/g, '');
+  const peer = /(其他人|其他学生|其他同学|别人|别的同学|同班同学|全班|班里|某同学|同学们)/;
+  const privateData = /(答案|作答|回答|分数|成绩|得分|进度|完成情况|答完|提交情况|报告|排名)/;
+  return peer.test(normalized) && privateData.test(normalized);
+}
+
+export const PEER_DATA_PRIVACY_REPLY = '我只能访问你的当前实验会话和课程公共资料，不能查看、比较或推测其他学生的答案、成绩、进度或学习报告。你可以问我你的本步反馈、课程原理或如何改进自己的作答。';

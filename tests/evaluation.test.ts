@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { detectDeterministicGates, normalizeEvaluation, totalScore } from '../src/domain/evaluation';
+import { detectDeterministicGates, detectRequiredEvidenceGaps, normalizeEvaluation, totalScore } from '../src/domain/evaluation';
 import { experimentSteps } from '../src/domain/experiment';
 import { courseImageQuestions } from '../src/domain/media';
 import type { TextEvaluation } from '../src/domain/agent';
@@ -45,8 +45,18 @@ test('确定性Gate覆盖模型的通过结论', () => {
 });
 
 test('评分被限制在五维最大值内', () => {
-  const result = normalizeEvaluation(1, '这是一段没有Gate的正常描述。', evaluation({ scores: { knowledge: 99, operation: 99, decision: 99, troubleshooting: 99, analysis: 99 } }));
+  const answer = '我从NCBI GenBank登录号取得EGFP编码序列，使用pET-28a并设计20 bp同源臂完成同源重组。引物特异区20 bp，GC含量50%，Tm 60℃。PCR用Marker对照预期750 bp目标条带；若无条带或出现杂带，则检查退火温度、引物二聚体和模板质量。';
+  const result = normalizeEvaluation(1, answer, evaluation({ scores: { knowledge: 99, operation: 99, decision: 99, troubleshooting: 99, analysis: 99 } }));
   assert.equal(totalScore(result.scores), 100);
+});
+
+test('遗漏温度浓度时间等关键参数时不得虚判为通过', () => {
+  const answer = 'IPTG解除抑制后由T7 RNA聚合酶识别T7启动子，我会培养细菌并观察表达。';
+  const gaps = detectRequiredEvidenceGaps(3, answer);
+  assert.ok(gaps.some((item) => item.id === 's3-required-parameters'));
+  const result = normalizeEvaluation(3, answer, evaluation({ decision: 'pass' }));
+  assert.equal(result.decision, 'revise');
+  assert.ok(result.scores.operation <= 20);
 });
 
 test('低置信评阅必须建议教师查看', () => {

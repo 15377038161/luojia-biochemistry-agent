@@ -17,6 +17,10 @@ export interface StudyReportV2 {
   schemaVersion: 'StudyReport.v2';
   markdown: string;
   sections: StudyReportSectionsV2;
+  lossAnalysis: Array<{ stepNo: number; label: string; evidence: string; impact: string }>;
+  knowledgeGaps: Array<{ concept: string; gap: string; evidence: string }>;
+  improvementSuggestions: Array<{ dimension: string; suggestion: string; check: string }>;
+  resourceRecommendations: Array<{ label: string; source: string; reason: string }>;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -47,5 +51,9 @@ export function normalizeStudyReport(value: unknown): StudyReportV2 {
       gradeStatus: typeof sections.gradeStatus === 'string' ? sections.gradeStatus : '尚未认定',
       teacherReviewStatus: typeof sections.teacherReviewStatus === 'string' ? sections.teacherReviewStatus : '暂无教师复核',
     },
+    lossAnalysis: Array.isArray(source.lossAnalysis) ? source.lossAnalysis as StudyReportV2['lossAnalysis'] : [],
+    knowledgeGaps: Array.isArray(source.knowledgeGaps) ? source.knowledgeGaps as StudyReportV2['knowledgeGaps'] : [],
+    improvementSuggestions: Array.isArray(source.improvementSuggestions) ? source.improvementSuggestions as StudyReportV2['improvementSuggestions'] : [],
+    resourceRecommendations: Array.isArray(source.resourceRecommendations) ? source.resourceRecommendations as StudyReportV2['resourceRecommendations'] : [],
   };
 }

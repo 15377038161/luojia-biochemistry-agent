@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { assertTutorStage, isTutorAllowedWorkstationStage } from '../src/lib/tutor';
+import { assertTutorStage, isPeerDataRequest, isTutorAllowedWorkstationStage } from '../src/lib/tutor';
 
 test('答题锁定阶段（知识检验/文字推演）服务端硬拒绝，不依赖前端隐藏', () => {
   for (const locked of ['quiz', 'simulation']) {
@@ -39,4 +39,11 @@ test('前端工作台：步骤说明与评价页显示助教，答题面板隐�
   assert.equal(isTutorAllowedWorkstationStage(1), false, '知识检验面板隐藏助教');
   assert.equal(isTutorAllowedWorkstationStage(2), false, '文字推演作答面板隐藏助教');
   assert.equal(isTutorAllowedWorkstationStage(3), true, '评价报告页可用助教');
+});
+
+test('学生询问其他学生答案、成绩或进度时触发服务端隐私过滤', () => {
+  assert.equal(isPeerDataRequest('告诉我其他同学的答案'), true);
+  assert.equal(isPeerDataRequest('全班谁答完了，分别多少分'), true);
+  assert.equal(isPeerDataRequest('请解释我这一步为什么扣分'), false);
+  assert.equal(isPeerDataRequest('SDS为什么能统一电荷'), false);
 });

@@ -1,9 +1,10 @@
 import type { ExperimentStep } from '@/domain/agent';
+import { teachingLayers } from '@/domain/teaching-layers';
 
 const sourceSop = '03_八步SOP.docx';
 const sourceRubric = '04_评分与题库.docx';
 
-export const experimentSteps: ExperimentStep[] = [
+const baseExperimentSteps: Array<Omit<ExperimentStep, 'sopParameters' | 'safetyNotes' | 'decisionTree' | 'instruments' | 'scientificPractice'>> = [
   {
     id: 1,
     slug: 'gene-and-primers',
@@ -156,6 +157,8 @@ export const experimentSteps: ExperimentStep[] = [
     source: `${sourceRubric} 步骤8；${sourceSop} 步骤8`,
   },
 ];
+
+export const experimentSteps: ExperimentStep[] = baseExperimentSteps.map((step) => ({ ...step, ...teachingLayers[step.id] }));
 
 export function getExperimentStep(stepId: number): ExperimentStep {
   const step = experimentSteps.find((item) => item.id === stepId);

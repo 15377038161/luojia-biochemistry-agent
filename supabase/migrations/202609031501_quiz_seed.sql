@@ -103,5 +103,4 @@ INSERT INTO quiz_questions (step_no, dimension, question_text, options, correct_
  'B',
  'Bradford 法用考马斯亮蓝 G-250 结合蛋白，A595 测定，快速灵敏。A260 测核酸，A280/A260 比值测核酸纯度，琼脂糖凝胶分离核酸。');
 
--- Step 3-8 题目省略（实际会生成 80 道，这里为节省空间只展示前 2 步 20 道）
--- 完整种子数据见 scripts/seed-quiz-questions.ts
+-- 步骤3–8首轮题池由后续正式迁移202609040002补齐；不足时由服务端AI生成并入池。

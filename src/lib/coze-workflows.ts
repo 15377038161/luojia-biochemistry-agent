@@ -1,18 +1,22 @@
 import { randomUUID } from 'node:crypto';
-import { LLMClient } from 'coze-coding-dev-sdk';
-import type { ContentPart, Message } from 'coze-coding-dev-sdk';
-import { assertEvaluation } from '@/domain/evaluation';
+import { assertEvaluation, normalizeEvaluation } from '@/domain/evaluation';
 import { getExperimentStep } from '@/domain/experiment';
 import type { ExperimentStep, TextEvaluation } from '@/domain/agent';
 import { AiValidationError } from '@/lib/errors';
+import { invokeAi, type AiContentPart, type AiMessage } from '@/lib/ai-gateway';
 
 export interface WorkflowResult<T> {
   data: T;
   runId?: string;
 }
 
-const MODEL_PRO = 'doubao-seed-2-0-pro-260215';
-const MODEL_LITE = 'doubao-seed-2-0-lite-260215';
+export interface ExperimentProfileContext {
+  target_gene: string;
+  sequence_source: string;
+  accession?: string | null;
+  cloning_strategy: string;
+  design_snapshot?: Record<string, unknown> | null;
+}
 
 const SCORING_RULES = `五维评分上限：knowledge 20 / operation 30 / decision 20 / troubleshooting 15 / analysis 15（总分 100）。
 判定规则：总分 >= 80 且无关键要点缺失 → decision = "pass"；存在缺失或错误但可修改 → "revise"；信息不足以判断 → "teacher_review"。`;
@@ -73,7 +77,11 @@ const REPORT_SCHEMA = `{
     "actionPlan": [{ "action": "可执行动作", "appliesTo": "适用步骤", "check": "检查标准" }],
     "gradeStatus": "成绩状态",
     "teacherReviewStatus": "教师复核状态"
-  }
+  },
+  "lossAnalysis": [{ "stepNo": 1, "label": "具体失分点", "evidence": "学生原话或未交代", "impact": "为何失分" }],
+  "knowledgeGaps": [{ "concept": "薄弱知识点", "gap": "具体短板", "evidence": "对应证据" }],
+  "improvementSuggestions": [{ "dimension": "五维名称", "suggestion": "可执行动作", "check": "完成标准" }],
+  "resourceRecommendations": [{ "label": "课程资料名称", "source": "输入中真实resource_ref", "reason": "推荐理由" }]
 }`;
 
 interface VisionCheck {
@@ -86,14 +94,8 @@ function fixtureEnabled() {
   return process.env.ENABLE_AI_FIXTURE === 'true' && process.env.NODE_ENV !== 'production';
 }
 
-async function invokeLlm(messages: Message[], config?: { model?: string; temperature?: number }) {
-  const client = new LLMClient();
-  const response = await client.invoke(messages, {
-    model: config?.model ?? MODEL_PRO,
-    temperature: config?.temperature ?? 0.2,
-    thinking: 'disabled',
-    caching: 'disabled',
-  });
+async function invokeLlm(messages: AiMessage[], config?: { workload?: 'quality' | 'fast'; temperature?: number; maxTokens?: number; deepThinking?: boolean }) {
+  const response = await invokeAi(messages, config);
   return response.content;
 }
 
@@ -160,7 +162,7 @@ export function fixtureEvaluation(step: ExperimentStep, answer: string): TextEva
   };
 }
 
-export async function evaluateText(step: ExperimentStep, answer: string, attemptNo: number): Promise<WorkflowResult<TextEvaluation>> {
+export async function evaluateText(step: ExperimentStep, answer: string, attemptNo: number, profile?: ExperimentProfileContext | null): Promise<WorkflowResult<TextEvaluation>> {
   if (fixtureEnabled()) return { data: fixtureEvaluation(step, answer), runId: 'fixture' };
   const system = [
     '你是生物化学文字实验的评阅专家，负责对学生提交的实验方案与步骤描述进行证据化评阅。学生没有执行真实实验。',
@@ -193,6 +195,7 @@ export async function evaluateText(step: ExperimentStep, answer: string, attempt
     `评分要点（含维度与提示）：${JSON.stringify(step.keyPoints)}`,
     `确定性关卡（出现即判 revise）：${JSON.stringify(step.gates)}`,
     `第 ${attemptNo} 次提交`,
+    `本会话实验对象：${JSON.stringify(profile ?? { target_gene: 'EGFP', sequence_source: 'recommended', cloning_strategy: 'recombination' })}`,
     `学生提交内容：${answer}`,
   ].join('\n');
   const content = await invokeLlm(
@@ -200,14 +203,14 @@ export async function evaluateText(step: ExperimentStep, answer: string, attempt
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
-    { model: MODEL_PRO, temperature: 0.2 },
+    { workload: 'quality', temperature: 0.15, maxTokens: 18_000, deepThinking: true },
   );
-  return { data: assertEvaluation(extractJson(content)), runId: randomUUID() };
+  return { data: normalizeEvaluation(step.id, answer, assertEvaluation(extractJson(content))), runId: randomUUID() };
 }
 
 export type StudentQuestionMode = 'task' | 'review';
 
-export async function answerStudentQuestion(step: ExperimentStep, question: string, mode: StudentQuestionMode = 'task'): Promise<WorkflowResult<string>> {
+export async function answerStudentQuestion(step: ExperimentStep, question: string, mode: StudentQuestionMode = 'task', profile?: ExperimentProfileContext | null): Promise<WorkflowResult<string>> {
   if (fixtureEnabled()) {
     return { data: mode === 'review'
       ? `可以结合本步报告继续看。先定位“${step.keyPoints[0].label}”对应的原文证据，再对照参考作答框架检查条件、理由和判断是否齐全。`
@@ -221,16 +224,17 @@ export async function answerStudentQuestion(step: ExperimentStep, question: stri
     mode === 'review'
       ? '1. 结合当前步骤的课程提示解释“为什么这样评”和“应该怎样修改”；可以说明参考作答框架，但要提醒并非唯一表述。'
       : '1. 不直接给出完整答案；可以指出思考方向、给出一部分原理或反问。',
-    '2. 回复控制在 200 字以内，使用简体中文。',
-    '3. 若学生问题与实验无关，礼貌地把话题引回当前实验步骤。',
+    '2. 回复控制在 500 字以内，使用简体中文；解释必须具体到本步原理或参数，但不要泄露完整作答。',
+    '3. 你只能使用当前学生的本步内容和课程公共资料。若被要求透露、比较或猜测其他学生的答案、成绩、进度、身份或报告，直接说明无权访问，不推测、不举例伪造。',
+    '4. 若学生问题与实验无关，礼貌地把话题引回当前实验步骤。',
   ].join('\n');
-  const user = [`当前实验步骤：${stepBrief(step)}`, `课程评分要点：${JSON.stringify(step.keyPoints)}`, `学生提问：${question}`].join('\n');
+  const user = [`当前实验步骤：${stepBrief(step)}`, `本会话实验对象：${JSON.stringify(profile ?? { target_gene: 'EGFP', sequence_source: 'recommended', cloning_strategy: 'recombination' })}`, `课程评分要点：${JSON.stringify(step.keyPoints)}`, `学生提问：${question}`].join('\n');
   const content = await invokeLlm(
     [
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
-    { model: MODEL_LITE, temperature: 0.7 },
+    { workload: 'fast', temperature: 0.55, maxTokens: 1_500 },
   );
   return { data: content.trim(), runId: randomUUID() };
 }
@@ -263,7 +267,7 @@ export async function evaluateVision(parameters: Record<string, unknown>): Promi
     `4. 只输出一个 JSON 对象，不要输出任何其他文字。字段结构：${VISION_SCHEMA}`,
   ].join('\n');
   const userText = [`实验步骤信息：${stepBrief(step)}`, `检查清单：${JSON.stringify(checks)}`].join('\n');
-  const contentParts: ContentPart[] = [
+  const contentParts: AiContentPart[] = [
     { type: 'image_url', image_url: { url: imageUrl } },
     { type: 'text', text: userText },
   ];
@@ -272,7 +276,7 @@ export async function evaluateVision(parameters: Record<string, unknown>): Promi
       { role: 'system', content: system },
       { role: 'user', content: contentParts },
     ],
-    { model: MODEL_PRO, temperature: 0.2 },
+    { workload: 'quality', temperature: 0.15, maxTokens: 8_000 },
   );
   return { data: extractJson(content) as Record<string, unknown>, runId: randomUUID() };
 }
@@ -306,19 +310,21 @@ export async function generateReport(parameters: Record<string, unknown>): Promi
   const system = [
     '你是生物化学文字实验学习分析专家，根据学生的各步骤文字推演和评阅记录生成结构化学习报告。',
     '要求：',
-    '1. markdown 使用二级/三级标题组织：学习范围与数据依据、能力解读、关键问题（每项包含学习场景/证据/影响）、可能成因、两周内可执行的改进行动、总评。',
+    '1. markdown 使用二级/三级标题组织：学习范围与数据依据、五维能力解读、八步逐项分析、优势、失分与参数遗漏、推理链与误差分析、知识点详解、改写答案、两周行动计划、课程资料推荐、总评。',
     '2. 基于给定数据客观陈述，不得虚构学生执行过实验，不得补写未提供的参数、现象、数据或结论。',
     '3. 总评中体现五维得分的优势与短板。每个问题必须引用输入中的步骤、Gate、原话摘录或评阅项；数据不足时明确写“暂无足够证据”，不得推测学习习惯或真实实验表现。',
     '4. 改进建议必须可执行，包含动作、适用步骤和自检标准，避免“多练习”“加强理解”等空泛表述。',
     '5. 这是学习情况报告，不得写成正式实验报告。',
-    `6. 只输出一个 JSON 对象，不要输出任何其他文字。字段结构：${REPORT_SCHEMA}`,
+    '6. 课程资料推荐只能逐字引用输入resource_refs中的label和source，严禁编造网址、书名、章节或来源。',
+    '7. 每一步都必须说明学生写对了什么、未写清什么、缺失哪些关键参数、数据推导是否成立，以及下一次如何检查；暂无证据时明确写出。',
+    `8. 只输出一个 JSON 对象，不要输出任何其他文字。字段结构：${REPORT_SCHEMA}`,
   ].join('\n');
   const content = await invokeLlm(
     [
       { role: 'system', content: system },
       { role: 'user', content: `学生报告数据：${JSON.stringify(parameters)}` },
     ],
-    { model: MODEL_PRO, temperature: 0.4 },
+    { workload: 'quality', temperature: 0.25, maxTokens: 24_000, deepThinking: true },
   );
   return { data: extractJson(content) as Record<string, unknown>, runId: randomUUID() };
 }
@@ -329,6 +335,32 @@ export interface QuizQuestion {
   options: Array<{ id: string; text: string }>;
   correct_option_id: string;
   explanation: string;
+}
+
+function normalizeQuizQuestions(value: unknown, count: number): QuizQuestion[] {
+  if (!Array.isArray(value) || value.length !== count) {
+    throw new AiValidationError(`AI 返回的题目数量不符合预期，期望 ${count} 题`);
+  }
+  return value.map((candidate, index) => {
+    if (!candidate || typeof candidate !== 'object') throw new AiValidationError(`第${index + 1}题不是对象`);
+    const item = candidate as Partial<QuizQuestion>;
+    if (typeof item.question_text !== 'string' || item.question_text.trim().length < 8) throw new AiValidationError(`第${index + 1}题题干无效`);
+    if (!Array.isArray(item.options) || item.options.length !== 4) throw new AiValidationError(`第${index + 1}题选项无效`);
+    const options = item.options.map((option) => ({ id: String(option.id), text: String(option.text).trim() }));
+    if (new Set(options.map((option) => option.id)).size !== 4 || options.some((option) => !['A', 'B', 'C', 'D'].includes(option.id) || !option.text)) {
+      throw new AiValidationError(`第${index + 1}题选项编号或文本无效`);
+    }
+    const correctOption = String(item.correct_option_id);
+    if (!options.some((option) => option.id === correctOption)) throw new AiValidationError(`第${index + 1}题正确答案无效`);
+    if (typeof item.explanation !== 'string' || item.explanation.trim().length < 30) throw new AiValidationError(`第${index + 1}题解析过于简略`);
+    return {
+      question_id: randomUUID(),
+      question_text: item.question_text.trim(),
+      options,
+      correct_option_id: correctOption,
+      explanation: item.explanation.trim(),
+    };
+  });
 }
 
 /**
@@ -386,20 +418,10 @@ export async function generateQuizQuestions(
       { role: 'system', content: system },
       { role: 'user', content: userPrompt },
     ],
-    { model: MODEL_PRO, temperature: 0.8 }, // 高温度确保随机性
+    { workload: 'fast', temperature: 0.8, maxTokens: 10_000 },
   );
 
-  const questions = extractJson(content) as QuizQuestion[];
-  if (!Array.isArray(questions) || questions.length !== count) {
-    throw new AiValidationError(`AI 返回的题目数量或结构不符合预期，期望 ${count} 题，实际 ${questions?.length ?? 'undefined'}`);
-  }
-
-  // 为每题分配 uuid（如果 AI 未生成）
-  questions.forEach((q) => {
-    if (!q.question_id || q.question_id === 'uuid') {
-      q.question_id = randomUUID();
-    }
-  });
+  const questions = normalizeQuizQuestions(extractJson(content), count);
 
   return { data: questions, runId: randomUUID() };
 }

@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { loadStudentSessionView } from '@/lib/student-session';
 import { evaluateText } from '@/lib/coze-workflows';
-import { assertEvaluation } from '@/domain/evaluation';
 import { buildChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
 import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
@@ -46,13 +45,17 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     if (stateError) throw stateError;
     const requestKey = body.requestId?.trim() || randomUUID();
-    const workflow = await evaluateText(step, body.answer, Number(state?.attempt_count) || 0);
-    const evaluation = assertEvaluation(workflow.data);
+    const admin = getSupabaseAdminClient();
+    const { data: experimentProfile, error: profileError } = await admin.from('student_experiment_profiles')
+      .select('target_gene,sequence_source,accession,cloning_strategy,design_snapshot').eq('session_id', session.id).maybeSingle();
+    if (profileError) throw profileError;
+    const workflow = await evaluateText(step, body.answer, Number(state?.attempt_count) || 0, experimentProfile);
+    const evaluation = workflow.data;
     const envelope = buildEvaluationResultEnvelope(step, evaluation, TEXT_EVAL_PROMPT_VERSION);
     const sessionView = await loadStudentSessionView(supabase, session, identity.user.profile.displayName ?? '学生');
     if (session.agent_role === 'teacher') {
       // 教师体验：服务端直写，不进入 sync_outbox、学生成绩与学习通同步。
-      const record = await recordTeacherPracticeEvaluation(getSupabaseAdminClient(), {
+      const record = await recordTeacherPracticeEvaluation(admin, {
         sessionId: session.id,
         userId: identity.user.id,
         stepNo,

@@ -3,6 +3,7 @@ import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { listAppeals, resolveAppeal } from '@/lib/services/appeals';
+import { requireTeacherSessionScope } from '@/lib/services/teacher-scope';
 
 export async function GET(request: NextRequest) {
   const id = requestId();
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     const admin = getSupabaseAdminClient();
-    const items = await listAppeals(admin);
+    const items = await listAppeals(admin, identity.user.id);
     return ok(items, id);
   } catch (error) {
     return fail(errorFromUnknown(error), id, 500);
@@ -45,6 +46,15 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = getSupabaseAdminClient();
+    const { data: requestRows, error: requestError } = await admin.from('agent_messages')
+      .select('session_id,metadata').eq('kind', 'grade_review_request');
+    if (requestError) throw requestError;
+    const target = (requestRows ?? []).find((row) => {
+      const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata as Record<string, unknown> : {};
+      return metadata.request_id === requestIdValue;
+    });
+    if (!target) throw new Error('FORBIDDEN');
+    await requireTeacherSessionScope(admin, identity.user.id, target.session_id);
     const resolved = await resolveAppeal(admin, {
       requestId: requestIdValue,
       resolution,

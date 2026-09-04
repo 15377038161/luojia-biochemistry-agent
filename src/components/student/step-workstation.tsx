@@ -10,6 +10,7 @@ import PageBackground from '@/components/page-background';
 import StudentTopbar from '@/components/student/student-topbar';
 import GlobalAiTutor from '@/components/student/global-ai-tutor';
 import StepReviewReport from '@/components/student/step-review-report';
+import ExperimentProfileCard from '@/components/student/experiment-profile-card';
 import { dispatchChaoxingTaskflow } from '@/lib/chaoxing-taskflow-client';
 import type { ChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
 import { clientErrorMessage } from '@/lib/client-request';
@@ -275,6 +276,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
               <p className="mt-2 text-sm leading-relaxed">{step.context}</p>
               <p className="mt-2 text-sm leading-relaxed font-bold text-primary">本步目标：{step.goal}</p>
             </div>
+            {stepId === 1 && <ExperimentProfileCard sessionId={session.sessionId} preview={preview} />}
             <div className="rounded-2xl bg-card/90 border border-secondary/30 shadow-card p-5 mt-5">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-sm font-extrabold flex items-center gap-2"><Lightbulb className="w-4 h-4 text-secondary" /> 原理讲解 · 这一步为什么这么做</h3>
@@ -315,6 +317,21 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                   </>
                 );
               })()}
+            </div>
+            <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mt-5">
+              {[
+                { title: 'SOP 参数', items: step.sopParameters, tone: 'text-primary' },
+                { title: '安全事项', items: step.safetyNotes, tone: 'text-warning' },
+                { title: '判断与排错', items: step.decisionTree, tone: 'text-secondary' },
+                { title: '设备与记录', items: [...step.instruments, step.scientificPractice], tone: 'text-success' },
+              ].map((group) => (
+                <details key={group.title} className="rounded-2xl bg-card/90 border border-border/60 shadow-card p-4" open={group.title === 'SOP 参数'}>
+                  <summary className={`cursor-pointer text-sm font-extrabold ${group.tone}`}>{group.title}</summary>
+                  <ul className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
+                    {group.items.map((item) => <li key={item} className="flex gap-2"><span>•</span><span>{item}</span></li>)}
+                  </ul>
+                </details>
+              ))}
             </div>
           </section>
         )}

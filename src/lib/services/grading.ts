@@ -12,6 +12,27 @@ export const DIMENSION_LABELS: Record<keyof DimensionScores, string> = {
   analysis: '结果分析与判断',
 };
 
+export type RadarDimensionKey = 'knowledgeMastery' | 'operationUnderstanding' | 'dataInterpretation' | 'detailControl' | 'knowledgeTransfer';
+
+export interface RadarDimension {
+  key: RadarDimensionKey;
+  label: string;
+  score: number;
+  max: 100;
+}
+
+export interface ReportIssue {
+  stepNo: number;
+  stepTitle: string;
+  dimension: string;
+  kind: 'missing' | 'incorrect' | 'ambiguous' | 'safety';
+  label: string;
+  evidence: string;
+  impact: string;
+  action: string;
+  check: string;
+}
+
 export interface EvaluationFact {
   id: string;
   stepNo: number;
@@ -61,6 +82,9 @@ export interface StepGradeReport {
   improved_answer: string;
   knowledge_explanation: string;
   next_action: string;
+  student_feedback: string;
+  detailed_issues: ReportIssue[];
+  resource_refs: Array<{ label: string; source: string }>;
 }
 
 export interface GradeSummary {
@@ -68,15 +92,15 @@ export interface GradeSummary {
   process_score: number;
   contribution_points: number;
   dimensions: Array<{ key: keyof DimensionScores; label: string; score: number; max: number }>;
+  radar_dimensions: RadarDimension[];
   step_reports: StepGradeReport[];
   completion: number;
   review_required_steps: number[];
   status: GradeStatus;
   calculated_at: string;
-  // 新增：报告改版字段
-  loss_analysis: string; // 失分点解析：汇总所有步骤的 missing_points / incorrect 项，说明扣分原因与影响
-  knowledge_gaps: string; // 知识点掌握短板：从五维度识别薄弱维度，并从 reasoning_review 中提取共性问题
-  improvement_suggestions: string; // 针对性提升建议：根据薄弱维度与失分原因给出具体学习路径（不超过 5 条）
+  loss_analysis: ReportIssue[];
+  knowledge_gaps: Array<{ concept: string; gap: string; evidence: string }>;
+  improvement_suggestions: Array<{ dimension: string; suggestion: string; check: string }>;
 }
 
 const DIMENSION_MAX: DimensionScores = { knowledge: 20, operation: 30, decision: 20, troubleshooting: 15, analysis: 15 };
@@ -95,6 +119,18 @@ function dimensionScoresFromResult(result: Record<string, unknown> | null): Dime
     analysis: Number(source.analysis ?? 0) || 0,
   };
   return picked;
+}
+
+function text(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function records(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object') : [];
+}
+
+function issueKind(value: unknown): ReportIssue['kind'] {
+  return ['missing', 'incorrect', 'ambiguous', 'safety'].includes(String(value)) ? value as ReportIssue['kind'] : 'ambiguous';
 }
 
 export function finalEvaluationPerStep(evaluations: EvaluationFact[]): Map<number, EvaluationFact> {
@@ -127,12 +163,14 @@ export function computeGradeSummary(facts: GradingFacts): GradeSummary {
   const stepReports: StepGradeReport[] = [];
   const reviewRequiredSteps: number[] = [];
   let passedCount = 0;
+  let scoredStepCount = 0;
 
   for (const step of steps) {
     const evaluation = finalByStep.get(step.id) ?? null;
     const state = stateByStep.get(step.id) ?? null;
     const scores = evaluation?.scores ?? dimensionScoresFromResult(evaluation?.result ?? null);
     if (scores) {
+      scoredStepCount += 1;
       dimensionsAccumulator.knowledge += scores.knowledge;
       dimensionsAccumulator.operation += scores.operation;
       dimensionsAccumulator.decision += scores.decision;
@@ -145,8 +183,24 @@ export function computeGradeSummary(facts: GradingFacts): GradeSummary {
 
     const result = evaluation?.result ?? null;
     const envelope = (result ?? {}) as Record<string, unknown>;
+    const evaluationBody = (envelope.evaluation && typeof envelope.evaluation === 'object' ? envelope.evaluation : envelope) as Record<string, unknown>;
     const requiresReview = Boolean(evaluation?.requiresTeacherReview) || state?.status === 'teacher_review';
     if (requiresReview) reviewRequiredSteps.push(step.id);
+
+    const detailedIssues = records(evaluationBody.detailedIssues ?? envelope.detailed_issues).map((issue): ReportIssue => {
+      const evidence = issue.evidence && typeof issue.evidence === 'object' ? issue.evidence as Record<string, unknown> : {};
+      return {
+        stepNo: step.id,
+        stepTitle: step.shortTitle,
+        dimension: text(issue.dimension) || '未分类',
+        kind: issueKind(issue.kind),
+        label: text(issue.title) || '未命名问题',
+        evidence: text(evidence.quote) || '本次提交未交代',
+        impact: text(issue.impact) || '该信息缺失会降低方案的可复核性。',
+        action: text(issue.action) || '对照本步要求补齐条件、理由和判断依据。',
+        check: text(issue.check) || '修订后应能从原文直接定位对应证据。',
+      };
+    });
 
     stepReports.push({
       step_no: step.id,
@@ -158,74 +212,79 @@ export function computeGradeSummary(facts: GradingFacts): GradeSummary {
       requires_review: requiresReview,
       strengths: Array.isArray(envelope.strengths) ? envelope.strengths.filter((value): value is string => typeof value === 'string') : [],
       missing_points: Array.isArray(envelope.missing_points) ? envelope.missing_points : [],
-      reasoning_review: typeof envelope.reasoning_review === 'string' ? envelope.reasoning_review : '',
-      standard_answer: typeof envelope.standard_answer === 'string' ? envelope.standard_answer : '',
-      improved_answer: typeof envelope.improved_answer === 'string' ? envelope.improved_answer : '',
-      knowledge_explanation: typeof envelope.knowledge_explanation === 'string' ? envelope.knowledge_explanation : '',
-      next_action: typeof envelope.next_action === 'string' ? envelope.next_action : '',
+      reasoning_review: text(envelope.reasoning_review ?? evaluationBody.reasoningReview),
+      standard_answer: text(envelope.standard_answer ?? evaluationBody.standardAnswer),
+      improved_answer: text(envelope.improved_answer ?? evaluationBody.improvedAnswer),
+      knowledge_explanation: text(envelope.knowledge_explanation ?? evaluationBody.knowledgeExplanation),
+      next_action: text(envelope.next_action ?? evaluationBody.nextAction),
+      student_feedback: text(evaluationBody.studentFeedback),
+      detailed_issues: detailedIssues,
+      resource_refs: [{ label: `${step.shortTitle}课程资料`, source: step.source }],
     });
   }
 
   const dimensions = (Object.keys(DIMENSION_LABELS) as Array<keyof DimensionScores>).map((key) => ({
     key,
     label: DIMENSION_LABELS[key],
-    score: Math.min(Math.round(dimensionsAccumulator[key] * 10) / 10, DIMENSION_MAX[key]),
+    score: scoredStepCount > 0 ? Math.round((dimensionsAccumulator[key] / scoredStepCount) * 10) / 10 : 0,
     max: DIMENSION_MAX[key],
   }));
 
-  const totalScore = dimensions.reduce((sum, item) => sum + item.score, 0);
   const processScore = Math.round((processScoreTotal / STEP_COUNT) * 10) / 10;
+  const totalScore = processScore;
   const contributionPoints = Math.round(processScore * 0.1 * 10) / 10;
+
+  const normalized = Object.fromEntries(dimensions.map((item) => [item.key, item.max > 0 ? Math.round(item.score / item.max * 100) : 0])) as Record<keyof DimensionScores, number>;
+  const radarDimensions: RadarDimension[] = [
+    { key: 'knowledgeMastery', label: '知识点掌握', score: normalized.knowledge, max: 100 },
+    { key: 'operationUnderstanding', label: '实验操作理解', score: normalized.operation, max: 100 },
+    { key: 'dataInterpretation', label: '数据解读', score: normalized.analysis, max: 100 },
+    { key: 'detailControl', label: '细节把控', score: Math.round(normalized.operation * 0.65 + normalized.troubleshooting * 0.35), max: 100 },
+    { key: 'knowledgeTransfer', label: '知识迁移应用', score: Math.round(normalized.decision * 0.6 + normalized.troubleshooting * 0.4), max: 100 },
+  ];
 
   let status: GradeStatus = 'provisional';
   if (facts.finalization && facts.finalization.status === 'final') status = 'final';
   else if (facts.hasPendingAppeal) status = 'appealed';
   else if (reviewRequiredSteps.length > 0) status = 'review_required';
 
-  // 生成报告改版字段
-  const lossPoints: string[] = [];
-  const knowledgeIssues: string[] = [];
-  for (const report of stepReports) {
-    if (report.missing_points && Array.isArray(report.missing_points) && report.missing_points.length > 0) {
-      lossPoints.push(`【${report.short_title}】缺失要点：${report.missing_points.length} 项`);
-    }
-    if (report.reasoning_review) {
-      const lines = report.reasoning_review.split(/[。\n]/).filter((line) => line.trim().length > 10);
-      if (lines.length > 0) knowledgeIssues.push(`【${report.short_title}】${lines[0].trim()}`);
-    }
-  }
-
-  const weakDimensions = dimensions.filter((dim) => dim.score / dim.max < 0.7).map((dim) => dim.label);
-  const knowledgeGaps = weakDimensions.length > 0 ? `薄弱维度：${weakDimensions.join('、')}。${knowledgeIssues.slice(0, 3).join('；')}。` : '各维度掌握均衡。';
-
-  const suggestions: string[] = [];
-  if (weakDimensions.length > 0) {
-    suggestions.push(`重点加强 ${weakDimensions[0]} 维度，复习相关知识点的底层原理与应用场景`);
-  }
-  if (lossPoints.length > 0) {
-    suggestions.push(`逐一回看失分步骤的标准答案与知识点讲解，补齐缺失要点`);
-  }
-  if (processScore < 7) {
-    suggestions.push(`提升实验步骤的描述完整度，关键参数（温度、浓度、时间）与操作顺序需明确交代`);
-  }
-  if (dimensions.find((d) => d.key === 'analysis' && d.score / d.max < 0.6)) {
-    suggestions.push(`强化数据解读能力，练习从案例数据推导结论、识别异常并推测后续影响`);
-  }
-  if (suggestions.length === 0) suggestions.push('继续保持，可适当挑战更高难度的实验设计题');
+  const lossPoints = stepReports.flatMap((report) => report.detailed_issues);
+  const weakRadar = radarDimensions.filter((item) => item.score < 70);
+  const knowledgeGaps = weakRadar.map((item) => {
+    const evidence = lossPoints.find((issue) => issue.dimension === ({
+      knowledgeMastery: 'knowledge', operationUnderstanding: 'operation', dataInterpretation: 'analysis',
+      detailControl: 'operation', knowledgeTransfer: 'decision',
+    } as Record<RadarDimensionKey, string>)[item.key]);
+    return {
+      concept: item.label,
+      gap: evidence ? `${evidence.stepTitle}中“${evidence.label}”尚未形成完整证据链。` : '当前得分低于70分，需要补充更多可核对的作答证据。',
+      evidence: evidence?.evidence || '暂无可直接引用的充分证据',
+    };
+  });
+  const improvementSuggestions = (weakRadar.length ? weakRadar : radarDimensions.slice(0, 1)).map((item) => ({
+    dimension: item.label,
+    suggestion: item.key === 'dataInterpretation'
+      ? '练习按“观察数据—排除混杂因素—得出结论—说明后续影响”四步书写。'
+      : item.key === 'detailControl'
+        ? '提交前逐项核对温度、浓度、时间、顺序、对照和注意事项。'
+        : `回看对应课程资料，将原理、参数依据和实验决策写成完整因果链。`,
+    check: item.key === 'detailControl' ? '修订文本中六类要素均可被直接定位。' : '下一次作答至少包含一处原文证据和一条因果解释。',
+  }));
 
   return {
     total_score: Math.round(totalScore * 10) / 10,
     process_score: processScore,
     contribution_points: contributionPoints,
     dimensions,
+    radar_dimensions: radarDimensions,
     step_reports: stepReports,
     completion: Math.round((passedCount / STEP_COUNT) * 100) / 100,
     review_required_steps: reviewRequiredSteps,
     status,
     calculated_at: new Date().toISOString(),
-    loss_analysis: lossPoints.length > 0 ? lossPoints.join('；') : '各步骤掌握良好，未发现明显失分点。',
+    loss_analysis: lossPoints,
     knowledge_gaps: knowledgeGaps,
-    improvement_suggestions: suggestions.slice(0, 5).join('；'),
+    improvement_suggestions: improvementSuggestions.slice(0, 5),
   };
 }
 
@@ -303,7 +362,11 @@ export function buildLearningReportContent(summary: GradeSummary, studyReport: R
     contribution_points: summary.contribution_points,
     status: finalization?.status ?? summary.status,
     dimensions: summary.dimensions.map((item) => ({ dimension: item.label, score: item.score, max: item.max })),
+    radar_dimensions: summary.radar_dimensions,
     step_reports: summary.step_reports,
+    loss_analysis: summary.loss_analysis,
+    knowledge_gaps: summary.knowledge_gaps,
+    improvement_suggestions: summary.improvement_suggestions,
     calculated_at: summary.calculated_at,
     finalized_at: finalization?.finalizedAt ?? null,
     finalized_by: finalization?.finalizedBy ?? null,

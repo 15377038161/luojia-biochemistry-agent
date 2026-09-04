@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ExperimentStep, TextEvaluation } from '@/domain/agent';
 import { totalScore } from '@/domain/evaluation';
 
-export const TEXT_EVAL_PROMPT_VERSION = 'TEXT_EVAL_V3';
+export const TEXT_EVAL_PROMPT_VERSION = 'TEXT_EVAL_V4_REQUIRED_EVIDENCE';
 
 export type MissingPointKind = 'missing' | 'incorrect' | 'ambiguous' | 'safety';
 

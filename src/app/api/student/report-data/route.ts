@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server';
 import type { DimensionScores } from '@/domain/agent';
-import { experimentSteps } from '@/domain/experiment';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
+import { getSupabaseAdminClient } from '@/lib/supabase-client';
+import { computeGradeSummary, loadGradingFacts, type RadarDimension, type ReportIssue } from '@/lib/services/grading';
 
 interface ReportStepRow {
   stepNo: number;
@@ -16,7 +17,7 @@ interface ReportStepRow {
   missingLabels: string[];
   issues: Array<{
     label: string;
-    kind: 'missing' | 'incorrect' | 'ambiguous' | 'safety';
+    kind: ReportIssue['kind'];
     dimension: keyof DimensionScores | null;
     quote?: string;
     scenario?: string;
@@ -25,36 +26,41 @@ interface ReportStepRow {
     action?: string;
     check?: string;
   }>;
+  strengths?: string[];
+  reasoningReview?: string;
+  standardAnswer?: string;
+  improvedAnswer?: string;
+  knowledgeExplanation?: string;
+  nextAction?: string;
+  resources?: Array<{ label: string; source: string }>;
 }
 
 export interface StudentReportData {
   totalScore: number | null;
   grade: string;
   dimensions: DimensionScores | null;
+  radarDimensions: RadarDimension[];
   steps: ReportStepRow[];
   weakest: Array<{ label: string; count: number }>;
   latestFeedback: string;
-  lossAnalysis?: Array<{ label: string; detail: string }>;
-  knowledgeGaps?: Array<{ concept: string; gap: string }>;
-  improvementSuggestions?: Array<{ dimension: string; suggestion: string }>;
+  lossAnalysis: Array<{ label: string; detail: string; evidence: string; action: string; check: string }>;
+  knowledgeGaps: Array<{ concept: string; gap: string; evidence: string }>;
+  improvementSuggestions: Array<{ dimension: string; suggestion: string; check: string }>;
+  gradeStatus: 'provisional' | 'review_required' | 'appealed' | 'final';
 }
 
-const DIMENSION_KEYS: Array<keyof DimensionScores> = ['knowledge', 'operation', 'decision', 'troubleshooting', 'analysis'];
-
-function isDimension(value: unknown): value is keyof DimensionScores {
-  return typeof value === 'string' && DIMENSION_KEYS.includes(value as keyof DimensionScores);
+function gradeName(score: number | null): string {
+  if (score === null) return '尚未评定';
+  if (score >= 90) return '优秀';
+  if (score >= 80) return '良好';
+  if (score >= 60) return '中等';
+  return '待提高';
 }
 
-function parseScores(result: unknown): DimensionScores | null {
-  const scores = (result as { scores?: Partial<DimensionScores> } | null)?.scores;
-  if (!scores || DIMENSION_KEYS.some((key) => typeof scores[key] !== 'number')) return null;
-  return {
-    knowledge: scores.knowledge as number,
-    operation: scores.operation as number,
-    decision: scores.decision as number,
-    troubleshooting: scores.troubleshooting as number,
-    analysis: scores.analysis as number,
-  };
+function asDimension(value: string): keyof DimensionScores | null {
+  return ['knowledge', 'operation', 'decision', 'troubleshooting', 'analysis'].includes(value)
+    ? value as keyof DimensionScores
+    : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -63,121 +69,74 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as { sessionId?: string };
     if (!body.sessionId) return fail({ code: 'VALIDATION_ERROR', message: '缺少会话编号。', retryable: false });
+
     const { supabase } = createSupabaseRouteClient(request);
-    const { data: session, error: sessionError } = await supabase.from('agent_sessions')
-      .select('id,user_id').eq('id', body.sessionId).single();
-    if (sessionError) throw sessionError;
-    if (session.user_id !== identity.user.id) throw new Error('FORBIDDEN');
-    const [{ data: states, error: stateError }, { data: attempts, error: attemptError }] = await Promise.all([
-      supabase.from('step_states').select('step_no,status,attempt_count').eq('session_id', session.id).order('step_no'),
-      supabase.from('step_attempts')
-        .select('step_no,version_no,submitted_at,evaluations(decision,total_score,result)')
-        .eq('session_id', session.id)
-        .order('submitted_at'),
-    ]);
-    if (stateError) throw stateError;
-    if (attemptError) throw attemptError;
+    const { data: session, error } = await supabase.from('agent_sessions')
+      .select('id,user_id').eq('id', body.sessionId).maybeSingle();
+    if (error) throw error;
+    if (!session || session.user_id !== identity.user.id) throw new Error('FORBIDDEN');
 
-    const keyPointDimensions = new Map(experimentSteps.flatMap((step) => step.keyPoints.map((point) => [point.id, point.dimension] as const)));
-    const latestByStep = new Map<number, { decision: 'pass' | 'revise' | 'teacher_review'; totalScore: number | null; scores: DimensionScores | null; missingLabels: string[]; feedback: string; issues: ReportStepRow['issues'] }>();
-    for (const attempt of (attempts || []) as Array<{ step_no: number; evaluations: Array<{ decision: 'pass' | 'revise' | 'teacher_review'; total_score: number | string | null; result: unknown }> | null }>) {
-      const evaluation = attempt.evaluations?.[attempt.evaluations.length - 1];
-      if (!evaluation) continue;
-      const score = Number(evaluation.total_score);
-      const result = evaluation.result as {
-        missingPoints?: Array<{ rubricId?: string; label?: string }>;
-        incorrectPoints?: Array<{ rubricId?: string; label?: string }>;
-        ambiguousPhrases?: Array<{ rubricId?: string; label?: string }>;
-        safetyAlerts?: Array<{ rubricId?: string; label?: string }>;
-        studentFeedback?: string;
-        detailedIssues?: Array<{
-          dimension?: unknown; kind?: unknown; title?: unknown; evidence?: { quote?: unknown };
-          scenario?: unknown; impact?: unknown; causeBoundary?: unknown; action?: unknown; check?: unknown;
-        }>;
-      } | null;
-      const issueGroups: Array<{ kind: ReportStepRow['issues'][number]['kind']; points: Array<{ rubricId?: string; label?: string }> }> = [
-        { kind: 'missing', points: result?.missingPoints || [] },
-        { kind: 'incorrect', points: result?.incorrectPoints || [] },
-        { kind: 'ambiguous', points: result?.ambiguousPhrases || [] },
-        { kind: 'safety', points: result?.safetyAlerts || [] },
-      ];
-      const legacyIssues = issueGroups.flatMap(({ kind, points }) => points
-        .filter((point) => point.label)
-        .map((point) => ({ label: point.label as string, kind, dimension: point.rubricId ? keyPointDimensions.get(point.rubricId) || (kind === 'safety' ? 'operation' : null) : kind === 'safety' ? 'operation' : null })));
-      const issues: ReportStepRow['issues'] = result?.detailedIssues?.length
-        ? result.detailedIssues.flatMap((issue): ReportStepRow['issues'] => {
-          const kind = ['missing', 'incorrect', 'ambiguous', 'safety'].includes(String(issue.kind))
-            ? String(issue.kind) as ReportStepRow['issues'][number]['kind'] : 'ambiguous';
-          const title = typeof issue.title === 'string' ? issue.title.trim() : '';
-          if (!title) return [];
-          return [{
-            label: title, kind, dimension: isDimension(issue.dimension) ? issue.dimension : null,
-            quote: typeof issue.evidence?.quote === 'string' ? issue.evidence.quote : '',
-            scenario: typeof issue.scenario === 'string' ? issue.scenario : '',
-            impact: typeof issue.impact === 'string' ? issue.impact : '',
-            causeBoundary: typeof issue.causeBoundary === 'string' ? issue.causeBoundary : '',
-            action: typeof issue.action === 'string' ? issue.action : '',
-            check: typeof issue.check === 'string' ? issue.check : '',
-          }];
-        }) : legacyIssues;
-      latestByStep.set(attempt.step_no, {
-        decision: evaluation.decision,
-        totalScore: Number.isFinite(score) ? score : null,
-        scores: parseScores(evaluation.result),
-        missingLabels: issues.filter((issue) => issue.kind === 'missing').map((issue) => issue.label),
-        feedback: result?.studentFeedback || '',
-        issues,
-      });
-    }
-
-    const missingCounts = new Map<string, number>();
-    const steps: ReportStepRow[] = experimentSteps.map((step) => {
-      const state = (states || []).find((item) => item.step_no === step.id);
-      const latest = latestByStep.get(step.id);
-      for (const label of latest?.missingLabels || []) missingCounts.set(label, (missingCounts.get(label) || 0) + 1);
+    const facts = await loadGradingFacts(getSupabaseAdminClient(), session.id);
+    const summary = computeGradeSummary(facts);
+    const scoreByKey = Object.fromEntries(summary.dimensions.map((item) => [item.key, item.score])) as unknown as DimensionScores;
+    const stateByStep = new Map(facts.stepStates.map((state) => [state.stepNo, state]));
+    const steps: ReportStepRow[] = summary.step_reports.map((report) => {
+      const state = stateByStep.get(report.step_no);
       return {
-        stepNo: step.id,
-        shortTitle: step.shortTitle,
+        stepNo: report.step_no,
+        shortTitle: report.short_title,
         status: state?.status || 'locked',
-        attemptCount: state?.attempt_count || 0,
-        decision: latest?.decision || null,
-        totalScore: latest?.totalScore ?? null,
-        scores: latest?.scores || null,
-        missingLabels: latest?.missingLabels || [],
-        issues: latest?.issues || [],
+        attemptCount: report.attempt_count,
+        decision: report.decision,
+        totalScore: report.score,
+        scores: null,
+        missingLabels: report.detailed_issues.filter((issue) => issue.kind === 'missing').map((issue) => issue.label),
+        issues: report.detailed_issues.map((issue) => ({
+          label: issue.label,
+          kind: issue.kind,
+          dimension: asDimension(issue.dimension),
+          quote: issue.evidence,
+          scenario: `步骤${issue.stepNo} · ${issue.stepTitle}`,
+          impact: issue.impact,
+          causeBoundary: '仅依据本次文字作答，不推断学习态度或真实操作表现。',
+          action: issue.action,
+          check: issue.check,
+        })),
+        strengths: report.strengths,
+        reasoningReview: report.reasoning_review,
+        standardAnswer: report.standard_answer,
+        improvedAnswer: report.improved_answer,
+        knowledgeExplanation: report.knowledge_explanation,
+        nextAction: report.next_action,
+        resources: report.resource_refs,
       };
     });
+    const counts = new Map<string, number>();
+    for (const issue of summary.loss_analysis) counts.set(issue.label, (counts.get(issue.label) || 0) + 1);
 
-    const scored = steps.filter((item) => item.scores);
-    let dimensions: DimensionScores | null = null;
-    if (scored.length) {
-      const sums = { knowledge: 0, operation: 0, decision: 0, troubleshooting: 0, analysis: 0 };
-      for (const item of scored) {
-        const itemScores = item.scores as DimensionScores;
-        for (const key of DIMENSION_KEYS) sums[key] += itemScores[key];
-      }
-      dimensions = {
-        knowledge: Math.round(sums.knowledge / scored.length),
-        operation: Math.round(sums.operation / scored.length),
-        decision: Math.round(sums.decision / scored.length),
-        troubleshooting: Math.round(sums.troubleshooting / scored.length),
-        analysis: Math.round(sums.analysis / scored.length),
-      };
-    }
-    const scoredTotals = steps.filter((item) => item.totalScore != null);
-    const totalScore = scoredTotals.length ? Math.round(scoredTotals.reduce((sum, item) => sum + (item.totalScore as number), 0) / scoredTotals.length) : null;
-    const grade = totalScore == null ? '尚未评定' : totalScore >= 80 ? '良好' : totalScore >= 60 ? '中等' : '待提高';
-    const currentEvaluated = [...latestByStep.entries()].sort((a, b) => b[0] - a[0])[0];
     return ok<StudentReportData>({
-      totalScore,
-      grade,
-      dimensions,
+      totalScore: summary.completion > 0 ? summary.total_score : null,
+      grade: gradeName(summary.completion > 0 ? summary.total_score : null),
+      dimensions: summary.completion > 0 ? scoreByKey : null,
+      radarDimensions: summary.radar_dimensions,
       steps,
-      weakest: [...missingCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([label, count]) => ({ label, count })),
-      latestFeedback: currentEvaluated?.[1].feedback || '',
+      weakest: [...counts.entries()].sort((left, right) => right[1] - left[1]).slice(0, 5).map(([label, count]) => ({ label, count })),
+      latestFeedback: [...summary.step_reports].reverse().find((item) => item.student_feedback)?.student_feedback || '',
+      lossAnalysis: summary.loss_analysis.map((issue) => ({
+        label: `步骤${issue.stepNo} · ${issue.label}`,
+        detail: issue.impact,
+        evidence: issue.evidence,
+        action: issue.action,
+        check: issue.check,
+      })),
+      knowledgeGaps: summary.knowledge_gaps,
+      improvementSuggestions: summary.improvement_suggestions,
+      gradeStatus: summary.status,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'FORBIDDEN') return fail({ code: 'FORBIDDEN', message: '无权查看该会话。', retryable: false }, undefined, 403);
+    if (error instanceof Error && error.message === 'FORBIDDEN') {
+      return fail({ code: 'FORBIDDEN', message: '无权查看该会话。', retryable: false }, undefined, 403);
+    }
     return fail(errorFromUnknown(error), undefined, 500);
   }
 }

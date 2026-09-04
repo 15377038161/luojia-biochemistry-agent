@@ -36,7 +36,11 @@ export function buildStepReviewRows(step: ExperimentStep, evaluation: TextEvalua
       status: result?.status || '需要补充',
       studentEvidence: result?.evidence || answers[point.id]?.trim() || '本次提交未提供可定位的文字证据。',
       feedback: result?.feedback || point.hints[2],
-      referenceAnswer: point.hints.join('；'),
+      referenceAnswer: [
+        `${point.label}检查要点：${point.hints.join('；')}`,
+        evaluation.knowledgeExplanation ? `原理解析：${evaluation.knowledgeExplanation}` : `本步原理：${step.principle}`,
+        evaluation.standardAnswer ? `完整参考答案：${evaluation.standardAnswer}` : '',
+      ].filter(Boolean).join('\n\n'),
     };
   });
 }

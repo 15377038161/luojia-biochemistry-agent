@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { computeGradeSummary, loadGradingFacts } from '@/lib/services/grading';
+import { authorizedTeacherClassIds, requireTeacherSessionScope } from '@/lib/services/teacher-scope';
 
 export interface AppealRecord {
   requestId: string;
@@ -127,7 +128,13 @@ export async function appealStateForSession(
   };
 }
 
-export async function listAppeals(admin: SupabaseClient): Promise<AppealListItem[]> {
+export async function listAppeals(admin: SupabaseClient, teacherId: string): Promise<AppealListItem[]> {
+  const classIds = await authorizedTeacherClassIds(admin, teacherId);
+  if (classIds.length === 0) return [];
+  const { data: scopedSessions, error: scopeError } = await admin.from('agent_sessions')
+    .select('id').eq('agent_role', 'student').in('class_id', classIds);
+  if (scopeError) throw scopeError;
+  const allowedSessionIds = new Set((scopedSessions ?? []).map((row) => String(row.id)));
   const { data: rows, error } = await admin
     .from('agent_messages')
     .select('kind,metadata,content,created_at,session_id')
@@ -151,7 +158,7 @@ export async function listAppeals(admin: SupabaseClient): Promise<AppealListItem
       }
     }
   }
-  const items = [...requests.values()];
+  const items = [...requests.values()].filter((item) => allowedSessionIds.has(item.sessionId));
   if (items.length === 0) return [];
 
   const sessionIds = [...new Set(items.map((item) => item.sessionId))].filter(Boolean);
@@ -216,6 +223,7 @@ export async function resolveAppeal(admin: SupabaseClient, input: ResolveAppealI
     throw Object.assign(new Error('该申诉已处理，不能重复处理。'), { code: 'STATE_INVALID', statusCode: 409 });
   }
   const sessionId = requestRow.session_id;
+  await requireTeacherSessionScope(admin, input.teacherId, sessionId);
   const reportId = String(metadata.report_id ?? '');
   const reason = typeof metadata.reason === 'string' ? metadata.reason : '';
 

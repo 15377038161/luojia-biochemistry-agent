@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { BadgeCheck, ChartNoAxesColumn, CircleAlert, Clock, Check, Download, FileText, Hourglass, Lightbulb, LoaderCircle, Radar as RadarIcon, ScanSearch, X } from 'lucide-react';
 import type { ApiResult, DimensionScores } from '@/domain/agent';
 import type { StudentReportData } from '@/app/api/student/report-data/route';
+import type { RadarDimensionKey } from '@/lib/services/grading';
 import { useSwipeDismiss } from '@/hooks/use-swipe-dismiss';
 import StudentTopbar from '@/components/student/student-topbar';
 import { clientErrorMessage } from '@/lib/client-request';
@@ -30,18 +31,19 @@ interface GradeData {
   review: { id: string; status: string; reason: string; resolution: string | null } | null;
 }
 
-const DIMENSIONS: Array<{ key: keyof DimensionScores; label: string; max: number; definition: string; standard: string }> = [
-  { key: 'knowledge', label: '知识理解', max: 20, definition: '能否说清本步原理、术语和条件之间的关系。', standard: '按原理解释的准确性与完整性评分。' },
-  { key: 'operation', label: '操作描述', max: 30, definition: '能否按顺序写清文字方案、关键条件和注意事项。', standard: '按步骤、条件和记录要素的完整度评分。' },
-  { key: 'decision', label: '科学决策', max: 20, definition: '能否说明为什么选择某一方案或下一步。', standard: '按依据与选择是否对应评分。' },
-  { key: 'troubleshooting', label: '问题解决', max: 15, definition: '能否识别异常并提出有依据的处理方向。', standard: '按异常识别与应对逻辑评分。' },
-  { key: 'analysis', label: '结果分析与判断', max: 15, definition: '能否由案例结果推导出合理判断与后续动作。', standard: '按观察依据、判断与结论链条评分。' },
+const DIMENSIONS: Array<{ key: RadarDimensionKey; label: string; max: 100; issueDimensions: Array<keyof DimensionScores>; definition: string; standard: string }> = [
+  { key: 'knowledgeMastery', label: '知识点掌握', max: 100, issueDimensions: ['knowledge'], definition: '能否准确解释概念、术语和底层因果关系。', standard: '由知识理解评分归一化。' },
+  { key: 'operationUnderstanding', label: '实验操作理解', max: 100, issueDimensions: ['operation'], definition: '能否按顺序说明操作目的、条件和安全注意事项。', standard: '由操作描述评分归一化。' },
+  { key: 'dataInterpretation', label: '数据解读能力', max: 100, issueDimensions: ['analysis'], definition: '能否从数据和对照推导结论并识别异常。', standard: '由结果分析评分归一化。' },
+  { key: 'detailControl', label: '细节把控能力', max: 100, issueDimensions: ['operation', 'troubleshooting'], definition: '能否完整交代温度、浓度、时间、顺序、对照与误差。', standard: '综合操作与问题解决证据。' },
+  { key: 'knowledgeTransfer', label: '知识迁移应用', max: 100, issueDimensions: ['decision', 'troubleshooting'], definition: '能否将原理迁移到方案选择、异常处理和后续步骤。', standard: '综合科学决策与问题解决证据。' },
 ];
 
 const PREVIEW_REPORT_DATA: StudentReportData = {
   totalScore: 86,
   grade: '良好',
   dimensions: { knowledge: 18, operation: 25, decision: 17, troubleshooting: 13, analysis: 13 },
+  radarDimensions: DIMENSIONS.map((item, index) => ({ key: item.key, label: item.label, score: [90, 83, 87, 82, 84][index], max: 100 })),
   steps: [
     { stepNo: 1, shortTitle: '基因与引物', status: 'passed', attemptCount: 1, decision: 'pass', totalScore: 90, scores: null, missingLabels: [], issues: [] },
     { stepNo: 2, shortTitle: '载体构建', status: 'passed', attemptCount: 1, decision: 'pass', totalScore: 88, scores: null, missingLabels: [], issues: [] },
@@ -54,6 +56,10 @@ const PREVIEW_REPORT_DATA: StudentReportData = {
   ],
   weakest: [{ label: '关键参数遗漏', count: 3 }, { label: '模糊表述', count: 2 }],
   latestFeedback: '整体流程方向正确，但超声破碎与电泳条件缺少关键参数，请补充后重新提交。',
+  lossAnalysis: [{ label: '步骤4 · 缺超声破碎参数', detail: '处理强度不可复核，可能影响可溶性判断。', evidence: '重悬后超声破碎', action: '补写功率、工作/间隔时间、总时长和低温控制。', check: '六类参数均可从原文定位。' }],
+  knowledgeGaps: [{ concept: '细节把控能力', gap: '样品处理参数未形成完整记录。', evidence: '步骤4未写明功率和总时长。' }],
+  improvementSuggestions: [{ dimension: '细节把控能力', suggestion: '提交前核对温度、浓度、时间、顺序、对照和注意事项。', check: '修订文本六类要素齐全。' }],
+  gradeStatus: 'review_required',
 };
 
 function barColor(score: number): string {
@@ -153,7 +159,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
       '',
       `总分：${data.totalScore ?? '尚未评定'}（${data.grade}）`,
       '',
-      '维度得分：' + DIMENSIONS.map(({ key, label, max }) => `${label} ${data.dimensions?.[key] ?? '—'}/${max}`).join('，'),
+      '五维能力：' + DIMENSIONS.map(({ key, label }) => `${label} ${data.radarDimensions.find((item) => item.key === key)?.score ?? '—'}/100`).join('，'),
       '',
       '八步 Gate 记录：',
       ...data.steps.map((step) => `Gate ${step.stepNo} · ${step.shortTitle}：${step.status === 'passed' ? `通过（${step.attemptCount || 1} 次）` : step.status === 'teacher_review' || step.status === 'active' ? '待修改' : '未开始'}${step.totalScore != null ? `，${step.totalScore} 分` : ''}${step.missingLabels.length ? `，待改进：${step.missingLabels.join('；')}` : ''}`),
@@ -171,13 +177,13 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
     URL.revokeObjectURL(url);
   }
 
-  const dims = data?.dimensions || null;
-  const radarValues = DIMENSIONS.map(({ key, max }) => toPercent(dims?.[key] ?? 0, max));
+  const dims = data ? Object.fromEntries(data.radarDimensions.map((item) => [item.key, item.score])) as Record<RadarDimensionKey, number> : null;
+  const radarValues = DIMENSIONS.map(({ key }) => dims?.[key] ?? 0);
   const pendingSteps = data?.steps.filter((step) => step.status !== 'passed' && step.status !== 'teacher_review') || [];
   const dimensionInsights = data && dims ? DIMENSIONS.map((dimension) => {
     const score = dims[dimension.key];
     const percent = toPercent(score, dimension.max);
-    const relatedIssue = data.steps.map((step) => ({ step, issue: step.issues.find((issue) => issue.dimension === dimension.key) })).find((item) => item.issue);
+    const relatedIssue = data.steps.map((step) => ({ step, issue: step.issues.find((issue) => issue.dimension && dimension.issueDimensions.includes(issue.dimension)) })).find((item) => item.issue);
     const evidence = relatedIssue
       ? `Gate ${relatedIssue.step.stepNo}「${relatedIssue.step.shortTitle}」：${relatedIssue.issue?.scenario || relatedIssue.issue?.label}${relatedIssue.issue?.quote ? `；原文“${relatedIssue.issue.quote}”` : ''}`
       : '当前已评阅步骤中暂无该维度的具体待改进项。';

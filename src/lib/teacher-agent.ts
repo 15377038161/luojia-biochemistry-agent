@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { invokeAi } from '@/lib/ai-gateway';
 
 export interface TeacherEvidence {
   type: 'statistic' | 'student_answer' | 'evaluation';
@@ -24,7 +25,7 @@ function requestedStep(query: string): number | null {
 export async function answerTeacherQuery(supabase: SupabaseClient, query: string): Promise<TeacherAgentAnswer> {
   const step = requestedStep(query);
   const [{ data: sessions, error: sessionError }, { data: evaluations, error: evaluationError }] = await Promise.all([
-    supabase.from('agent_sessions').select('id,user_id,current_step,completed_at,profiles!agent_sessions_user_id_fkey(display_name)')
+    supabase.from('agent_sessions').select('id,user_id,current_step,completed_at,class_id,profiles!agent_sessions_user_id_fkey(display_name,student_no),classes(name)')
       .eq('agent_role', 'student'),
     supabase.from('evaluations').select('id,decision,confidence,total_score,result,requires_teacher_review,step_attempts!inner(step_no,answer,session_id,version_no)'),
   ]);
@@ -80,29 +81,51 @@ export async function answerTeacherQuery(supabase: SupabaseClient, query: string
     };
   }
 
-  const name = query.match(/([\u4e00-\u9fa5]{1,4})(同学|学生)/)?.[1];
-  if (name) {
+  const name = query.match(/([\u4e00-\u9fa5]{1,8})(同学|学生)/)?.[1];
+  const studentNo = query.match(/(?:学号|编号)\s*[:：]?\s*([A-Za-z0-9_-]{3,30})/)?.[1];
+  if (name || studentNo) {
     const target = studentSessions.find((item) => {
-      const profile = item.profiles as unknown as { display_name?: string } | null;
-      return profile?.display_name?.includes(name);
+      const profile = item.profiles as unknown as { display_name?: string; student_no?: string } | null;
+      return Boolean((name && profile?.display_name?.includes(name)) || (studentNo && profile?.student_no === studentNo));
     });
-    if (!target) return { answer: `没有找到姓名包含“${name}”的学生记录。`, scope: '演示班级', evidence: [], suggestedActions: ['核对学生姓名或学号'] };
+    const lookup = name || studentNo || '';
+    if (!target) return { answer: `没有找到与“${lookup}”匹配的授权班级学生记录。`, scope: '当前教师获授权班级', evidence: [], suggestedActions: ['核对学生姓名或学号'] };
     const records = allEvaluations.filter((item) => (item.step_attempts as unknown as { session_id: string }).session_id === target.id);
+    const targetProfile = target.profiles as unknown as { display_name?: string } | null;
+    const displayName = targetProfile?.display_name || lookup;
     return {
-      answer: `${name}同学当前进行到第${Number(target.current_step) || 1}步，共有${records.length}次正式评阅记录。`,
-      scope: `单个学生：${name}`,
+      answer: `${displayName}当前进行到第${Number(target.current_step) || 1}步，共有${records.length}次正式评阅记录；下面列出各步原话，教师可继续追问具体得分、遗漏或完成情况。`,
+      scope: `授权班级单个学生：${displayName}`,
       evidence: records.slice(-8).map((item) => {
         const attempt = item.step_attempts as unknown as { step_no: number; answer: string };
-        return { type: 'student_answer', label: `步骤${attempt.step_no}原话`, value: attempt.answer, recordId: item.id };
+        return { type: 'student_answer', label: `步骤${attempt.step_no}原话 · ${item.total_score ?? 0}分 · ${item.decision}`, value: attempt.answer, recordId: item.id };
       }),
       suggestedActions: records.length ? ['查看AI评阅依据', '添加教师补充意见'] : [],
     };
   }
 
+  const evidence: TeacherEvidence[] = allEvaluations.slice(-40).map((item) => {
+    const attempt = item.step_attempts as unknown as { step_no: number; answer: string; session_id: string };
+    const session = studentSessions.find((candidate) => candidate.id === attempt.session_id);
+    const profile = session?.profiles as unknown as { display_name?: string } | null;
+    return {
+      type: 'evaluation',
+      label: `${profile?.display_name || '学生'} · 步骤${attempt.step_no} · ${item.total_score ?? 0}分 · ${item.decision}`,
+      value: attempt.answer,
+      recordId: item.id,
+    };
+  });
+  if (process.env.ENABLE_AI_FIXTURE === 'true' && process.env.NODE_ENV !== 'production') {
+    return { answer: '当前为演示模式。可查询授权班级的进度、成绩、遗漏、待复核记录和学生原始回答。', scope: `当前授权范围，共${studentSessions.length}名已开始学生`, evidence: evidence.slice(0, 12), suggestedActions: ['查看某位学生', '查看高频遗漏', '查看待复核记录'] };
+  }
+  const response = await invokeAi([
+    { role: 'system', content: '你是教师端生物化学学习分析助手。只能依据输入的授权班级证据回答；不得推测未提供的数据，不得扩展到其他班级。回答要明确结论、学生/步骤证据、教学建议，并说明数据范围。使用简体中文。' },
+    { role: 'user', content: `教师问题：${query}\n授权范围：${studentSessions.length}名已开始学生\n证据：${JSON.stringify(evidence)}` },
+  ], { workload: 'quality', temperature: 0.2, maxTokens: 6_000, deepThinking: true });
   return {
-    answer: '我可以查询班级进度、高频遗漏、待复核记录或某位学生的回答证据。请告诉我想查看的步骤或学生。',
-    scope: `演示班级，共${studentSessions.length}名已开始学生`,
-    evidence: [],
-    suggestedActions: ['查看第3步完成情况', '查看高频遗漏', '查看待复核记录'],
+    answer: response.content,
+    scope: `当前教师获授权班级，共${studentSessions.length}名已开始学生、${allEvaluations.length}次评阅`,
+    evidence: evidence.slice(0, 12),
+    suggestedActions: ['查看相关学生完整档案', '按步骤筛选证据', '创建针对性课堂提醒'],
   };
 }

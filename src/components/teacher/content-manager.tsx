@@ -13,16 +13,18 @@ import {
 } from '@/domain/course-content';
 
 interface DraftRecord { id: string; version: number; status: string; updated_at?: string }
-interface Props { preview?: boolean }
+interface Props { preview?: boolean; initialStep?: number; focused?: boolean }
+type EditorSection = 'theory' | 'sop' | 'rubric' | 'resources' | 'preview';
 
 function copyDefault(): CourseContentPayload {
   return JSON.parse(JSON.stringify(defaultCourseContent())) as CourseContentPayload;
 }
 
-export default function ContentManager({ preview = false }: Props) {
+export default function ContentManager({ preview = false, initialStep = 1, focused = false }: Props) {
   const [content, setContent] = useState<CourseContentPayload>(copyDefault);
   const [draft, setDraft] = useState<DraftRecord | null>(null);
-  const [activeStep, setActiveStep] = useState(1);
+  const [activeStep, setActiveStep] = useState(initialStep);
+  const [section, setSection] = useState<EditorSection>('theory');
   const [validation, setValidation] = useState<ContentValidation>(() => validateCourseContent(defaultCourseContent()));
   const [busy, setBusy] = useState<'load' | 'save' | 'publish' | 'upload' | ''>('');
   const [message, setMessage] = useState('');
@@ -64,6 +66,10 @@ export default function ContentManager({ preview = false }: Props) {
         ? field === 'label' ? { ...point, label: value } : { ...point, hints: [value, point.hints[1], point.hints[2]] }
         : point),
     });
+  }
+
+  function updateList(field: 'sopParameters' | 'safetyNotes' | 'decisionTree' | 'instruments', value: string) {
+    updateStep({ [field]: value.split('\n').map((item) => item.trim()).filter(Boolean) });
   }
 
   async function save() {
@@ -139,32 +145,54 @@ export default function ContentManager({ preview = false }: Props) {
         <div><p>版本化课程内容</p><h2 id="content-title">八步任务与教学素材</h2></div>
         <span className="teacher-content-version">{draft ? `V${draft.version} · ${draft.status === 'published' ? '已发布' : '草稿'}` : '尚未保存'}</span>
       </div>
-      <p className="teacher-panel-lead">固定 EGFP 重组克隆主线。编辑任务情境、理论提示、五维评分点、Gate 和案例素材；发布前执行完整性校验。</p>
+      <p className="teacher-panel-lead">EGFP 是推荐示例，学生可按会话自选目标基因。分屏编辑理论、SOP、安全、评分、Gate 与课程资料，发布前统一校验。</p>
 
-      <div className="teacher-step-tabs" role="tablist" aria-label="八步课程内容">
+      {!focused && <div className="teacher-step-tabs" role="tablist" aria-label="八步课程内容">
         {content.steps.map((item) => <button key={item.id} type="button" role="tab" aria-selected={item.id === activeStep} onClick={() => setActiveStep(item.id)} className={item.id === activeStep ? 'is-active' : ''}><span>{item.id}</span>{item.shortTitle}</button>)}
+      </div>}
+
+      <div className="teacher-editor-sections" role="tablist" aria-label="内容编辑分区">
+        {([
+          ['theory', '理论与任务'], ['sop', 'SOP参数与安全'], ['rubric', '评分与 Gate'], ['resources', '资料与设备'], ['preview', '预览发布'],
+        ] as Array<[EditorSection, string]>).map(([key, label]) => <button key={key} type="button" role="tab" aria-selected={section === key} onClick={() => setSection(key)} className={section === key ? 'is-active' : ''}>{label}</button>)}
       </div>
 
       {busy === 'load' || !step ? <p className="teacher-panel-loading"><LoaderCircle className="animate-spin" />正在读取内容草稿…</p> : (
-        <div className="teacher-content-grid">
+        <div className="teacher-content-grid is-sectioned">
+          {section === 'theory' &&
           <div className="teacher-content-fields">
             <label>步骤标题<input value={step.title} onChange={(event) => updateStep({ title: event.target.value })} /></label>
             <label>任务情境<textarea rows={4} value={step.context} onChange={(event) => updateStep({ context: event.target.value })} /></label>
             <label>学习目标 / 理论提示<textarea rows={3} value={step.goal} onChange={(event) => updateStep({ goal: event.target.value })} /></label>
+            <label>底层原理<textarea rows={10} value={step.principle} onChange={(event) => updateStep({ principle: event.target.value })} /></label>
             <label>来源依据<input value={step.source} onChange={(event) => updateStep({ source: event.target.value })} /></label>
-
+          </div>}
+          {section === 'sop' && <div className="teacher-content-fields">
+            <label>SOP 参数（每行一项）<textarea rows={7} value={step.sopParameters.join('\n')} onChange={(event) => updateList('sopParameters', event.target.value)} /></label>
+            <label>安全事项（每行一项）<textarea rows={6} value={step.safetyNotes.join('\n')} onChange={(event) => updateList('safetyNotes', event.target.value)} /></label>
+            <label>决策树与排错（每行一项）<textarea rows={7} value={step.decisionTree.join('\n')} onChange={(event) => updateList('decisionTree', event.target.value)} /></label>
+            <label>科学实践要求<textarea rows={4} value={step.scientificPractice} onChange={(event) => updateStep({ scientificPractice: event.target.value })} /></label>
+          </div>}
+          {section === 'resources' && <div className="teacher-content-fields">
+            <label>设备与识别要点（每行一项）<textarea rows={6} value={step.instruments.join('\n')} onChange={(event) => updateList('instruments', event.target.value)} /></label>
             <div className="teacher-content-subsection">
               <div><h3>案例图与图片题素材</h3><label className="teacher-upload-button"><Upload aria-hidden />{busy === 'upload' ? '上传中…' : '上传图片'}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => void upload(event)} disabled={Boolean(busy)} /></label></div>
               {assets.length === 0 ? <p className="teacher-content-empty"><FileImage aria-hidden />当前步骤暂无案例素材，可仅使用文字任务。</p> : (
                 <ul className="teacher-asset-list">{assets.map((asset) => <li key={asset.id}><FileImage aria-hidden /><span><b>{asset.title}</b><small>{asset.sourceRef}</small></span><button type="button" onClick={() => removeAsset(asset.id)} aria-label={`移除${asset.title}`}><X aria-hidden /></button></li>)}</ul>
               )}
             </div>
-          </div>
+          </div>}
 
+          {section === 'rubric' &&
           <div className="teacher-content-rules">
             <div className="teacher-content-subsection"><h3>五维评分点</h3>{step.keyPoints.map((point, index) => <article key={point.id}><span>{point.dimension}</span><input aria-label={`${point.dimension}评分点`} value={point.label} onChange={(event) => updatePoint(index, 'label', event.target.value)} /><textarea aria-label={`${point.dimension}提示`} rows={2} value={point.hints[0]} onChange={(event) => updatePoint(index, 'hint', event.target.value)} /></article>)}</div>
             <div className="teacher-content-subsection"><h3>Gate 检查规则</h3>{step.gates.map((gate, index) => <article key={gate.id}><input aria-label="Gate规则" value={gate.label} onChange={(event) => updateGate(index, 'label', event.target.value)} /><textarea aria-label="Gate指导" rows={2} value={gate.guidance} onChange={(event) => updateGate(index, 'guidance', event.target.value)} /></article>)}</div>
-          </div>
+          </div>}
+          {section === 'preview' && <div className="teacher-content-fields teacher-content-preview">
+            <span className="teacher-content-version">步骤 {step.id} · {step.shortTitle}</span>
+            <h3>{step.title}</h3><p>{step.context}</p><p><b>学习目标：</b>{step.goal}</p>
+            <div className="teacher-preview-grid"><article><b>SOP</b><ul>{step.sopParameters.map((item) => <li key={item}>{item}</li>)}</ul></article><article><b>Gate</b><ul>{step.gates.map((item) => <li key={item.id}>{item.label}</li>)}</ul></article></div>
+          </div>}
         </div>
       )}
 

@@ -45,6 +45,16 @@ export async function POST(req: NextRequest) {
     }
 
     const questions = session.questions as QuizQuestion[];
+    const questionIds = new Set(questions.map((question) => question.question_id));
+    const answerIds = Object.keys(answers);
+    if (answerIds.length !== questions.length || answerIds.some((id) => !questionIds.has(id))) {
+      return fail({ code: 'VALIDATION_ERROR', message: '请完成全部题目后再最终提交。', retryable: false });
+    }
+    for (const question of questions) {
+      if (!question.options.some((option) => option.id === answers[question.question_id])) {
+        return fail({ code: 'VALIDATION_ERROR', message: '作答选项无效，请刷新后重试。', retryable: false });
+      }
+    }
 
     // 批改：对比 correct_option_id
     const results = questions.map((q) => {

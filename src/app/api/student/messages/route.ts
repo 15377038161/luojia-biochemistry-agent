@@ -3,9 +3,10 @@ import { answerStudentQuestion } from '@/lib/coze-workflows';
 import { getExperimentStep } from '@/domain/experiment';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import type { ApiError } from '@/domain/agent';
-import { assertTutorStage, type TutorLearningStage } from '@/lib/tutor';
+import { assertTutorStage, isPeerDataRequest, PEER_DATA_PRIVACY_REPLY, type TutorLearningStage } from '@/lib/tutor';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
+import { getSupabaseAdminClient } from '@/lib/supabase-client';
 
 export async function POST(request: NextRequest) {
   const identity = await getSessionUser(request.cookies);
@@ -34,13 +35,20 @@ export async function POST(request: NextRequest) {
       return fail({ code: 'STATE_INVALID', message: '该会话已完成，AI 助教不再接受提问。', retryable: false }, undefined, 409);
     }
     const step = getExperimentStep(Number(session.current_step) || 1);
-    const { data: answer, runId } = await answerStudentQuestion(step, content, stage === 'review' ? 'review' : 'task');
+    const { data: experimentProfile, error: profileError } = await getSupabaseAdminClient().from('student_experiment_profiles')
+      .select('target_gene,sequence_source,accession,cloning_strategy,design_snapshot').eq('session_id', session.id).maybeSingle();
+    if (profileError) throw profileError;
+    const privateDataRequest = isPeerDataRequest(content);
+    const tutorResult = privateDataRequest
+      ? { data: PEER_DATA_PRIVACY_REPLY, runId: 'privacy-filter' }
+      : await answerStudentQuestion(step, content, stage === 'review' ? 'review' : 'task', experimentProfile);
+    const { data: answer, runId } = tutorResult;
     const now = new Date().toISOString();
     // 助教响应统一记录 prompt 版本、工作流运行标识与引用依据来源，便于审计。
     const promptVersion = 'TUTOR_V1';
     const rows = [
       { session_id: session.id, role: 'user', kind: 'question', step_no: step.id, content, metadata: { learningStage: stage, promptVersion } },
-      { session_id: session.id, role: 'assistant', kind: 'question', step_no: step.id, content: answer, metadata: { workflowRunId: runId, promptVersion, learningStage: stage, citations: [{ source: 'experiment_step', stepId: step.id, label: step.title }] } },
+      { session_id: session.id, role: 'assistant', kind: 'question', step_no: step.id, content: answer, metadata: { workflowRunId: runId, promptVersion, learningStage: stage, privacyFiltered: privateDataRequest, citations: privateDataRequest ? [] : [{ source: 'experiment_step', stepId: step.id, label: step.title }] } },
     ];
     const { data, error } = await supabase.from('agent_messages').insert(rows).select('id,role,kind,step_no,content,created_at');
     if (error) throw error;

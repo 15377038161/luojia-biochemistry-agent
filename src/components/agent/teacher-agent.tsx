@@ -11,10 +11,11 @@ import PageBackground from '@/components/page-background';
 import BrandLockup from '@/components/brand-lockup';
 import ContentManager from '@/components/teacher/content-manager';
 import GradeReviewPanel from '@/components/teacher/grade-review-panel';
+import StudentRecord from '@/components/teacher/student-record';
 import { clientErrorMessage } from '@/lib/client-request';
 
-type TeacherView = 'overview' | 'students' | 'reviews' | 'content';
-interface Props { displayName: string; demo: boolean; preview?: boolean; view?: TeacherView }
+type TeacherView = 'overview' | 'students' | 'student-detail' | 'reviews' | 'content' | 'content-detail';
+interface Props { displayName: string; demo: boolean; preview?: boolean; view?: TeacherView; contentStep?: number; studentSessionId?: string }
 
 const DIMENSION_LABELS: Array<{ key: 'knowledge' | 'operation' | 'decision' | 'troubleshooting' | 'analysis'; label: string; max: number }> = [
   { key: 'knowledge', label: '知识理解', max: 20 },
@@ -124,7 +125,7 @@ function statusBadge(student: TeacherStudentOverview): { text: string; className
   return { text: '进行中', className: 'bg-primary-container text-primary' };
 }
 
-export default function TeacherAgent({ displayName, demo, preview = false, view = 'overview' }: Props) {
+export default function TeacherAgent({ displayName, demo, preview = false, view = 'overview', contentStep = 1, studentSessionId }: Props) {
   const [overview, setOverview] = useState<TeacherOverview | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
@@ -289,7 +290,7 @@ export default function TeacherAgent({ displayName, demo, preview = false, view 
   }
 
   const firstName = displayName.trim().charAt(0) || '师';
-  const pageTitle = view === 'students' ? '学生管理' : view === 'reviews' ? '成绩复核' : view === 'content' ? '课程内容管理' : '教学概览';
+  const pageTitle = view === 'students' || view === 'student-detail' ? '学生管理' : view === 'reviews' ? '成绩复核' : view === 'content' || view === 'content-detail' ? '课程内容管理' : '教学概览';
   const withPreview = (href: string) => preview ? `${href}?preview=1` : href;
   return (
     <div className="teacher-app flex min-h-screen" data-testid="teacher-dashboard">
@@ -301,7 +302,7 @@ export default function TeacherAgent({ displayName, demo, preview = false, view 
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1 text-sm font-medium overflow-y-auto">
           {NAV_ITEMS.map(({ label, icon: Icon, href, view: itemView }) => (
-            <Link key={label} href={withPreview(href)} className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-xl text-left transition-colors ${view === itemView ? 'bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-card' : 'text-muted-foreground hover:bg-muted'}`}>
+            <Link key={label} href={withPreview(href)} className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-xl text-left transition-colors ${(view === itemView || (itemView === 'students' && view === 'student-detail') || (itemView === 'content' && view === 'content-detail')) ? 'bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-card' : 'text-muted-foreground hover:bg-muted'}`}>
               <Icon className="w-4 h-4" /> {label}
             </Link>
           ))}
@@ -424,6 +425,7 @@ export default function TeacherAgent({ displayName, demo, preview = false, view 
                       ))}
                     </div>
                   </div>
+                  <Link href={withPreview(`/teacher/students/${selected.sessionId}`)} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground">打开完整学习档案 <ChevronRight className="w-4 h-4" /></Link>
                   {selected.detail ? renderDetail(selected.detail) : <p className="mt-5 text-xs text-muted-foreground">该学生还没有产生正式评阅记录。</p>}
                 </>
               ) : (
@@ -439,7 +441,14 @@ export default function TeacherAgent({ displayName, demo, preview = false, view 
           </>}
           {view === 'content' && <>
             <section className="teacher-page-intro compact"><div><p>COURSE STUDIO</p><h2>八步课程内容与发布</h2><span>内容编辑从教学分析中独立出来，保存草稿、规则校验和正式发布在同一条工作流内完成。</span></div></section>
-            <ContentManager preview={preview} />
+            <section className="teacher-content-index">
+              {experimentSteps.map((item) => <Link key={item.id} href={withPreview(`/teacher/content/${item.id}`)}><span>{item.id}</span><div><small>STEP {item.id}</small><h3>{item.shortTitle}</h3><p>{item.goal}</p></div><ChevronRight /></Link>)}
+            </section>
+          </>}
+          {view === 'student-detail' && studentSessionId && <StudentRecord sessionId={studentSessionId} preview={preview} />}
+          {view === 'content-detail' && <>
+            <section className="teacher-page-intro compact"><div><p>COURSE STUDIO · STEP {contentStep}</p><h2>{experimentSteps[contentStep - 1]?.title || '步骤内容编辑'}</h2><span>每次只处理一个步骤和一个编辑分区，减少长页滚动。</span></div><Link href={withPreview('/teacher/content')}>返回八步索引</Link></section>
+            <ContentManager preview={preview} initialStep={contentStep} focused />
           </>}
         </main>
       </div>

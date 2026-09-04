@@ -102,8 +102,9 @@ test('教师体验评价记录不写入 sync_outbox，也不调用学生评价 R
   pushResponse({ count: 1 }); // insert agent_messages
 
   const step = getExperimentStep(1);
-  const evaluation = normalizeEvaluation(step.id, '测试回答', {
-    ...fixtureEvaluation(step, '测试回答'),
+  const answer = '我从NCBI GenBank登录号取得EGFP编码序列，使用pET-28a并设计20 bp同源臂完成同源重组。引物特异区20 bp，GC含量50%，Tm 60℃。PCR用Marker对照预期750 bp目标条带；若无条带或出现杂带，则检查退火温度、引物二聚体和模板质量。';
+  const evaluation = normalizeEvaluation(step.id, answer, {
+    ...fixtureEvaluation(step, answer),
     decision: 'pass',
     studentFeedback: '很好。',
     teacherSummary: '教师总结。',
@@ -114,7 +115,7 @@ test('教师体验评价记录不写入 sync_outbox，也不调用学生评价 R
     userId: 'teacher-1',
     stepNo: 1,
     requestKey: 'request-1',
-    answer: '测试回答',
+    answer,
     envelope,
     evaluation,
     workflowRunId: null,
