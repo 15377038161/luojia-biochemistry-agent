@@ -440,6 +440,7 @@ export default function StepWorkstation(
                 chaoxingTaskflow?: ChaoxingTaskflowPayload;
             }>("/api/student/evaluate", {
                 sessionId: session.sessionId,
+                stepNo: stepId,
                 answer,
                 requestId: requestKey
             });
