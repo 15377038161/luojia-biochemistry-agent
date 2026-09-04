@@ -1,8 +1,14 @@
 [project]
+name = "luojia-biochemistry-agent"
+sub_id = "9f0d2c4f"
+project_type = "web"
 requires = [ "nodejs-24" ]
 template = "nextjs"
-version = "0.0.27"
+version = "0.0.35"
 appliedPatches = [ ]
+
+[preview]
+preview_enable = "enabled"
 
 [dev]
 build = [ "bash", "./scripts/prepare.sh" ]
@@ -15,7 +21,9 @@ build = [ "bash", "./scripts/build.sh" ]
 run = [ "bash", "./scripts/start.sh" ]
 deps = [ "git" ]
 
-
 [deploy.profile]
 kind = "service"
 flavor = "web"
+
+[subprojects]
+path = [ "." ]

@@ -32,7 +32,8 @@ const STAGE_LABELS = ["任务与原理", "知识检验", "分步文字推演", "
 const STAGE_MOBILE_LABELS = ["任务", "检验", "推演", "报告"];
 const STAGE_ICONS = [BookOpen, CircleHelp, PenLine, Flag];
 const STEP_BADGES = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
-const MIN_DESC_LENGTH = 8;
+// 用户填写门槛：去掉字数门槛，只要"用自己话说了一句"（trim 后非空）即视为已作答
+const MIN_DESC_LENGTH = 0;
 
 async function api<T>(url: string, body: unknown): Promise<T> {
     const response = await fetch(url, {
@@ -412,9 +413,9 @@ export default function StepWorkstation(
                 }
             ) => (descs[point.id] || "").trim().length < MIN_DESC_LENGTH);
 
-            const firstShort = missing[0];
-            const detail = firstShort ? `第 ${firstShort.idx + 1} 条「${firstShort.point.label}」还差 ${Math.max(0, MIN_DESC_LENGTH - (descs[firstShort.point.id] || "").trim().length)} 个字（每条至少 ${MIN_DESC_LENGTH} 字）` : "";
-            setError(`还有 ${missing.length} 条没写够${MIN_DESC_LENGTH}字，${detail}`);
+            const previewList = missing.slice(0, 3).map(m => `「${m.point.label}」`).join("、");
+            const more = missing.length > 3 ? ` 等共 ${missing.length} 条` : "";
+            setError(`还有 ${missing.length} 条未完成作答：${previewList}${more}。请把每条用至少 ${MIN_DESC_LENGTH} 个字描述清楚后再提交。`);
             return;
         }
 
