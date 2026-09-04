@@ -443,7 +443,6 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                         className="mt-6 w-full px-5 py-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground text-base font-black shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:shadow-none disabled:translate-y-0 disabled:cursor-not-allowed transition-all">
                         {busy ? '提交中…' : isLast ? '提交答卷，查看解析' : '下一题 →'}
                       </button>
-                      <p className="mt-3 text-center text-xs text-muted-foreground">答题完成即可解锁下一阶段，不需要全对。</p>
                     </div>
                   </div>
                 </section>
