@@ -404,29 +404,33 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
             )}
 
             {!quizLoading && !error && quizQuestions.length > 0 && !quizCompleted && (
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-bold text-muted-foreground">题目 {quizCurrentIndex + 1} / {quizQuestions.length}</span>
-                  <div className="h-1.5 flex-1 mx-4 rounded-full bg-muted overflow-hidden">
+              <div className="mt-6 mx-auto max-w-2xl">
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="shrink-0 text-xs font-bold text-muted-foreground">题目 {quizCurrentIndex + 1} / {quizQuestions.length}</span>
+                  <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
                     <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${((quizCurrentIndex) / quizQuestions.length) * 100}%` }} />
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border bg-card p-5">
-                  <p className="text-sm font-bold leading-relaxed">{quizQuestions[quizCurrentIndex].question_text}</p>
-                  <div className="mt-4 grid gap-2.5">
+                <div className="rounded-2xl border border-border bg-card p-7 shadow-card">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
+                    <CircleHelp className="w-5 h-5" />
+                  </div>
+                  <p className="text-base font-bold leading-relaxed">{quizQuestions[quizCurrentIndex].question_text}</p>
+                  <div className="mt-5 grid gap-3">
                     {quizQuestions[quizCurrentIndex].options.map((option) => {
                       const isSelected = quizSelectedOption === option.id;
                       return (
                         <button key={option.id} type="button" onClick={() => setQuizSelectedOption(option.id)}
-                          className={`w-full text-left px-4 py-3 rounded-xl border text-xs transition-all ${isSelected ? 'border-primary bg-primary/10 text-primary font-bold' : 'border-border bg-card hover:bg-muted'}`}>
-                          {option.id}. {option.text}
+                          className={`w-full text-left px-5 py-4 rounded-xl border text-sm transition-all ${isSelected ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm' : 'border-border bg-muted/30 hover:bg-muted hover:border-border'}`}>
+                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black mr-3 ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{option.id}</span>
+                          {option.text}
                         </button>
                       );
                     })}
                   </div>
                   <button onClick={submitQuizAnswer} disabled={!quizSelectedOption || busy}
-                    className="mt-4 w-full px-4 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity">
+                    className="mt-6 w-full px-5 py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity shadow-sm">
                     {busy ? '提交中...' : quizCurrentIndex + 1 >= quizQuestions.length ? '完成并提交全部答案' : '提交并继续'}
                   </button>
                 </div>
@@ -434,25 +438,28 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
             )}
 
             {quizCompleted && (
-              <div className="mt-6 space-y-4">
-                <div className="rounded-xl border border-success/30 bg-success/10 p-4">
-                  <p className="text-sm font-bold text-success flex items-center gap-2"><Check className="w-4 h-4" /> 全部题目已完成！</p>
-                  <p className="mt-1 text-xs text-muted-foreground">答对 {quizResults.filter((r) => r.is_correct).length} / {quizResults.length} 题，已解锁「分步文字推演」。</p>
+              <div className="mt-6 mx-auto max-w-2xl space-y-4">
+                <div className="rounded-2xl border border-success/30 bg-success/10 p-5 text-center">
+                  <div className="w-12 h-12 rounded-full bg-success/20 text-success flex items-center justify-center mx-auto mb-2">
+                    <Check className="w-6 h-6" />
+                  </div>
+                  <p className="text-base font-bold text-success">全部题目已完成！</p>
+                  <p className="mt-1 text-sm text-muted-foreground">答对 {quizResults.filter((r) => r.is_correct).length} / {quizResults.length} 题，已解锁「分步文字推演」。</p>
                 </div>
 
                 <div className="space-y-3">
                   {quizResults.map((result, index) => (
-                    <div key={result.question_id} className="rounded-xl border border-border bg-card p-4">
-                      <div className="flex items-start gap-2">
-                        <span className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${result.is_correct ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
+                    <div key={result.question_id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-black ${result.is_correct ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
                           {result.is_correct ? '✓' : '✗'}
                         </span>
-                        <div className="flex-1">
-                          <p className="text-xs font-bold">Q{index + 1} · {quizQuestions[index]?.question_text}</p>
-                          <div className="mt-2 space-y-1.5 text-xs">
-                            <p className="text-muted-foreground"><span className="font-bold">你的答案：</span>{result.user_answer}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold leading-relaxed">Q{index + 1} · {quizQuestions[index]?.question_text}</p>
+                          <div className="mt-3 space-y-2 text-sm">
+                            <p className="text-muted-foreground"><span className="font-bold text-foreground">你的答案：</span>{result.user_answer}</p>
                             {!result.is_correct && <p className="text-success"><span className="font-bold">正确答案：</span>{result.correct_answer}</p>}
-                            <p className="text-muted-foreground leading-relaxed"><span className="font-bold">解析：</span>{result.explanation}</p>
+                            <p className="text-muted-foreground leading-relaxed"><span className="font-bold text-foreground">解析：</span>{result.explanation}</p>
                           </div>
                         </div>
                       </div>
