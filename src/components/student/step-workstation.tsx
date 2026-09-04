@@ -182,7 +182,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
 
   function goTo(index: number) {
     if (stageUnlocked(index)) { setStage(index); setRailHint(''); return; }
-    if (index === 2) setRailHint('先在「知识检验」答对全部题目，才能进入分步文字推演。');
+    if (index === 2) setRailHint('先完成「知识检验」作答，才能进入分步文字推演。');
     else setRailHint('先用自己的话完成全部子步骤描述并提交，AI 才会生成点评与本步报告。');
   }
 
@@ -204,8 +204,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
           explanation: '完整答案需要同时说明底层原理、关键参数、对照设计和从数据到结论的推导过程。',
         }));
         setQuizResults(results);
-        setQuizCompleted(results.every((item) => item.is_correct));
-        if (results.some((item) => !item.is_correct)) setError('预览答题未全部正确，请查看解析后重试。');
+        setQuizCompleted(true);
         setBusy(false);
         return;
       }
@@ -384,91 +383,116 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
         )}
 
         {stage === 1 && (
-          <section className="student-stage-panel student-stage-panel-quiz mt-4 rounded-2xl bg-card/90 border border-border/60 shadow-card p-6">
-            <p className="text-xs font-black text-primary bg-primary-container/60 border border-primary/30 rounded-full px-2.5 py-1 inline-flex items-center gap-1"><CircleHelp className="w-3 h-3" /> 引导级 · 知识检验</p>
-            <h2 className="text-lg font-bold mt-2">答对全部题目，解锁「分步文字推演」</h2>
-            <p className="mt-1 text-xs text-muted-foreground">先确认基础概念，再用文字说明每个操作步骤与判断理由。</p>
+          <>
+            <section className="mt-4 rounded-2xl bg-primary-container/40 border border-primary/20 p-5">
+              <p className="text-xs font-black text-primary bg-card/80 border border-primary/30 rounded-full px-2.5 py-1 inline-flex items-center gap-1"><CircleHelp className="w-3 h-3" /> 引导级 · 知识检验</p>
+              <h2 className="text-2xl font-bold tracking-tight mt-2">基础概念快问快答</h2>
+              <p className="mt-2 text-sm leading-relaxed">用 5 道小题快速检验你对本步核心知识点、实验细节和数据判读的掌握情况。答错不影响解锁，答完即可查看每题解析，然后进入文字推演。</p>
+            </section>
 
             {quizLoading && (
-              <div className="mt-6 flex items-center justify-center py-12">
-                <LoaderCircle className="w-8 h-8 text-primary animate-spin" />
-                <span className="ml-3 text-sm text-muted-foreground">正在加载教师题库…</span>
-              </div>
+              <section className="mt-5 rounded-2xl bg-card/90 border border-border/60 shadow-card p-10 flex flex-col items-center justify-center">
+                <LoaderCircle className="w-10 h-10 text-primary animate-spin" />
+                <p className="mt-4 text-sm text-muted-foreground">正在为你抽取题目…</p>
+              </section>
             )}
 
             {error && !quizLoading && (
-              <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
-                <p className="text-sm text-destructive">{error}</p>
-                <button onClick={() => { setError(''); setQuizSessionId(null); setQuizReloadKey((current) => current + 1); }} className="mt-2 text-xs px-3 py-1.5 rounded-full border border-destructive/40 text-destructive hover:bg-destructive/5 transition-colors">重试</button>
-              </div>
+              <section className="mt-5 rounded-2xl border border-destructive/30 bg-destructive/10 p-5">
+                <p className="text-sm font-bold text-destructive flex items-center gap-2"><CircleAlert className="w-4 h-4" /> {error}</p>
+                <button onClick={() => { setError(''); setQuizSessionId(null); setQuizReloadKey((current) => current + 1); }} className="mt-3 text-sm px-4 py-2 rounded-full bg-destructive text-destructive-foreground font-bold hover:opacity-90 transition-opacity">重新抽题</button>
+              </section>
             )}
 
-            {!quizLoading && !error && quizQuestions.length > 0 && !quizCompleted && (
-              <div className="mt-6 mx-auto max-w-2xl">
-                <div className="flex items-center gap-3 mb-5">
-                  <span className="shrink-0 text-xs font-bold text-muted-foreground">题目 {quizCurrentIndex + 1} / {quizQuestions.length}</span>
-                  <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${((quizCurrentIndex) / quizQuestions.length) * 100}%` }} />
-                  </div>
-                </div>
+            {!quizLoading && !error && quizQuestions.length > 0 && !quizCompleted && (() => {
+              const currentQ = quizQuestions[quizCurrentIndex];
+              const progressPct = ((quizCurrentIndex) / quizQuestions.length) * 100;
+              const isLast = quizCurrentIndex + 1 >= quizQuestions.length;
+              return (
+                <section className="mt-5">
+                  <div className="mx-auto max-w-2xl">
+                    <div className="flex items-center gap-4 mb-4">
+                      <span className="shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-black">
+                        <CircleHelp className="w-3.5 h-3.5" /> 第 {quizCurrentIndex + 1} 题 / 共 {quizQuestions.length} 题
+                      </span>
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${progressPct}%` }} />
+                      </div>
+                    </div>
 
-                <div className="rounded-2xl border border-border bg-card p-7 shadow-card">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
-                    <CircleHelp className="w-5 h-5" />
-                  </div>
-                  <p className="text-base font-bold leading-relaxed">{quizQuestions[quizCurrentIndex].question_text}</p>
-                  <div className="mt-5 grid gap-3">
-                    {quizQuestions[quizCurrentIndex].options.map((option) => {
-                      const isSelected = quizSelectedOption === option.id;
-                      return (
-                        <button key={option.id} type="button" onClick={() => setQuizSelectedOption(option.id)}
-                          className={`w-full text-left px-5 py-4 rounded-xl border text-sm transition-all ${isSelected ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm' : 'border-border bg-muted/30 hover:bg-muted hover:border-border'}`}>
-                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black mr-3 ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{option.id}</span>
-                          {option.text}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <button onClick={submitQuizAnswer} disabled={!quizSelectedOption || busy}
-                    className="mt-6 w-full px-5 py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity shadow-sm">
-                    {busy ? '提交中...' : quizCurrentIndex + 1 >= quizQuestions.length ? '完成并提交全部答案' : '提交并继续'}
-                  </button>
-                </div>
-              </div>
-            )}
+                    <div className="rounded-2xl bg-card/95 border border-border shadow-float p-7">
+                      <div className="flex items-start gap-3 mb-5">
+                        <span className="shrink-0 w-9 h-9 rounded-full bg-primary text-primary-foreground text-base font-black flex items-center justify-center">Q{quizCurrentIndex + 1}</span>
+                        <p className="text-base font-bold leading-relaxed pt-1.5">{currentQ.question_text}</p>
+                      </div>
 
-            {quizCompleted && (
-              <div className="mt-6 mx-auto max-w-2xl space-y-4">
-                <div className="rounded-2xl border border-success/30 bg-success/10 p-5 text-center">
-                  <div className="w-12 h-12 rounded-full bg-success/20 text-success flex items-center justify-center mx-auto mb-2">
-                    <Check className="w-6 h-6" />
-                  </div>
-                  <p className="text-base font-bold text-success">全部题目已完成！</p>
-                  <p className="mt-1 text-sm text-muted-foreground">答对 {quizResults.filter((r) => r.is_correct).length} / {quizResults.length} 题，已解锁「分步文字推演」。</p>
-                </div>
+                      <div className="grid gap-2.5">
+                        {currentQ.options.map((option) => {
+                          const isSelected = quizSelectedOption === option.id;
+                          return (
+                            <button key={option.id} type="button" onClick={() => setQuizSelectedOption(option.id)}
+                              className={`w-full text-left px-5 py-3.5 rounded-xl border-2 text-sm transition-all flex items-center gap-3 ${isSelected ? 'border-primary bg-primary/10 text-foreground shadow-sm' : 'border-border bg-background hover:border-primary/40 hover:bg-primary/5'}`}>
+                              <span className={`shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black transition-colors ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{option.id}</span>
+                              <span className={`${isSelected ? 'font-bold' : ''}`}>{option.text}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
 
-                <div className="space-y-3">
-                  {quizResults.map((result, index) => (
-                    <div key={result.question_id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                      <div className="flex items-start gap-3">
-                        <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-black ${result.is_correct ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
-                          {result.is_correct ? '✓' : '✗'}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold leading-relaxed">Q{index + 1} · {quizQuestions[index]?.question_text}</p>
-                          <div className="mt-3 space-y-2 text-sm">
-                            <p className="text-muted-foreground"><span className="font-bold text-foreground">你的答案：</span>{result.user_answer}</p>
-                            {!result.is_correct && <p className="text-success"><span className="font-bold">正确答案：</span>{result.correct_answer}</p>}
-                            <p className="text-muted-foreground leading-relaxed"><span className="font-bold text-foreground">解析：</span>{result.explanation}</p>
+                      <button onClick={submitQuizAnswer} disabled={!quizSelectedOption || busy}
+                        className="mt-6 w-full px-5 py-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground text-base font-black shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:shadow-none disabled:translate-y-0 disabled:cursor-not-allowed transition-all">
+                        {busy ? '提交中…' : isLast ? '提交答卷，查看解析' : '下一题 →'}
+                      </button>
+                      <p className="mt-3 text-center text-xs text-muted-foreground">答题完成即可解锁下一阶段，不需要全对。</p>
+                    </div>
+                  </div>
+                </section>
+              );
+            })()}
+
+            {quizCompleted && (() => {
+              const correctCount = quizResults.filter((r) => r.is_correct).length;
+              const pct = Math.round((correctCount / quizResults.length) * 100);
+              return (
+                <section className="mt-5 mx-auto max-w-2xl space-y-4">
+                  <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-primary-container/40 to-secondary/20 border border-primary/20 p-6 text-center shadow-card">
+                    <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto shadow-lg shadow-primary/30">
+                      <Check className="w-7 h-7" />
+                    </div>
+                    <h3 className="mt-3 text-xl font-black">答题完成！</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">答对 <span className="text-primary font-black text-lg">{correctCount}</span> / {quizResults.length} 题 · 正确率 {pct}%</p>
+                    <div className="mt-4 h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-700" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="mt-4 text-sm text-foreground/80">已解锁「分步文字推演」阶段，可以继续学习啦！下方是每题解析，建议看完错题解析再进入下一步。</p>
+                    <button onClick={() => setStage(2)} className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-black shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                      开始分步推演 <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {quizResults.map((result, index) => (
+                      <div key={result.question_id} className={`rounded-2xl border bg-card p-5 shadow-sm ${result.is_correct ? 'border-success/30' : 'border-destructive/30'}`}>
+                        <div className="flex items-start gap-3">
+                          <span className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base font-black ${result.is_correct ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
+                            {result.is_correct ? '✓' : '✗'}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold leading-relaxed">第 {index + 1} 题 · {quizQuestions[index]?.question_text}</p>
+                            <div className="mt-3 grid gap-2 text-sm">
+                              <div className="flex gap-2"><span className="shrink-0 text-xs font-black text-muted-foreground mt-0.5">你的答案</span><span className={result.is_correct ? 'text-success font-bold' : 'text-destructive font-bold'}>{result.user_answer}</span></div>
+                              {!result.is_correct && <div className="flex gap-2"><span className="shrink-0 text-xs font-black text-muted-foreground mt-0.5">正确答案</span><span className="text-success font-bold">{result.correct_answer}</span></div>}
+                              <div className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed text-foreground/80"><span className="font-black text-foreground">解析：</span>{result.explanation}</div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
+                    ))}
+                  </div>
+                </section>
+              );
+            })()}
+          </>
         )}
 
         {stage === 2 && (
