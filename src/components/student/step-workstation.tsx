@@ -19,7 +19,7 @@ const STAGE_LABELS = ['任务与原理', '知识检验', '分步文字推演', '
 const STAGE_MOBILE_LABELS = ['任务', '检验', '推演', '报告'];
 const STAGE_ICONS = [BookOpen, CircleHelp, PenLine, Flag];
 const STEP_BADGES = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧'];
-const MIN_DESC_LENGTH = 15;
+const MIN_DESC_LENGTH = 8;
 
 async function api<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -248,7 +248,22 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
   }
 
   async function submitEvaluation() {
-    if (!descComplete || busy || !isCurrent) return;
+    if (busy) return;
+    if (!isCurrent) {
+      setError('当前不是本步骤，请切回当前步骤后再提交。');
+      return;
+    }
+    if (!descComplete) {
+      const missing = step.keyPoints
+        .map((point, idx) => ({ point, idx }))
+        .filter(({ point }) => (descs[point.id] || '').trim().length < MIN_DESC_LENGTH);
+      const firstShort = missing[0];
+      const detail = firstShort
+        ? `第 ${firstShort.idx + 1} 条「${firstShort.point.label}」还差 ${Math.max(0, MIN_DESC_LENGTH - (descs[firstShort.point.id] || '').trim().length)} 个字（每条至少 ${MIN_DESC_LENGTH} 字）`
+        : '';
+      setError(`还有 ${missing.length} 条没写够${MIN_DESC_LENGTH}字，${detail}`);
+      return;
+    }
     setBusy(true); setError(''); setSyncNotice('');
     const answer = submittedAnswer;
     if (preview) {
@@ -663,8 +678,12 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                       onChange={(event) => setDescs((value) => ({ ...value, [point.id]: event.target.value }))}
                       rows={2}
                       placeholder={`用自己的话描述：${point.label}（至少 ${MIN_DESC_LENGTH} 字）`}
-                      className="mt-2 w-full rounded-lg bg-muted border-none px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-muted-foreground/50 resize-y"
+                      className={`mt-2 w-full rounded-lg bg-muted px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all placeholder:text-muted-foreground/50 resize-y ${described ? 'border-2 border-success/40 focus:border-success' : 'border-2 border-transparent'}`}
                     />
+                    <div className="mt-1 flex items-center justify-between text-[11px]">
+                      <span className={described ? 'text-success font-bold' : 'text-muted-foreground'}>{described ? '✓ 已达字数要求' : `还差 ${MIN_DESC_LENGTH - text.trim().length} 字`}</span>
+                      <span className="text-muted-foreground">{text.trim().length} / {MIN_DESC_LENGTH} 字</span>
+                    </div>
                   </div>
                 );
               })}
@@ -672,10 +691,10 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
             {error && <p className="mt-3 text-xs font-bold text-destructive flex items-center gap-1.5"><CircleAlert className="w-3.5 h-3.5" />{error}</p>}
 
             <div className="mt-6 flex flex-col items-center">
-              <button type="button" onClick={submitEvaluation} disabled={busy || !descComplete || !isCurrent}
-                className={`w-full max-w-xl rounded-xl px-5 py-4 text-base font-black inline-flex items-center justify-center gap-2 border-2 transition-colors ${busy || !descComplete || !isCurrent ? 'bg-muted text-muted-foreground border-border cursor-not-allowed' : 'bg-primary text-primary-foreground border-primary/30 hover:bg-primary-container hover:text-primary hover:border-primary cursor-pointer'}`}>
+              <button type="button" onClick={submitEvaluation} disabled={busy}
+                className={`w-full max-w-xl rounded-xl px-5 py-4 text-base font-black inline-flex items-center justify-center gap-2 border-2 transition-colors ${busy ? 'bg-muted text-muted-foreground border-border cursor-wait' : 'bg-primary text-primary-foreground border-primary/30 hover:bg-primary-container hover:text-primary hover:border-primary cursor-pointer'}`}>
                 {busy && <LoaderCircle className="w-5 h-5 animate-spin" />}
-                {busy ? 'AI 正在逐项评阅并生成报告…' : !isCurrent ? '仅当前步骤可提交' : !descComplete ? `请完成全部 ${step.keyPoints.length} 步描述后提交（${describedCount}/${step.keyPoints.length}）` : '提交作答，让 AI 生成点评报告 →'}
+                {busy ? 'AI 正在逐项评阅并生成报告…' : !isCurrent ? '请切回当前步骤后再提交' : !descComplete ? `提交作答（已完成 ${describedCount}/${step.keyPoints.length} 步） →` : '提交作答，让 AI 生成点评报告 →'}
               </button>
               <p className="mt-2 text-[11px] text-muted-foreground">提交后 AI 会给出逐项点评、参考答案、本步五维学习报告与 Gate 结果。</p>
             </div>
