@@ -111,7 +111,7 @@ export default function ExperimentProfileCard({ sessionId, preview }: Props) {
             {profile.sequence_source === 'pasted' && <label className="block text-xs font-bold">DNA 编码序列
               <textarea value={profile.coding_sequence || ''} onChange={(event) => update('coding_sequence', event.target.value)} className="mt-1.5 min-h-28 w-full resize-y rounded-xl border border-border bg-background p-3 font-mono text-xs leading-5" placeholder="仅输入 A / C / G / T / N，可包含空格和换行" />
             </label>}
-            <button type="button" onClick={save} disabled={saving} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50">
+            <button type="button" onClick={save} disabled={saving} className="gene-profile-save-button inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold disabled:opacity-50">
               {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} 保存并用于八步实验
             </button>
           </div>

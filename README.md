@@ -26,7 +26,7 @@
 
 ## 本地运行
 
-1. 复制`.env.example`为`.env.local`并填写Supabase与服务端AI网关。Coze环境使用`COZE_SUPABASE_*`；直接连接Supabase也支持`SUPABASE_URL`、`SUPABASE_PUBLISHABLE_KEY`和仅服务端可见的`SUPABASE_SERVICE_ROLE_KEY`。AI 密钥仅填写 `AI_GATEWAY_API_KEY`，不得使用 `NEXT_PUBLIC_` 前缀。
+1. 复制`.env.example`为`.env.local`并填写Supabase与服务端AI网关。Coze 会自动注入内置库的`COZE_SUPABASE_*`；如需切换到专用 Supabase，配置`SUPABASE_URL`、`SUPABASE_PUBLISHABLE_KEY`和仅服务端可见的`SUPABASE_SERVICE_ROLE_KEY`，这组三项会显式覆盖平台注入值，三项必须来自同一个项目。AI 密钥仅填写 `AI_GATEWAY_API_KEY`，不得使用 `NEXT_PUBLIC_` 前缀。
 2. 新库初始化时按文件名顺序执行 `supabase/migrations/` 中全部迁移；已投入使用的生产库不在应用运行时执行 DDL。数据映射见 `docs/数据库映射说明-Coze原生模型.md`。
 3. 执行`pnpm seed:content`导入八步、40个五维知识块、仪器和图片题。
 4. 开发联调可设置`ENABLE_DEMO_ACCESS=true`和`ENABLE_AI_FIXTURE=true`。

@@ -44,6 +44,23 @@ test('直接 Supabase 环境变量可建立统一公开配置', () => {
   });
 });
 
+test('显式 Supabase 配置优先于扣子自动注入的旧数据库', () => {
+  withCleanSupabaseEnv(() => {
+    process.env.COZE_SUPABASE_URL = 'https://old.example.supabase.co';
+    process.env.COZE_SUPABASE_ANON_KEY = 'old-publishable-key';
+    process.env.COZE_SUPABASE_SERVICE_ROLE_KEY = 'old-service-key';
+    process.env.SUPABASE_URL = 'https://new.example.supabase.co';
+    process.env.SUPABASE_PUBLISHABLE_KEY = 'new-publishable-key';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'new-service-key';
+
+    assert.deepEqual(getSupabaseCredentials(), {
+      url: 'https://new.example.supabase.co',
+      anonKey: 'new-publishable-key',
+    });
+    assert.equal(hasCompleteSupabaseConfiguration(), true);
+  });
+});
+
 test('缺少 service role 时不得误报数据库已经接通', () => {
   withCleanSupabaseEnv(() => {
     process.env.COZE_SUPABASE_URL = 'https://example.supabase.co';

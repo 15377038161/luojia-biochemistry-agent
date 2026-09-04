@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpen, Check, CircleAlert, CircleHelp, Flag, Lightbulb, LoaderCircle, PenLine, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, ChevronUp, CircleAlert, CircleHelp, Flag, Lightbulb, LoaderCircle, PenLine, Save } from 'lucide-react';
 import type { ApiResult, StudentSessionView, TextEvaluation } from '@/domain/agent';
 import type { ExperimentStep } from '@/domain/agent';
 import { experimentSteps } from '@/domain/experiment';
@@ -75,6 +75,20 @@ function previewEvaluation(step: ExperimentStep): TextEvaluation {
   };
 }
 
+function previewQuizQuestions(step: ExperimentStep) {
+  const labels = step.keyPoints.map((point) => point.label);
+  return Array.from({ length: 5 }, (_, index) => ({
+    question_id: `preview-${step.id}-${index + 1}`,
+    question_text: index < labels.length ? `关于“${labels[index]}”，哪项说明同时包含原理、关键参数和判断依据？` : `完成步骤${step.id}时，哪项记录最有利于复现与排错？`,
+    options: [
+      { id: 'A', text: '说明因果原理，并记录关键参数、对照与结果判断' },
+      { id: 'B', text: '只写操作名称，不记录条件和结果' },
+      { id: 'C', text: '只描述看到的现象，不分析误差来源' },
+      { id: 'D', text: '省略对照，直接给出结论' },
+    ],
+  }));
+}
+
 export default function StepWorkstation({ session, stepId, catalog = experimentSteps, preview = false, canSwitchToTeacher = false, onBack, onSessionUpdate, onOpenReport }: Props) {
   const step = catalog.find((item) => item.id === stepId) ?? experimentSteps[stepId - 1];
   const [stage, setStage] = useState(0);
@@ -98,15 +112,28 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
   const [quizResults, setQuizResults] = useState<Array<{ question_id: string; is_correct: boolean; user_answer: string; correct_answer: string; explanation: string }>>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [quizLoading, setQuizLoading] = useState(false);
+  const [quizReloadKey, setQuizReloadKey] = useState(0);
+  const [showExecutionDetails, setShowExecutionDetails] = useState(true);
 
   // 初始化知识点检验会话
   useEffect(() => {
-    if (stage !== 1 || quizSessionId || quizLoading) return;
+    if (stage !== 1 || quizSessionId) return;
     let cancelled = false;
+    setError('');
     setQuizLoading(true);
+    if (preview) {
+      setQuizSessionId(`preview-${stepId}`);
+      setQuizQuestions(previewQuizQuestions(step));
+      setQuizCurrentIndex(0);
+      setQuizSelectedOption('');
+      setQuizResults([]);
+      setQuizCompleted(false);
+      setQuizLoading(false);
+      return;
+    }
     (async () => {
       try {
-        const res = await fetch('/api/student/quiz/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stepNo: stepId, count: 5 }) });
+        const res = await fetch('/api/student/quiz/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stepNo: stepId }) });
         const data = await res.json();
         if (!cancelled && data.ok) {
           setQuizSessionId(data.data.session_id);
@@ -125,7 +152,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
       }
     })();
     return () => { cancelled = true; };
-  }, [stage, stepId, quizSessionId, quizLoading]);
+  }, [stage, stepId, step, quizSessionId, quizReloadKey, preview]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || loadedDraft.current) return;
@@ -168,6 +195,20 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
     // 如果是最后一题，调用批量提交 API
     if (quizCurrentIndex + 1 >= quizQuestions.length) {
       setBusy(true);
+      if (preview) {
+        const results = quizQuestions.map((question) => ({
+          question_id: question.question_id,
+          is_correct: newAnswers[question.question_id] === 'A',
+          user_answer: newAnswers[question.question_id],
+          correct_answer: 'A',
+          explanation: '完整答案需要同时说明底层原理、关键参数、对照设计和从数据到结论的推导过程。',
+        }));
+        setQuizResults(results);
+        setQuizCompleted(results.every((item) => item.is_correct));
+        if (results.some((item) => !item.is_correct)) setError('预览答题未全部正确，请查看解析后重试。');
+        setBusy(false);
+        return;
+      }
       try {
         const res = await fetch('/api/student/quiz/submit', {
           method: 'POST',
@@ -318,21 +359,27 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
                 );
               })()}
             </div>
-            <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mt-5">
+            <div className="execution-details-heading mt-5 flex items-center justify-between gap-3">
+              <p className="text-xs font-black text-primary">实验执行要点 · 四项同步显示</p>
+              <button type="button" onClick={() => setShowExecutionDetails((current) => !current)} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-primary/20 bg-card px-3 text-xs font-bold text-primary">
+                {showExecutionDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}{showExecutionDetails ? '收起全部' : '展开全部'}
+              </button>
+            </div>
+            {showExecutionDetails && <div className="execution-details-grid grid md:grid-cols-2 xl:grid-cols-4 gap-4 mt-3">
               {[
                 { title: 'SOP 参数', items: step.sopParameters, tone: 'text-primary' },
                 { title: '安全事项', items: step.safetyNotes, tone: 'text-warning' },
                 { title: '判断与排错', items: step.decisionTree, tone: 'text-secondary' },
                 { title: '设备与记录', items: [...step.instruments, step.scientificPractice], tone: 'text-success' },
               ].map((group) => (
-                <details key={group.title} className="rounded-2xl bg-card/90 border border-border/60 shadow-card p-4" open={group.title === 'SOP 参数'}>
-                  <summary className={`cursor-pointer text-sm font-extrabold ${group.tone}`}>{group.title}</summary>
+                <article key={group.title} className="rounded-2xl bg-card/90 border border-border/60 shadow-card p-4">
+                  <h3 className={`text-sm font-extrabold ${group.tone}`}>{group.title}</h3>
                   <ul className="mt-3 space-y-2 text-xs leading-relaxed text-muted-foreground">
                     {group.items.map((item) => <li key={item} className="flex gap-2"><span>•</span><span>{item}</span></li>)}
                   </ul>
-                </details>
+                </article>
               ))}
-            </div>
+            </div>}
           </section>
         )}
 
@@ -345,14 +392,14 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
             {quizLoading && (
               <div className="mt-6 flex items-center justify-center py-12">
                 <LoaderCircle className="w-8 h-8 text-primary animate-spin" />
-                <span className="ml-3 text-sm text-muted-foreground">正在生成题目...</span>
+                <span className="ml-3 text-sm text-muted-foreground">正在加载教师题库…</span>
               </div>
             )}
 
             {error && !quizLoading && (
               <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
                 <p className="text-sm text-destructive">{error}</p>
-                <button onClick={() => { setError(''); setQuizSessionId(null); }} className="mt-2 text-xs px-3 py-1.5 rounded-full border border-destructive/40 text-destructive hover:bg-destructive/5 transition-colors">重试</button>
+                <button onClick={() => { setError(''); setQuizSessionId(null); setQuizReloadKey((current) => current + 1); }} className="mt-2 text-xs px-3 py-1.5 rounded-full border border-destructive/40 text-destructive hover:bg-destructive/5 transition-colors">重试</button>
               </div>
             )}
 
