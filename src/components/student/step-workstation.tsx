@@ -409,7 +409,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
               const progressPct = ((quizCurrentIndex) / quizQuestions.length) * 100;
               const isLast = quizCurrentIndex + 1 >= quizQuestions.length;
               return (
-                <section className="mt-5">
+                <section className="mt-5 pb-24">
                   <div className="mx-auto max-w-2xl">
                     <div className="flex items-center gap-4 mb-4">
                       <span className="shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-black">
@@ -454,7 +454,7 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
               const correctCount = quizResults.filter((r) => r.is_correct).length;
               const pct = Math.round((correctCount / quizResults.length) * 100);
               return (
-                <section className="mt-5 mx-auto max-w-2xl space-y-4">
+                <section className="mt-5 mx-auto max-w-2xl space-y-4 pb-24">
                   <div className="rounded-2xl bg-gradient-to-br from-primary/10 via-primary-container/40 to-secondary/20 border border-primary/20 p-6 text-center shadow-card">
                     <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto shadow-lg shadow-primary/30">
                       <Check className="w-7 h-7" />
@@ -548,13 +548,14 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
               })}
             </div>
             {error && <p className="mt-3 text-xs font-bold text-destructive flex items-center gap-1.5"><CircleAlert className="w-3.5 h-3.5" />{error}</p>}
-            <div className="mt-5 rounded-xl border border-primary/20 bg-primary-container/35 p-4">
-              <p className="text-sm font-extrabold">完成后直接提交</p>
-              <p className="mt-1 text-xs leading-6 text-muted-foreground">无需再进入单独的“提交”页面。提交后，AI 会自动生成逐项点评、参考答案、本步五维学习报告和 Gate 结果。</p>
+
+            <div className="mt-6 flex flex-col items-center">
               <button type="button" onClick={submitEvaluation} disabled={busy || !descComplete || !isCurrent}
-                className={`mt-3 w-full rounded-xl px-4 py-3 text-sm font-bold inline-flex items-center justify-center gap-2 ${busy || !descComplete || !isCurrent ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-primary text-primary-foreground shadow-card hover:opacity-90 cursor-pointer'}`}>
-                {busy && <LoaderCircle className="w-4 h-4 spin" />}{busy ? 'AI 正在逐项评阅并生成报告…' : isCurrent ? '提交并生成本步学习报告' : '仅当前步骤可提交'}
+                className={`w-full max-w-xl rounded-xl px-5 py-4 text-base font-black inline-flex items-center justify-center gap-2 shadow-lg transition-all ${busy || !descComplete || !isCurrent ? 'bg-muted text-muted-foreground cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-secondary to-primary text-primary-foreground shadow-secondary/30 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer'}`}>
+                {busy && <LoaderCircle className="w-5 h-5 animate-spin" />}
+                {busy ? 'AI 正在逐项评阅并生成报告…' : !isCurrent ? '仅当前步骤可提交' : !descComplete ? `请完成全部 ${step.keyPoints.length} 步描述后提交（${describedCount}/${step.keyPoints.length}）` : '提交作答，让 AI 生成点评报告 →'}
               </button>
+              <p className="mt-2 text-[11px] text-muted-foreground">提交后 AI 会给出逐项点评、参考答案、本步五维学习报告与 Gate 结果。</p>
             </div>
           </section>
         )}
