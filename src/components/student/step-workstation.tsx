@@ -300,11 +300,14 @@ export default function StepWorkstation({ session, stepId, catalog = experimentS
               const Icon = STAGE_ICONS[index];
               const unlocked = stageUnlocked(index);
               const active = stage === index;
+              const past = unlocked && index < stage;
               return (
                 <button key={label} type="button" onClick={() => goTo(index)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${active ? 'bg-primary text-primary-foreground border-primary' : unlocked ? 'bg-card text-foreground border-border hover:bg-muted' : 'bg-muted text-muted-foreground border-border/60'}`}>
+                  disabled={!unlocked}
+                  className={`inline-flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${active ? 'bg-primary text-primary-foreground border-primary shadow-sm' : past ? 'bg-success-container text-success border-success/40' : unlocked ? 'bg-card text-foreground border-border hover:bg-muted cursor-pointer' : 'bg-muted text-muted-foreground border-border/60 cursor-not-allowed'}`}>
+                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black ${active ? 'bg-primary-foreground/20' : past ? 'bg-success/15' : 'bg-muted-foreground/15'}`}>{past ? '✓' : index + 1}</span>
                   <Icon className="w-3.5 h-3.5" />
-                  <span className="stage-label-desktop">{index + 1} {label}</span>
+                  <span className="stage-label-desktop">{label}</span>
                   <span className="stage-label-mobile">{STAGE_MOBILE_LABELS[index]}</span>
                 </button>
               );

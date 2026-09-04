@@ -89,7 +89,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
           </div>
           <p className="student-map-progress">
             {practiceMode && <><span className="text-secondary">教师独立体验</span><span className="text-border">·</span></>}
-            <span className="text-success">已完成 {doneCount} 步</span><span className="text-border">·</span><span className="text-primary">{completed ? '全部完成' : `当前：步骤${currentStep} ${currentMeta?.shortTitle || ''}`}</span><span className="text-border">·</span><span className="text-success">全部开放</span>
+            <span className="text-success">已完成 {doneCount} 步</span><span className="text-border">·</span><span className="text-primary">{completed ? '全部完成，可生成本关学习报告' : `当前：步骤${currentStep} ${currentMeta?.shortTitle || ''}`}</span>
           </p>
           {demo && <span className="student-preview-badge">开发预览</span>}
           {practiceMode && <Link href="/teacher/dashboard" className="student-map-teacher-return">返回教学分析</Link>}
@@ -97,7 +97,7 @@ export default function ExperimentMap({ steps, catalog = experimentSteps, curren
 
         <section className="desktop-route-board island-route-board relative mt-6 hidden md:block">
           <div className="island-route-canvas">
-            <Image src="/illustrations/biochem-experiment-island-map-v1.png" alt="重组蛋白表达与纯化八步群岛实验地图" fill priority sizes="(max-width: 1200px) 100vw, 1152px" className="island-route-image" />
+            <Image src="/illustrations/biochem-experiment-island-map-v1.webp" alt="重组蛋白表达与纯化八步群岛实验地图" fill priority sizes="(max-width: 1200px) 100vw, 1152px" className="island-route-image" />
             {[1, 2, 3, 4, 5, 6, 7, 8].map(renderIslandHotspot)}
           </div>
         </section>
