@@ -204,6 +204,11 @@ export default function StepWorkstation(
     const [reviewIndex, setReviewIndex] = useState(0);
     const [quizLoading, setQuizLoading] = useState(false);
     const [quizReloadKey, setQuizReloadKey] = useState(0);
+    const [quizHistory, setQuizHistory] = useState<{
+        questions: Array<{ question_id: string; question_text: string; options: Array<{ id: string; text: string }>; correct_option_id?: string }>;
+        answers: Record<string, string>;
+        results: Array<{ question_id: string; is_correct: boolean; user_answer: string; correct_answer: string; explanation: string }>;
+    } | null>(null);
     const [showExecutionDetails, setShowExecutionDetails] = useState(true);
 
     useEffect(() => {
@@ -254,6 +259,15 @@ export default function StepWorkstation(
                     setReviewIndex(0);
                 } else if (!cancelled) {
                     setError(data.error?.message || "加载题目失败");
+                    if (data.error?.code === "STATE_INVALID") {
+                        try {
+                            const historyRes = await fetch(`/api/student/quiz/history?stepNo=${stepId}`);
+                            const historyData = await historyRes.json();
+                            if (!cancelled && historyData.ok && historyData.data.history) setQuizHistory(historyData.data.history);
+                        } catch {
+                            // 历史回顾失败不影响主错误提示
+                        }
+                    }
                 }
             } catch (err) {
                 if (!cancelled)
@@ -636,15 +650,31 @@ export default function StepWorkstation(
                             <p className="mt-4 text-sm text-muted-foreground">正在为你抽取题目…</p>
                         </section>}
                         {error && !quizLoading && <section
-                            className="mt-5 rounded-2xl border border-destructive/30 bg-destructive/10 p-5">
-                            <p className="text-sm font-bold text-destructive flex items-center gap-2"><CircleAlert className="w-4 h-4" /> {error}</p>
+                            className={`mt-5 rounded-2xl border p-5 ${quizHistory ? "border-primary/25 bg-primary/5" : "border-destructive/30 bg-destructive/10"}`}>
+                            <p className={`text-sm font-bold flex items-center gap-2 ${quizHistory ? "text-primary" : "text-destructive"}`}><CircleAlert className="w-4 h-4" /> {quizHistory ? "本步骤题库已完成" : error}</p>
+                            {quizHistory && <>
+                                <p className="mt-2 text-sm text-foreground/80">你已经完成当前已发布的全部题目。下面是最近一次答题记录；教师发布新题后，你可以再次抽取。</p>
+                                <div className="mt-4 space-y-3">
+                                    {quizHistory.questions.map((question, index) => {
+                                        const result = quizHistory.results.find(item => item.question_id === question.question_id);
+                                        const answer = result?.user_answer || quizHistory.answers[question.question_id];
+                                        const correct = result?.correct_answer || question.correct_option_id;
+                                        return <article key={question.question_id} className="rounded-xl border border-border/70 bg-card/80 p-3 text-sm">
+                                            <p className="font-bold">{index + 1}. {question.question_text}</p>
+                                            <p className="mt-1 text-muted-foreground">你的答案：{answer || "未作答"} · 正确答案：{correct || "—"} {result ? (result.is_correct ? "✓" : "✗") : ""}</p>
+                                            {result?.explanation && <p className="mt-1 leading-6 text-foreground/75">解析：{result.explanation}</p>}
+                                        </article>;
+                                    })}
+                                </div>
+                            </>}
                             <button
                                 onClick={() => {
                                     setError("");
+                                    setQuizHistory(null);
                                     setQuizSessionId(null);
                                     setQuizReloadKey(current => current + 1);
                                 }}
-                                className="mt-3 text-sm px-4 py-2 rounded-full bg-destructive text-destructive-foreground font-bold hover:opacity-90 transition-opacity">重新抽题</button>
+                                className="mt-4 text-sm px-4 py-2 rounded-full bg-primary text-primary-foreground font-bold hover:opacity-90 transition-opacity">重新抽题</button>
                         </section>}
                         {!quizLoading && !error && quizQuestions.length > 0 && !quizCompleted && (() => {
                             const currentQ = quizQuestions[quizCurrentIndex];
