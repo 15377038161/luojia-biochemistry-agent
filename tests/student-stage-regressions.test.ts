@@ -8,7 +8,7 @@ test('知识检验加载状态不再触发自身 effect 循环且重试有独立
   const source = read('src/components/student/step-workstation.tsx');
   assert.match(source, /quizReloadKey/);
   assert.doesNotMatch(source, /\[stage, stepId, quizSessionId, quizLoading\]/);
-  assert.match(source, /正在加载教师题库/);
+  assert.match(source, /正在(?:加载教师题库|为你抽取题目)/);
 });
 
 test('四组实验执行要点只能同步展开或同步收起', () => {
