@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       }));
 
     if (questions.length < 5) {
-      return fail({ code: 'STATE_INVALID', message: '本步骤暂无足够的未做发布题，请联系教师补充并发布题库。', retryable: false }, undefined, 409);
+      return fail({ code: 'STATE_INVALID', message: '暂时没有更多新题，你可以回顾历史答卷或继续学习。教师发布新题后可再练习。', retryable: false }, undefined, 409);
     }
 
     // 创建 quiz_session

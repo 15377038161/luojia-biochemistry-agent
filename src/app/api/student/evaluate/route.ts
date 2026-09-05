@@ -52,7 +52,13 @@ export async function POST(request: NextRequest) {
     const workflow = await evaluateText(step, body.answer, Number(state?.attempt_count) || 0, experimentProfile);
     const evaluation = workflow.data;
     const envelope = buildEvaluationResultEnvelope(step, evaluation, TEXT_EVAL_PROMPT_VERSION);
-    const sessionView = await loadStudentSessionView(supabase, session, identity.user.profile.displayName ?? '学生');
+    const ownedSessionId = session.id;
+    async function refreshedSessionView() {
+      const { data: refreshed, error: refreshError } = await admin.from('agent_sessions')
+        .select('id,current_step,completed_at').eq('id', ownedSessionId).eq('user_id', identity!.user.id).single();
+      if (refreshError) throw refreshError;
+      return loadStudentSessionView(admin, refreshed, identity!.user.profile.displayName ?? '学生');
+    }
     if (session.agent_role === 'teacher') {
       // 教师体验：服务端直写，不进入 sync_outbox、学生成绩与学习通同步。
       const record = await recordTeacherPracticeEvaluation(admin, {
@@ -67,7 +73,7 @@ export async function POST(request: NextRequest) {
       });
       return ok({
         evaluation,
-        session: sessionView,
+        session: await refreshedSessionView(),
         result: {
           id: record.evaluationId,
           attempt_id: record.attemptId,
@@ -98,7 +104,7 @@ export async function POST(request: NextRequest) {
     });
     return ok({
       evaluation,
-      session: sessionView,
+      session: await refreshedSessionView(),
       result: data,
       chaoxingTaskflow,
     });

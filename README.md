@@ -15,7 +15,7 @@
 - 模型网关：服务端 OpenAI Chat 兼容调用；`qwen3.8-max` 用于严肃评测、报告、教师分析和图片理解，`deepseek-v4-flash-0731` 用于高频助教和随机出题。深度思考字段不兼容时自动退回模型默认推理。
 - 教师预制题库：教师在“内容管理 → 知识检验题库”中让 AI 批量生成草稿，可逐题修改题干、选项、答案和解析，审核后发布；学生开考仅抽取本人未做的已发布题，不再等待现场 AI 生成。测验仍保持单页单题、最终确认后统一批改，提交前 API 不返回答案或解析。
 - 数据层：完全运行在 `202608140001_agent_core.sql` 的 Coze 原生模型上——`agent_sessions.agent_role` 区分会话类型、`content_versions` 单表承载草稿/发布、`evaluations` 是过程成绩唯一事实来源、申诉复核走 `teacher_reviews`+`agent_messages`、`sync_outbox.payload` 保存外部记录编号；教师学习体验不计成绩、不进班级统计和超星 outbox。
-- UI V7：全站使用唯一“珞珈数字实验笔记”视觉系统；首页、统一登录、学生地图、步骤、报告与教师工作台共用字体、颜色、圆角、控件尺寸和导航规则。
+- 水彩课堂：保留八步地图与水彩背景，原理、测验、文字推演和报告拆为独立组件；答题和历史回顾共用逐题卡片，文字推演逐环节编辑后统一检查提交。交互契约与真实验收边界见 [水彩课堂交互与验收](docs/水彩课堂交互与验收.md)。
 
 ## 产品边界
 
@@ -36,7 +36,7 @@
 
 学生端采用多页面层级：`/student/map` 为八步任务地图，`/student/step/[stepId]` 为分步文字推演，`/student/report` 为学习报告。教师端拆分为 `/teacher/dashboard`、`/teacher/students`、`/teacher/students/[sessionId]`、`/teacher/reviews`、`/teacher/content` 和 `/teacher/content/[stepId]`。学生的专业、年级、班级优先取学习通身份/课程成员字段，缺失值明确显示为“待同步”，不得猜测。
 
-非核心提示使用轻量抽屉/弹窗；移动端支持向下滑动关闭，桌面端支持点击遮罩、关闭按钮与 Esc。全局视觉变量、固定字号、48px 操作目标、底部安全区和低成本动效均集中在 `src/app/globals.css`，并遵循 `prefers-reduced-motion`。
+学生概况与成绩复核使用 Radix Sheet，移动端全屏，支持关闭按钮、遮罩与 Esc，自动管理焦点。基础视觉变量在 `src/app/globals.css`；课堂纸张面板、逐题卡片、写作布局与响应式样式在 `src/app/learning-workspace.css`。文字输入时底部栏随文档流排布，避免覆盖输入区域。
 
 首页与登录使用 `public/illustrations/luojia-biochem-agent-bg-v1.webp` 及对应 8 秒 WebM/MP4 循环素材；它们是根据武大官方标识规范和本项目视觉方向原创生成的无文字素材，不拼贴官网照片。登录先显示静态 WebP，视频就绪后淡入；省流量、减少动画或加载失败时保持静态背景。当前视觉规范与操作动线见 `docs/UI-V7统一视觉与操作动线规范.md`。
 

@@ -179,6 +179,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
   if (activeStep) {
     return (
       <StepWorkstation
+        key={session.sessionId + ":" + activeStep}
         session={session}
         stepId={activeStep}
         catalog={courseContent.steps}

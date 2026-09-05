@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { BookOpenText, CheckCircle2, ChevronRight, FlaskConical, GraduationCap, History, Home, LayoutDashboard, LoaderCircle, PenLine, Radar, Scale, Search, Users, CircleAlert, X } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { BookOpenText, CheckCircle2, ChevronRight, FlaskConical, GraduationCap, History, Home, LayoutDashboard, LoaderCircle, PenLine, Radar, Scale, Search, Users, CircleAlert } from 'lucide-react';
 import { experimentSteps } from '@/domain/experiment';
 import type { ApiResult } from '@/domain/agent';
 import type { TeacherOverview, TeacherStudentDetail, TeacherStudentOverview } from '@/app/api/teacher/overview/route';
@@ -372,7 +373,7 @@ export default function TeacherAgent({ displayName, demo, preview = false, view 
             <button type="button" onClick={() => { setFilter(''); setMajorFilter(''); setGradeFilter(''); setClassFilter(''); }}>重置</button>
             <strong>{filtered.length} 名学生</strong>
           </section>
-          <section id="student-progress" className="scroll-mt-24 grid lg:grid-cols-[420px_1fr] gap-5 items-start">
+          <section id="student-progress" className="scroll-mt-24">
             <div className="rounded-2xl bg-card/90 backdrop-blur border border-border/60 shadow-card p-5">
               <div className="flex items-center justify-between">
                 <h2 className="font-extrabold text-sm flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> 学生文字推演进度 · 8 Gate</h2>
@@ -402,8 +403,8 @@ export default function TeacherAgent({ displayName, demo, preview = false, view 
                 })}
               </div>
             </div>
-            <div id="review-detail" role="dialog" aria-label="学生复核详情" aria-modal={mobileDetailOpen ? true : undefined} className={`teacher-review-detail scroll-mt-24 rounded-2xl bg-card/90 backdrop-blur border border-border/60 shadow-card p-5 sm:p-6 ${mobileDetailOpen ? 'is-open' : ''}`}>
-              <button type="button" className="teacher-review-close lg:hidden" aria-label="关闭学生复核详情" onClick={() => setMobileDetailOpen(false)}><X className="w-5 h-5" /></button>
+            <Sheet open={mobileDetailOpen} onOpenChange={setMobileDetailOpen}><SheetContent className="teacher-student-sheet overflow-y-auto p-6 w-full sm:max-w-xl">
+              <SheetHeader className="mb-6"><SheetTitle>学生学习概况</SheetTitle><SheetDescription>先查看进度，再进入完整档案查阅作答证据。</SheetDescription></SheetHeader>
               {selected ? (
                 <>
                   <div className="flex flex-wrap items-center gap-3">
@@ -431,7 +432,7 @@ export default function TeacherAgent({ displayName, demo, preview = false, view 
               ) : (
                 <div className="text-xs text-muted-foreground flex items-center gap-2">{overview ? '请选择左侧学生查看学习记录。' : <><LoaderCircle className="w-4 h-4 animate-spin" /> 正在加载…</>}</div>
               )}
-            </div>
+            </SheetContent></Sheet>
           </section>
           </>}
 

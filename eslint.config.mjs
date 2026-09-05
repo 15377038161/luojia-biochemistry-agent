@@ -50,6 +50,9 @@ const eslintConfig = defineConfig([
     'public/design-preview/vendor/**',
     // Script files (CommonJS):
     'scripts/**/*.js',
+    'scripts/**/*.cjs',
+    '.playwright-cli/**',
+    'output/**',
   ]),
 ]);
 

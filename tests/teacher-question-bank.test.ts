@@ -8,7 +8,7 @@ test('学生开考只抽已发布题，不在请求中调用 AI', () => {
   const source = read('src/app/api/student/quiz/start/route.ts');
   assert.match(source, /\.eq\('status', 'published'\)/);
   assert.doesNotMatch(source, /generateQuizQuestions/);
-  assert.match(source, /暂无足够的未做发布题/);
+  assert.match(source, /暂时没有更多新题/);
 });
 
 test('教师题库支持 AI 草稿、编辑、发布和归档', () => {

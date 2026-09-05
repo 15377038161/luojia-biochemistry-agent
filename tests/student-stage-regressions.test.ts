@@ -5,14 +5,14 @@ import test from 'node:test';
 const read = (path: string) => readFileSync(path, 'utf8');
 
 test('知识检验加载状态不再触发自身 effect 循环且重试有独立触发器', () => {
-  const source = read('src/components/student/step-workstation.tsx');
-  assert.match(source, /quizReloadKey/);
-  assert.doesNotMatch(source, /\[stage, stepId, quizSessionId, quizLoading\]/);
-  assert.match(source, /正在(?:加载教师题库|为你抽取题目)/);
+  const source = read('src/components/student/quiz-panel.tsx');
+  assert.match(source, /setRetry/);
+  assert.doesNotMatch(source, /\}, \[[^\]]*loading[^\]]*\]\)/);
+  assert.match(source, /正在恢复学习记录/);
 });
 
 test('四组实验执行要点只能同步展开或同步收起', () => {
-  const source = read('src/components/student/step-workstation.tsx');
+  const source = read('src/components/student/task-principles.tsx');
   assert.match(source, /showExecutionDetails/);
   assert.match(source, /收起全部/);
   assert.doesNotMatch(source, /open=\{group\.title === 'SOP 参数'\}/);

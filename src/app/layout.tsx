@@ -3,6 +3,7 @@ import { Inspector } from 'react-dev-inspector';
 import { SupabaseConfigProvider } from '@/lib/supabase-config-inject';
 import './globals.css';
 import './ui-system.css';
+import './learning-workspace.css';
 
 export const metadata: Metadata = {
   title: { default: '珞珈生化智能体', template: '%s｜珞珈生化智能体' },

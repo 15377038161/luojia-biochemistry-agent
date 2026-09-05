@@ -1,85 +1,34 @@
-import { BarChart3, BookCheck, Check, CircleAlert, Flag, Lightbulb, RotateCcw } from 'lucide-react';
-import type { DimensionScores, ExperimentStep, TextEvaluation } from '@/domain/agent';
-import { buildStepReviewRows, getStepLearningSummary } from '@/lib/step-learning-report';
-
-const DIMENSIONS: Array<{ key: keyof DimensionScores; label: string; max: number }> = [
-  { key: 'knowledge', label: '知识理解', max: 20 }, { key: 'operation', label: '操作描述', max: 30 },
-  { key: 'decision', label: '科学决策', max: 20 }, { key: 'troubleshooting', label: '问题解决', max: 15 },
-  { key: 'analysis', label: '结果分析', max: 15 },
-];
-
-interface Props {
-  step: ExperimentStep;
-  evaluation: TextEvaluation;
-  answers: Record<string, string>;
-  syncNotice: string;
-  onRevise: () => void;
-  onBack: () => void;
-}
-
+"use client";
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import type { ExperimentStep, TextEvaluation } from "@/domain/agent";
+import { Button } from "@/components/ui/button";
+import { buildStepReviewRows } from "@/lib/step-learning-report";
+import { computeGradeSummary } from "@/lib/services/grading";
+import AbilityRadar from "./ability-radar";
+interface Props { step: ExperimentStep; evaluation: TextEvaluation; answers: Record<string, string>; syncNotice: string; onRevise: () => void; onBack: () => void }
 export default function StepReviewReport({ step, evaluation, answers, syncNotice, onRevise, onBack }: Props) {
+  const [tab, setTab] = useState("overview");
   const rows = buildStepReviewRows(step, evaluation, answers);
-  const summary = getStepLearningSummary(step, evaluation);
-  const total = DIMENSIONS.reduce((sum, item) => sum + evaluation.scores[item.key], 0);
-  const passed = evaluation.decision === 'pass';
-
-  return (
-    <section className="mt-4 space-y-4">
-      <div className={`rounded-2xl border p-5 ${passed ? 'border-success/35 bg-success/10' : 'border-warning/35 bg-warning/10'}`}>
-        <div className="flex flex-wrap items-start gap-3"><div><p className="text-xs font-black text-primary">AI 点评已生成 · 本步学习报告</p><h2 className="mt-1 text-xl font-extrabold">{passed ? '本步达标，可以继续' : '本步需要修订后再通过 Gate'}</h2></div><span className="ml-auto rounded-full bg-card px-3 py-1 text-sm font-black text-primary">{total}/100</span></div>
-        <p className="mt-3 text-sm leading-7">{evaluation.studentFeedback}</p>
-        {syncNotice && <p className="mt-2 text-xs font-bold text-primary"><Check className="mr-1 inline h-3.5 w-3.5" />{syncNotice}</p>}
-      </div>
-
-      <div className="rounded-2xl border border-border/70 bg-card/90 p-5 shadow-card">
-        <h3 className="flex items-center gap-2 text-base font-extrabold"><BookCheck className="h-5 w-5 text-primary" />逐项回答诊断</h3>
-        <p className="mt-1 text-xs text-muted-foreground">AI 逐条对照你的原文与课程评分要点，告诉你答得怎样、该如何改。</p>
-        <div className="mt-4 space-y-3">
-          {rows.map((row, index) => {
-            const good = row.status === '讲清楚了';
-            return <article key={row.id} className="rounded-xl border border-border bg-card p-4">
-              <div className="flex flex-wrap items-center gap-2"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-container text-xs font-black text-primary">{index + 1}</span><h4 className="font-bold">{row.label}</h4><span className={`ml-auto rounded-full px-2 py-1 text-[11px] font-black ${good ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>{row.status}</span></div>
-              <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                <div className="rounded-lg bg-muted/60 p-3 text-xs leading-6"><p className="font-black text-foreground">你的回答</p><p className="mt-1 text-muted-foreground">{row.studentEvidence}</p></div>
-                <div className="rounded-lg bg-primary-container/35 p-3 text-xs leading-6"><p className="font-black text-primary">AI 点评与改法</p><p className="mt-1">{row.feedback}</p></div>
-              </div>
-              <details className="mt-3 rounded-lg border border-secondary/20 bg-secondary-container/25 p-3 text-xs leading-6"><summary className="cursor-pointer font-black text-secondary">查看参考答案与评分要点</summary><p className="mt-2">{row.referenceAnswer}</p><p className="mt-2 text-muted-foreground">这是课程资料中的参考作答框架，不是唯一表述；答案需同时写明条件、依据、判断和后续动作。</p></details>
-            </article>;
-          })}
-        </div>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-2xl border border-primary/25 bg-primary-container/25 p-5">
-          <h3 className="flex items-center gap-2 text-base font-extrabold"><Lightbulb className="h-5 w-5 text-primary" />推荐修订答案</h3>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-7">{evaluation.improvedAnswer || '本次评阅没有生成推荐修订答案，请根据逐项点评补齐条件、依据、判断与后续动作。'}</p>
-        </article>
-        <article className="rounded-2xl border border-secondary/25 bg-secondary-container/20 p-5">
-          <h3 className="flex items-center gap-2 text-base font-extrabold"><BookCheck className="h-5 w-5 text-secondary" />参考答案与原理</h3>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-7">{evaluation.standardAnswer || '本次评阅没有生成完整参考答案。'}</p>
-          <details className="mt-3 rounded-lg border border-secondary/20 bg-card/60 p-3 text-xs leading-6">
-            <summary className="cursor-pointer font-black text-secondary">展开知识讲解</summary>
-            <p className="mt-2 whitespace-pre-wrap">{evaluation.knowledgeExplanation || '暂无补充知识讲解。'}</p>
-          </details>
-        </article>
-      </div>
-
-      <div className="rounded-2xl border border-border/70 bg-card/90 p-5 shadow-card">
-        <h3 className="flex items-center gap-2 text-base font-extrabold"><Flag className="h-5 w-5 text-primary" />点评结论与下一步</h3>
-        <div className="mt-3 grid gap-3 md:grid-cols-3 text-sm leading-7">
-          <p className="rounded-xl bg-muted/60 p-3"><b>推理点评：</b>{evaluation.reasoningReview || '请结合逐项证据检查自己的判断链条。'}</p>
-          <p className="rounded-xl bg-muted/60 p-3"><b>下一步动作：</b>{evaluation.nextAction || summary.actions[0]}</p>
-          <p className="rounded-xl bg-muted/60 p-3"><b>本步优势：</b>{evaluation.strengths.length > 0 ? evaluation.strengths.join('；') : summary.strengths.join('；')}</p>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-border/70 bg-card/90 p-5 shadow-card">
-        <h3 className="flex items-center gap-2 text-base font-extrabold"><BarChart3 className="h-5 w-5 text-secondary" />{summary.title}</h3>
-        <div className="mt-4 grid gap-2 sm:grid-cols-5">{DIMENSIONS.map((item) => <div key={item.key} className="rounded-xl bg-muted/60 p-3 text-xs"><p className="font-bold">{item.label}</p><p className="mt-1 text-lg font-black text-primary">{evaluation.scores[item.key]}<span className="text-xs font-normal text-muted-foreground">/{item.max}</span></p><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-card"><div className="h-full rounded-full bg-primary" style={{ width: `${evaluation.scores[item.key] / item.max * 100}%` }} /></div></div>)}</div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2"><div className="rounded-xl bg-success/8 p-4 text-xs leading-6"><p className="font-black text-success"><Check className="mr-1 inline h-4 w-4" />本步优势</p>{summary.strengths.map((item) => <p key={item}>· {item}</p>)}</div><div className="rounded-xl bg-warning/8 p-4 text-xs leading-6"><p className="font-black text-warning"><Lightbulb className="mr-1 inline h-4 w-4" />下一次学习动作</p>{summary.actions.slice(0, 4).map((item) => <p key={item}>· {item}</p>)}</div></div>
-      </div>
-
-      <div className={`rounded-2xl border p-5 text-center ${passed ? 'border-success/40 bg-success/10' : 'border-warning/40 bg-warning/10'}`}><p className={`text-lg font-black ${passed ? 'text-success' : 'text-warning'}`}><Flag className="mr-2 inline h-5 w-5" />Gate {step.id} · {passed ? '通过' : '待通过'}</p><p className="mt-2 text-xs text-muted-foreground">{passed ? '本步报告已计入总学习报告，下一实验步骤已解锁。' : '请依据逐项点评修改后再次提交；新评阅会更新本步报告。'}</p><div className="mt-4 flex flex-wrap justify-center gap-2"><button type="button" onClick={onRevise} className="inline-flex items-center gap-1 rounded-xl border border-border bg-card px-4 py-2 text-sm font-bold"><RotateCcw className="h-4 w-4" />修改并重新提交</button>{passed && <button type="button" onClick={onBack} className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">返回实验地图</button>}</div>{evaluation.safetyAlerts.length > 0 && <p className="mt-3 text-xs font-bold text-destructive"><CircleAlert className="mr-1 inline h-4 w-4" />有 {evaluation.safetyAlerts.length} 项安全问题必须修正。</p>}</div>
-    </section>
-  );
+  const passed = evaluation.decision === "pass";
+  const grading = useMemo(() => computeGradeSummary({
+    sessionId: "step-review", completedAt: null, finalization: null, hasPendingAppeal: false,
+    stepStates: [{ stepNo: step.id, status: passed ? "passed" : "active", attemptCount: 1, passedAt: null }],
+    evaluations: [{ id: "current", stepNo: step.id, versionNo: 1, decision: evaluation.decision, totalScore: Object.values(evaluation.scores).reduce((sum, n) => sum + n, 0), scores: evaluation.scores, requiresTeacherReview: evaluation.requiresTeacherReview, result: { evaluation }, createdAt: "2000-01-01T00:00:00Z" }],
+  }), [evaluation, passed, step.id]);
+  const urgent = rows.filter(row => row.status !== "讲清楚了");
+  return <section className="learning-paper step-review-paper">
+    <header className="learning-section-heading"><div><span className="learning-eyebrow">04 / REFLECT & IMPROVE</span><h2>{passed ? "本步达标，继续探索" : "把这些细节再讲清楚"}</h2><p>第 {step.id} 步 · {step.shortTitle} · AI 暂定评阅{evaluation.requiresTeacherReview ? " · 待教师复核" : ""}</p></div><span className="learning-status">Gate {step.id} · {passed ? "通过" : "待通过"}</span></header>
+    <nav className="learning-tabs" aria-label="本步报告分区">{[["overview", "学习概况"], ["radar", "五维能力"], ["evidence", "逐项证据"], ["resources", "改进与资料"]].map(([key, label]) => <button key={key} type="button" aria-current={tab === key ? "page" : undefined} onClick={() => setTab(key)}>{label}</button>)}</nav>
+    {tab === "overview" && <div><p className="report-lead">{evaluation.studentFeedback}</p><h3 className="mt-6">优先回顾</h3>{urgent.length ? urgent.slice(0, 3).map(row => <details key={row.id} className="learning-disclosure"><summary>{row.label} · {row.status}</summary><p>{row.feedback}</p></details>) : <p className="learning-notice">本次评阅未发现需要优先修订的项目。</p>}<p className="learning-muted mt-4">{evaluation.nextAction}</p><Button variant="outline" onClick={() => setTab("evidence")}>查看全部作答证据</Button></div>}
+    {tab === "radar" && <><AbilityRadar dimensions={grading.radar_dimensions} /><p className="learning-muted">五维能力按本次已评阅证据归一化至 0–100；课程总成绩请查看独立学习报告。</p></>}
+    {tab === "evidence" && <div>{rows.map(row => <details key={row.id} className="learning-disclosure"><summary>{row.label} · {row.status}</summary><div className="report-evidence-pair"><blockquote><strong>你的原文</strong><p>{row.studentEvidence}</p></blockquote><div><strong>点评与改法</strong><p>{row.feedback}</p></div></div>{passed && <details className="mt-4"><summary>参考作答要点</summary><p>{row.referenceAnswer}</p></details>}</details>)}</div>}
+    {tab === "resources" && <div>
+      <h3>下一步行动</h3><p className="report-lead">{evaluation.nextAction}</p><p className="mt-4">{evaluation.reasoningReview}</p>
+      {passed ? [["修订答案", evaluation.improvedAnswer], ["完整参考答案", evaluation.standardAnswer], ["详细原理解读", evaluation.knowledgeExplanation]].map(([label, text]) => <details key={label} className="learning-disclosure"><summary>{label}</summary><p className="whitespace-pre-wrap">{text || "本次评阅尚未生成此部分。"}</p></details>) : <p className="learning-notice">先依据逐项诊断完善你的表达。本步正式结束后，可在报告中回顾完整参考答案。</p>}
+      <p className="learning-source">课程资料：{step.source}</p><Link className="underline" href={"/student/report?step=" + step.id}>打开独立学习报告</Link>
+    </div>}
+    {syncNotice && <p role="status" className="learning-muted mt-6">{syncNotice}</p>}
+    <footer className="learning-actions"><Button variant="outline" onClick={onRevise}>返回方案修订</Button>{passed && <Button onClick={onBack}>返回地图 · 进入下一步</Button>}</footer>
+  </section>;
 }

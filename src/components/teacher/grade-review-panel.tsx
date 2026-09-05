@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, LoaderCircle, RefreshCw, Scale, TriangleAlert } from 'lucide-react';
 import { clientErrorMessage } from '@/lib/client-request';
+import Link from 'next/link';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
 interface ReviewView {
   id: string;
+  sessionId: string;
   status: string;
   reason: string;
   resolution: string;
@@ -33,7 +36,7 @@ function normalize(value: unknown): ReviewView[] {
   return value.map((entry) => {
     const source = asRecord(entry);
     return {
-      id: String(source.id ?? ''), status: String(source.status ?? 'pending'), reason: String(source.reason ?? ''),
+      id: String(source.requestId ?? ''), sessionId: String(source.sessionId ?? ''), status: String(source.status ?? 'pending'), reason: String(source.reason ?? ''),
       resolution: String(source.resolution ?? ''), createdAt: String(source.createdAt ?? source.created_at ?? ''),
       studentName: String(source.studentName ?? '未命名学生'), studentNo: String(source.studentNo ?? '—'),
       processScore: asNumber(source.processScore), contributionPoints: asNumber(source.contributionPoints),
@@ -42,7 +45,7 @@ function normalize(value: unknown): ReviewView[] {
 }
 
 const PREVIEW_REVIEWS: ReviewView[] = [{
-  id: 'preview-review', status: 'pending', reason: '步骤 4 的案例图判断已补充证据，希望教师复核最终过程成绩。',
+  id: 'preview-review', sessionId: 'preview-1', status: 'pending', reason: '步骤 4 的案例图判断已补充证据，希望教师复核最终过程成绩。',
   resolution: '', createdAt: '2026-08-23T08:20:00.000Z', studentName: '张明轩', studentNo: '2023302110041',
   processScore: 72.5, contributionPoints: 7.25,
 }];
@@ -54,6 +57,7 @@ export default function GradeReviewPanel({ preview = false }: Props) {
   const [overrideScore, setOverrideScore] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [open, setOpen] = useState(false);
 
   async function load() {
     if (preview) { setReviews(PREVIEW_REVIEWS); return; }
@@ -97,29 +101,31 @@ export default function GradeReviewPanel({ preview = false }: Props) {
         <div className="teacher-review-list">
           {reviews.length === 0 && <p><CheckCircle2 aria-hidden />当前没有成绩异议。</p>}
           {reviews.map((review) => (
-            <button key={review.id} type="button" onClick={() => setSelectedId(review.id)} className={review.id === selectedId ? 'is-selected' : ''}>
+            <button key={review.id} type="button" onClick={() => { setSelectedId(review.id); setResolution(''); setOverrideScore(''); setMessage(''); setOpen(true); }} className={review.id === selectedId ? 'is-selected' : ''}>
               <span><strong>{review.studentName}</strong><small>{review.studentNo}</small></span>
               <b>{review.processScore.toFixed(1)} 分</b><i data-status={review.status}>{review.status === 'pending' ? '待复核' : '已处理'}</i>
             </button>
           ))}
         </div>
-        <div className="teacher-review-form">
+        <Sheet open={open} onOpenChange={setOpen}><SheetContent className="w-full sm:max-w-xl overflow-y-auto"><SheetHeader className="mb-6 pr-12"><SheetTitle>成绩复核</SheetTitle><SheetDescription>保留原报告，复核结果生成新版本。</SheetDescription></SheetHeader><div className="teacher-review-form">
           {!selected ? <p className="teacher-panel-loading"><Scale aria-hidden />选择一条记录查看详情。</p> : (
             <>
+              {selected.sessionId && <Link className="inline-flex min-h-11 items-center underline" href={`/teacher/students/${selected.sessionId}${preview ? '?preview=1' : ''}`}>查看学生完整学习档案</Link>}
               <div className="teacher-score-line"><span><small>过程成绩</small><strong>{selected.processScore.toFixed(1)}</strong></span><span><small>课程贡献</small><strong>{selected.contributionPoints.toFixed(2)} / 10</strong></span></div>
               <div className="teacher-review-reason"><b>学生异议说明</b><p>{selected.reason}</p></div>
               {selected.status === 'pending' ? (
                 <>
                   <label>教师复核结论<textarea value={resolution} onChange={(event) => setResolution(event.target.value)} rows={4} placeholder="结合具体步骤、评阅证据和认定依据填写…" /></label>
                   <label>调整后的过程成绩（可选）<input type="number" min="0" max="100" step="0.1" value={overrideScore} onChange={(event) => setOverrideScore(event.target.value)} placeholder="不填写则保留原成绩" /></label>
-                  <div className="teacher-review-actions"><button disabled={busy} type="button" onClick={() => void submit(true)}>{busy ? <LoaderCircle className="animate-spin" /> : <CheckCircle2 />}确认成绩</button><button disabled={busy} type="button" onClick={() => void submit(false)}><TriangleAlert />驳回异议</button></div>
+                  <div className="teacher-review-actions"><button disabled={busy} type="button" onClick={() => void submit(!overrideScore.trim())}>{busy ? <LoaderCircle className="animate-spin" /> : <CheckCircle2 />}{overrideScore.trim() ? '调整成绩并生成新版本' : '确认原成绩'}</button><button disabled={busy || !!overrideScore.trim()} type="button" onClick={() => void submit(false)}><TriangleAlert />保留成绩并回复异议</button></div>
                 </>
               ) : <p className="teacher-review-resolved"><CheckCircle2 aria-hidden />{selected.resolution || '该异议已处理。'}</p>}
             </>
           )}
           {message && <p className="teacher-panel-message">{message}</p>}
-        </div>
+        </div></SheetContent></Sheet>
       </div>
+      {!open && message && <p role="status" className="teacher-panel-message">{message}</p>}
     </section>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BadgeCheck, ChartNoAxesColumn, CircleAlert, Clock, Check, Download, FileText, Hourglass, Lightbulb, LoaderCircle, Radar as RadarIcon, ScanSearch, X } from 'lucide-react';
+import { BadgeCheck, ChartNoAxesColumn, CircleAlert, Clock, Check, BookOpen, Download, FileText, Lightbulb, LoaderCircle, Radar as RadarIcon, ScanSearch, X } from 'lucide-react';
 import type { ApiResult, DimensionScores } from '@/domain/agent';
 import type { StudentReportData } from '@/app/api/student/report-data/route';
 import type { RadarDimensionKey } from '@/lib/services/grading';
@@ -96,7 +96,9 @@ function radarPoints(values: number[], radius: number): string {
 }
 
 export default function StudyReport({ name, sessionId, preview, markdown, markdownBusy, markdownError, syncNotice = '', onClose, standalone = false, practiceMode = false, canSwitchToTeacher = false }: Props) {
-  const [reportTab, setReportTab] = useState<'overview' | 'gates' | 'analysis'>('overview');
+  const [reportTab, setReportTab] = useState<'overview' | 'gates' | 'analysis' | 'resources'>('overview');
+  const [selectedStep, setSelectedStep] = useState(1);
+  useEffect(() => { const step = Number(new URLSearchParams(window.location.search).get('step')); if (step >= 1 && step <= 8) { setSelectedStep(step); setReportTab('gates'); } }, []);
   const [data, setData] = useState<StudentReportData | null>(null);
   const [error, setError] = useState('');
   const [grade, setGrade] = useState<GradeData | null>(preview ? { id: 'preview-grade', process_score: 86, contribution_points: 8.6, status: 'provisional', review: null } : null);
@@ -179,8 +181,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
 
   const dims = data ? Object.fromEntries(data.radarDimensions.map((item) => [item.key, item.score])) as Record<RadarDimensionKey, number> : null;
   const radarValues = DIMENSIONS.map(({ key }) => dims?.[key] ?? 0);
-  const pendingSteps = data?.steps.filter((step) => step.status !== 'passed' && step.status !== 'teacher_review') || [];
-  const dimensionInsights = data && dims ? DIMENSIONS.map((dimension) => {
+    const dimensionInsights = data && dims ? DIMENSIONS.map((dimension) => {
     const score = dims[dimension.key];
     const percent = toPercent(score, dimension.max);
     const relatedIssue = data.steps.map((step) => ({ step, issue: step.issues.find((issue) => issue.dimension && dimension.issueDimensions.includes(issue.dimension)) })).find((item) => item.issue);
@@ -237,6 +238,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
               <button type="button" aria-current={reportTab === 'overview' ? 'page' : undefined} onClick={() => setReportTab('overview')}><RadarIcon />能力总览</button>
               <button type="button" aria-current={reportTab === 'gates' ? 'page' : undefined} onClick={() => setReportTab('gates')}><BadgeCheck />八步记录</button>
               <button type="button" aria-current={reportTab === 'analysis' ? 'page' : undefined} onClick={() => setReportTab('analysis')}><ScanSearch />AI 分析</button>
+                          <button type="button" aria-current={reportTab === 'resources' ? 'page' : undefined} onClick={() => setReportTab('resources')}><BookOpen />改进与资料</button>
             </nav>
 
             {reportTab === 'overview' && <section className="grade-summary-panel mt-5" aria-labelledby="grade-summary-title">
@@ -316,7 +318,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
             </div>}
 
             {/* 新增三个详细展示 section */}
-            {reportTab === 'overview' && data.lossAnalysis && data.lossAnalysis.length > 0 && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
+            {reportTab === 'analysis' && data.lossAnalysis && data.lossAnalysis.length > 0 && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
               <h4 className="font-extrabold flex items-center gap-2 text-sm"><CircleAlert className="w-5 h-5 text-destructive" /> 失分点解析</h4>
               <div className="mt-4 space-y-3">
                 {data.lossAnalysis.map((item, idx) => (
@@ -331,7 +333,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
               </div>
             </div>}
 
-            {reportTab === 'overview' && data.knowledgeGaps && data.knowledgeGaps.length > 0 && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
+            {reportTab === 'resources' && data.knowledgeGaps && data.knowledgeGaps.length > 0 && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
               <h4 className="font-extrabold flex items-center gap-2 text-sm"><ScanSearch className="w-5 h-5 text-warning" /> 知识点掌握短板</h4>
               <div className="mt-4 space-y-3">
                 {data.knowledgeGaps.map((item, idx) => (
@@ -343,7 +345,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
               </div>
             </div>}
 
-            {reportTab === 'overview' && data.improvementSuggestions && data.improvementSuggestions.length > 0 && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
+            {reportTab === 'resources' && data.improvementSuggestions && data.improvementSuggestions.length > 0 && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
               <h4 className="font-extrabold flex items-center gap-2 text-sm"><Lightbulb className="w-5 h-5 text-primary" /> 针对性提升建议</h4>
               <div className="mt-4 space-y-3">
                 {data.improvementSuggestions.map((item, idx) => (
@@ -355,36 +357,17 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
               </div>
             </div>}
 
-            {reportTab === 'gates' && <div className="mt-6 rounded-2xl border border-border/60 shadow-card p-5">
-              <h4 className="font-extrabold flex items-center gap-2 text-sm"><BadgeCheck className="w-5 h-5 text-success" /> 八步 Gate 记录</h4>
-              <ol className="mt-4 space-y-3">
-                {data.steps.map((step, index) => {
-                  const isLast = index === data.steps.length - 1;
-                  const passed = step.status === 'passed';
-                  const active = step.status === 'teacher_review' || step.status === 'active';
-                  return (
-                    <li key={step.stepNo} className="flex gap-3">
-                      <span className="flex flex-col items-center">
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${passed ? 'bg-success text-primary-foreground' : active ? 'bg-warning text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                          {passed ? <Check className="w-4 h-4" /> : active ? <Clock className="w-4 h-4" /> : <span className="text-xs font-bold">{step.stepNo}</span>}
-                        </span>
-                        {!isLast && <span className={`w-0.5 flex-1 ${passed ? 'bg-success/30' : 'bg-border'}`} />}
-                      </span>
-                      <div className="pb-1 min-w-0">
-                        <p className="text-sm font-bold">
-                          Gate {step.stepNo} · {step.shortTitle}
-                          {passed && <span className="ml-2 px-2 py-0.5 rounded-full bg-success/10 text-success text-xs font-bold">通过 · {step.attemptCount || 1} 次</span>}
-                          {active && <span className="ml-2 px-2 py-0.5 rounded-full bg-warning/10 text-warning text-xs font-bold">待修改 · 当前</span>}
-                          {!passed && !active && <span className="ml-2 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-bold">未开始</span>}
-                          {step.totalScore != null && <span className="ml-2 text-xs text-muted-foreground font-medium">{step.totalScore} 分</span>}
-                        </p>
-                        {step.missingLabels.length > 0 && <p className="text-xs text-muted-foreground mt-1">待改进：{step.missingLabels.join('；')}</p>}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-              {pendingSteps.length > 0 && <p className="mt-4 text-xs text-muted-foreground flex items-center gap-1.5"><Hourglass className="w-3.5 h-3.5" /> Gate {pendingSteps.map((step) => step.stepNo).join('、')} 待完成。</p>}
+            {reportTab === 'gates' && <div className="mt-6">
+              <nav className="learning-tabs" aria-label="报告步骤">{data.steps.map(s => <button key={s.stepNo} type="button" aria-current={selectedStep === s.stepNo ? "page" : undefined} onClick={() => setSelectedStep(s.stepNo)}>{s.stepNo} · {s.shortTitle}</button>)}</nav>
+              {data.steps.filter(s => s.stepNo === selectedStep).map(s => <article key={s.stepNo}>
+                <h4 className="text-lg font-bold">{s.shortTitle} · {s.totalScore === null ? "尚未评阅" : s.totalScore + " 分"}</h4>
+                <p className="mt-2 text-sm">Gate {s.stepNo} · {s.status === "passed" ? "已通过" : s.status === "locked" ? "尚未开始" : "待完善"} · 已提交 {s.attemptCount} 次</p>
+                {s.issues.map((issue, i) => <details key={i}><summary>{issue.label}</summary><p><b>作答证据：</b>{issue.quote || "未交代"}</p><p><b>影响：</b>{issue.impact || issue.scenario}</p><p><b>改进：</b>{issue.action}</p><p><b>自检：</b>{issue.check}</p></details>)}
+                {s.strengths?.length ? <details><summary>做得好的地方</summary>{s.strengths.map(text => <p key={text}>{text}</p>)}</details> : null}
+                {s.reasoningReview && <details><summary>推理链分析</summary><p>{s.reasoningReview}</p></details>}
+                {s.status === "passed" && [["详细原理", s.knowledgeExplanation], ["完整参考答案", s.standardAnswer], ["基于原文的改写", s.improvedAnswer]].map(([title, text]) => text && <details key={title}><summary>{title}</summary><p className="whitespace-pre-wrap">{text}</p></details>)}
+                {s.nextAction && <p className="learning-notice">{s.nextAction}</p>}
+              </article>)}
             </div>}
 
             {reportTab === 'analysis' && dimensionInsights.length > 0 && (
@@ -393,7 +376,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
                 <p className="mt-2 text-xs leading-5 text-muted-foreground">每项先呈现评分依据，再列出已有记录中的具体场景；没有证据的维度不作负面推断。</p>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {dimensionInsights.map((item) => (
-                    <article key={item.key} className="rounded-xl border border-border bg-card/70 p-4">
+                    <details key={item.key} className="rounded-xl border border-border bg-card/70 p-4"><summary>{item.label} · {levelName(item.percent)}</summary>
                       <div className="flex items-center justify-between gap-3"><h5 className="text-sm font-bold">{item.label}</h5><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${item.percent >= 85 ? 'bg-success/10 text-success' : item.percent >= 70 ? 'bg-primary-container text-primary' : 'bg-warning/10 text-warning'}`}>{levelName(item.percent)} · {item.score}/{item.max}</span></div>
                       <p className="mt-2 text-xs leading-5 text-muted-foreground"><b>定义：</b>{item.definition}</p>
                       <p className="mt-2 text-xs leading-5 text-muted-foreground"><b>学习场景：</b>{item.evidence}</p>
@@ -401,7 +384,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
                       <p className="mt-2 text-xs leading-5 text-muted-foreground"><b>成因边界：</b>{item.causeBoundary}</p>
                       <p className="mt-2 text-xs leading-5 text-primary"><b>下一步动作：</b>{item.action}</p>
                       <p className="mt-2 text-xs leading-5 text-primary"><b>检查标准：</b>{item.check}</p>
-                    </article>
+                    </details>
                   ))}
                 </div>
                 {data.weakest.length > 0 && <p className="mt-4 text-xs leading-5 text-muted-foreground"><b>跨步骤重复出现：</b>{data.weakest.map((item) => `${item.label}（${item.count} 次）`).join('；')}。优先从出现次数最多的一项开始修订。</p>}
@@ -409,11 +392,12 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
               </div>
             )}
 
-            {reportTab === 'analysis' && <div className="mt-6">
+            {reportTab === 'resources' && <div className="mt-6"><h4 className="font-bold">课程资料索引</h4>{data.steps.filter(s => s.resources?.length).map(s => <details key={s.stepNo}><summary>步骤{s.stepNo} · {s.shortTitle}</summary>{s.resources?.map((resource, i) => <p key={i}>{resource.label} · {resource.source}</p>)}</details>)}</div>}
+            {reportTab === 'resources' && <div className="mt-6">
               <h4 className="font-extrabold flex items-center gap-2 text-sm"><FileText className="w-5 h-5 text-primary" /> 完整学习报告</h4>
               {markdownBusy && <p className="mt-3 text-sm text-muted-foreground font-bold inline-flex items-center gap-2"><LoaderCircle className="w-4 h-4 animate-spin" />正在生成学习报告…</p>}
               {markdownError && <p className="mt-3 text-sm font-bold text-destructive flex items-center gap-1.5"><CircleAlert className="w-4 h-4" />{markdownError}</p>}
-              {markdown && !markdownBusy && !markdownError && <div className="mt-3 rounded-xl border border-border bg-muted/40 p-4 text-sm leading-relaxed whitespace-pre-wrap">{markdown}</div>}
+              {markdown && !markdownBusy && !markdownError && <details><summary>展开 AI 综合报告正文</summary><div className="mt-3 text-sm leading-relaxed whitespace-pre-wrap">{markdown}</div></details>}
             </div>}
           </>
         )}
