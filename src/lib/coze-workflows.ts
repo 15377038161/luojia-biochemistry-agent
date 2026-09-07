@@ -203,7 +203,7 @@ export async function evaluateText(step: ExperimentStep, answer: string, attempt
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
-    { workload: 'quality', temperature: 0.2, maxTokens: 8_000, deepThinking: false },
+    { workload: 'fast', temperature: 0.2, maxTokens: 8_000 },
   );
   return { data: normalizeEvaluation(step.id, answer, assertEvaluation(extractJson(content))), runId: randomUUID() };
 }
@@ -276,7 +276,7 @@ export async function evaluateVision(parameters: Record<string, unknown>): Promi
       { role: 'system', content: system },
       { role: 'user', content: contentParts },
     ],
-    { workload: 'quality', temperature: 0.15, maxTokens: 8_000 },
+    { workload: 'fast', temperature: 0.15, maxTokens: 8_000 },
   );
   return { data: extractJson(content) as Record<string, unknown>, runId: randomUUID() };
 }
@@ -324,7 +324,7 @@ export async function generateReport(parameters: Record<string, unknown>): Promi
       { role: 'system', content: system },
       { role: 'user', content: `学生报告数据：${JSON.stringify(parameters)}` },
     ],
-    { workload: 'quality', temperature: 0.25, maxTokens: 14_000, deepThinking: false },
+    { workload: 'fast', temperature: 0.25, maxTokens: 14_000 },
   );
   return { data: extractJson(content) as Record<string, unknown>, runId: randomUUID() };
 }

@@ -44,7 +44,7 @@ function gatewayConfig() {
     chatUrl: process.env.AI_GATEWAY_CHAT_URL?.trim() || DEFAULT_CHAT_URL,
     qualityModel: process.env.AI_MODEL_QUALITY?.trim() || QUALITY_MODEL,
     fastModel: process.env.AI_MODEL_FAST?.trim() || FAST_MODEL,
-    timeoutMs: positiveInteger(process.env.AI_GATEWAY_TIMEOUT_MS, 45_000),
+    timeoutMs: positiveInteger(process.env.AI_GATEWAY_TIMEOUT_MS, 90_000),
     retryCount: Math.min(2, positiveInteger(process.env.AI_GATEWAY_RETRY_COUNT, 1)),
   };
 }
