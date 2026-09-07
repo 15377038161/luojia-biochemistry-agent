@@ -13,5 +13,11 @@ export function clientErrorMessage(reason: unknown, fallback: string): string {
   ) {
     return '网络连接异常，请检查网络后重试。';
   }
+  if (/(http\s*502|http\s*503|http\s*504|bad gateway|service unavailable|gateway timeout|upstream)/i.test(text)) {
+    return '评阅服务暂时不可达，请稍后重试。';
+  }
+  if (/(syntaxerror|is not valid json|json\.parse|unexpected token)/i.test(text)) {
+    return '评阅服务返回异常，请稍后重试。';
+  }
   return reason.message || fallback;
 }
