@@ -10,9 +10,10 @@ const prompts = [
   ["器材与用途", "使用什么器材？凭哪些外观特征识别？如何设置和安全使用？"],
   ["观察与判断", "预计看到什么？用什么对照判断？异常时先检查哪里？"],
 ];
-export default function ExperimentWriter({ step, answers, onChange, onSubmit, busy, error, draftNotice, isCurrent }: {
+export default function ExperimentWriter({ step, answers, onChange, onSubmit, busy, error, draftNotice, isCurrent, phase = "evaluating" }: {
   step: ExperimentStep; answers: Record<string, string>; onChange: (value: Record<string, string>) => void;
   onSubmit: () => void; busy: boolean; error: string; draftNotice: string; isCurrent: boolean;
+  phase?: "preparing" | "evaluating";
 }) {
   const [index, setIndex] = useState(0);
   const [overview, setOverview] = useState(false);
@@ -39,7 +40,7 @@ export default function ExperimentWriter({ step, answers, onChange, onSubmit, bu
       <div className="writer-editor">
         {overview ? <div><span className="learning-eyebrow">YOUR EXPERIMENT NOTEBOOK</span><h3>按操作顺序，再读一遍</h3><p className="learning-muted">“已填写”只表示有作答，理解是否准确将在提交后评阅。</p>
           {step.keyPoints.map((p, i) => <article key={p.id} className="writer-summary"><header><h4>{i + 1}. {p.label}</h4><Button variant="ghost" disabled={busy} onClick={() => navigate(i)}>修改</Button></header><p>{answers[p.id]?.trim() || "尚未填写"}</p></article>)}
-          <div className="learning-actions"><Button variant="outline" disabled={busy} onClick={() => setOverview(false)}>返回编辑</Button><Button onClick={confirm} disabled={busy || !isCurrent}>{busy ? "正在评阅，请保留页面…" : "确认提交实验方案"}</Button></div>
+          <div className="learning-actions"><Button variant="outline" disabled={busy} onClick={() => setOverview(false)}>返回编辑</Button><Button onClick={confirm} disabled={busy || !isCurrent}>{busy ? (phase === "preparing" ? "正在提交…" : "正在评阅，请保留页面…") : "确认提交实验方案"}</Button></div>
           {!isCurrent && <p className="learning-notice">当前为历史步骤，可回顾原作答；正式提交请返回当前实验步骤。</p>}
         </div> : <>
           <span className="learning-eyebrow">环节 {String(index + 1).padStart(2, "0")} / {step.keyPoints.length}</span>

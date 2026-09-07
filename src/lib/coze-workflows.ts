@@ -203,7 +203,7 @@ export async function evaluateText(step: ExperimentStep, answer: string, attempt
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
-    { workload: 'quality', temperature: 0.15, maxTokens: 18_000, deepThinking: true },
+    { workload: 'quality', temperature: 0.2, maxTokens: 8_000, deepThinking: false },
   );
   return { data: normalizeEvaluation(step.id, answer, assertEvaluation(extractJson(content))), runId: randomUUID() };
 }
@@ -324,7 +324,7 @@ export async function generateReport(parameters: Record<string, unknown>): Promi
       { role: 'system', content: system },
       { role: 'user', content: `学生报告数据：${JSON.stringify(parameters)}` },
     ],
-    { workload: 'quality', temperature: 0.25, maxTokens: 24_000, deepThinking: true },
+    { workload: 'quality', temperature: 0.25, maxTokens: 14_000, deepThinking: false },
   );
   return { data: extractJson(content) as Record<string, unknown>, runId: randomUUID() };
 }

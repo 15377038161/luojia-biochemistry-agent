@@ -32,7 +32,7 @@ const STEP_BADGES = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧"];
 // 用户填写门槛：去掉字数门槛，只要"用自己话说了一句"（trim 后非空）即视为已作答
 const MIN_DESC_LENGTH = 1;
 
-async function api<T>(url: string, body: unknown): Promise<T> {
+async function safeApi<T>(url: string, body: unknown): Promise<T> {
     const response = await fetch(url, {
         method: "POST",
 
@@ -43,7 +43,17 @@ async function api<T>(url: string, body: unknown): Promise<T> {
         body: JSON.stringify(body)
     });
 
-    const payload = await response.json() as ApiResult<T>;
+    const rawText = await response.text();
+    let payload: ApiResult<T>;
+    try {
+        payload = JSON.parse(rawText) as ApiResult<T>;
+    } catch {
+        if (response.status >= 500) {
+            throw new Error(`HTTP ${response.status} 评阅服务暂时不可达，请稍后重试。`);
+        }
+        const snippet = rawText.replace(/\s+/g, ' ').slice(0, 120);
+        throw new Error(`评阅服务返回异常（HTTP ${response.status}）：${snippet || '请稍后重试'}`);
+    }
 
     if (!payload.ok)
         throw new Error(payload.error.message);
@@ -141,6 +151,7 @@ export default function StepWorkstation(
     const [stage, setStage] = useState(0);
     const [descs, setDescs] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
+    const [phase, setPhase] = useState<"preparing" | "evaluating">("evaluating");
     const [error, setError] = useState("");
     const [syncNotice, setSyncNotice] = useState("");
     const [railHint, setRailHint] = useState("");
@@ -265,6 +276,7 @@ export default function StepWorkstation(
         }
 
         setBusy(true);
+        setPhase("preparing");
         setError("");
         setSyncNotice("");
         const answer = submittedAnswer;
@@ -278,8 +290,9 @@ export default function StepWorkstation(
 
         try {
             const requestKey = crypto.randomUUID();
+            setPhase("evaluating");
 
-            const result = await api<{
+            const result = await safeApi<{
                 evaluation: TextEvaluation;
                 session: StudentSessionView;
                 chaoxingTaskflow?: ChaoxingTaskflowPayload;
@@ -373,7 +386,7 @@ export default function StepWorkstation(
                     </section>
                     {stage === 0 && <TaskPrinciples step={step} sessionId={session.sessionId} preview={preview} />}
                     <div hidden={stage !== 1}><QuizPanel key={session.sessionId + "-quiz-" + stepId} stepNo={stepId} preview={preview} onCompleted={() => setQuizCompleted(true)} onContinue={() => setStage(2)} /></div>
-                    {stage === 2 && <ExperimentWriter step={step} answers={descs} onChange={setDescs} onSubmit={() => void submitEvaluation()} busy={busy} error={error} draftNotice={draftNotice} isCurrent={isCurrent} />}
+                    {stage === 2 && <ExperimentWriter step={step} answers={descs} onChange={setDescs} onSubmit={() => void submitEvaluation()} busy={busy} error={error} draftNotice={draftNotice} isCurrent={isCurrent} phase={phase} />}
                     {stage === 3 && evaluation && <section className="student-stage-panel student-stage-panel-review"><StepReviewReport
                             step={step}
                             evaluation={evaluation}
