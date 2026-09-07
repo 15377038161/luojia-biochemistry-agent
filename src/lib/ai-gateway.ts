@@ -36,6 +36,11 @@ function positiveInteger(value: string | undefined, fallback: number): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function nonNegativeInteger(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
 function gatewayConfig() {
   const apiKey = process.env.AI_GATEWAY_API_KEY?.trim();
   if (!apiKey) throw new Error('AI_GATEWAY_API_KEY_MISSING');
@@ -45,7 +50,7 @@ function gatewayConfig() {
     qualityModel: process.env.AI_MODEL_QUALITY?.trim() || QUALITY_MODEL,
     fastModel: process.env.AI_MODEL_FAST?.trim() || FAST_MODEL,
     timeoutMs: positiveInteger(process.env.AI_GATEWAY_TIMEOUT_MS, 120_000),
-    retryCount: Math.min(3, positiveInteger(process.env.AI_GATEWAY_RETRY_COUNT, 2)),
+    retryCount: Math.min(3, nonNegativeInteger(process.env.AI_GATEWAY_RETRY_COUNT, 2)),
   };
 }
 

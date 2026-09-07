@@ -203,7 +203,9 @@ export async function evaluateText(step: ExperimentStep, answer: string, attempt
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
-    { workload: 'quality', temperature: 0.15, maxTokens: 18_000, deepThinking: true },
+    // 生产网关的请求窗口通常短于平台的默认长连接窗口；保留完整结构化字段，
+    // 但限制单次生成上限，避免评阅占用连接过久后被 Coze 前置网关断开。
+    { workload: 'quality', temperature: 0.15, maxTokens: 9_000, deepThinking: true },
   );
   return { data: normalizeEvaluation(step.id, answer, assertEvaluation(extractJson(content))), runId: randomUUID() };
 }
