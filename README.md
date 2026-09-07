@@ -54,14 +54,14 @@ pwsh -File scripts/package-delivery.ps1
 
 ```dotenv
 AI_GATEWAY_API_KEY=仅部署端密钥
-AI_GATEWAY_CHAT_URL=http://wg.cxcommon.com/fw/v1/chat/completion
+AI_GATEWAY_CHAT_URL=http://wg.cxcommon.com/fw/v1/chat/completions
 AI_MODEL_QUALITY=qwen3.8-max
 AI_MODEL_FAST=deepseek-v4-flash-0731
 AI_GATEWAY_TIMEOUT_MS=120000
 AI_GATEWAY_RETRY_COUNT=2
 ```
 
-网关日志只允许记录模型名、耗时、运行 ID 和错误分类，禁止记录请求头、密钥或完整学生答案。若生产网络支持 HTTPS，应优先把 `AI_GATEWAY_CHAT_URL` 换成网关提供的 HTTPS 地址。
+网关日志只允许记录模型名、耗时、运行 ID 和错误分类，禁止记录请求头、密钥或完整学生答案。共享说明中的单数路径 `/chat/completion` 在 2026-09-07 实测返回 404；当前使用 OpenAI Chat 兼容的复数路径 `/chat/completions`。若生产网络支持 HTTPS，应优先换成网关提供的 HTTPS 地址。
 
 ## Coze配置
 

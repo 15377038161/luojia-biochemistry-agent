@@ -27,7 +27,7 @@ interface GatewayResponse {
   error?: { message?: string };
 }
 
-const DEFAULT_CHAT_URL = 'http://wg.cxcommon.com/fw/v1/chat/completion';
+const DEFAULT_CHAT_URL = 'http://wg.cxcommon.com/fw/v1/chat/completions';
 const QUALITY_MODEL = 'qwen3.8-max';
 const FAST_MODEL = 'deepseek-v4-flash-0731';
 
