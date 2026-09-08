@@ -75,6 +75,7 @@ AI_GATEWAY_RETRY_COUNT=0
 ## 超星边界
 
 - OAuth通过`/api/auth/chaoxing`和`/api/auth/callback/chaoxing`建立同一套Supabase Session。
+- Coze 生产环境默认使用平台自动注入的内置 `COZE_SUPABASE_*`；JWT 仅保留鉴权和页面抬头所需的精简身份字段，完整学籍资料写入 `profiles` / `external_identities`，避免会话 Cookie 分块导致登录失败。
 - 教师身份由服务端数据链判断：`profiles.role`（teacher/content_admin）+ `external_identities.raw_roles`（学习通原始角色留痕）+ `enrollments` + `is_authorized_teacher(class_id)` RPC；只认 `CHAOXING_TEACHER_ROLE_IDS` 白名单角色，不使用角色名称猜测，不依据前端参数授权。
 - 完整业务状态只保存在Supabase。
 - 超星表单`3513491`只接收关键留痕字段；默认通过`CHAOXING_FORM_TRANSPORT=disabled`保留事件，不会误报已接通。

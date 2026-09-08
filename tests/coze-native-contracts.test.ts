@@ -3,7 +3,33 @@ import test from 'node:test';
 import { calculateCourseGrade } from '../src/domain/grade';
 import { defaultCourseContent, validateCourseContent } from '../src/domain/course-content';
 import { normalizeStudyReport } from '../src/domain/study-report';
-import { configuredTeacherRoleIds, hasConfiguredTeacherRole } from '../src/lib/supabase-chaoxing-user';
+import {
+  buildCompactChaoxingClaims,
+  configuredTeacherRoleIds,
+  hasConfiguredTeacherRole,
+} from '../src/lib/supabase-chaoxing-user';
+
+test('学习通会话声明保持精简，学籍详情不重复写入JWT', () => {
+  const claims = buildCompactChaoxingClaims({
+    openid: 'openid-1',
+    uid: 'uid-1',
+    name: '20260001',
+    displayName: '测试学生',
+    fid: 'fid-1',
+    orgName: '测试学校',
+    role: [{ roleId: '3', roleName: '学生' }],
+    loginNames: Array.from({ length: 50 }, (_, index) => `login-${index}`),
+    majorName: '生物科学',
+    gradeName: '2026级',
+    className: '生科一班',
+  }, 'student', 'student_default');
+
+  assert.equal('loginNames' in claims.chaoxing, false);
+  assert.equal('majorName' in claims.chaoxing, false);
+  assert.equal('gradeName' in claims.chaoxing, false);
+  assert.equal('className' in claims.chaoxing, false);
+  assert.ok(JSON.stringify(claims).length < 1_500);
+});
 
 test('教师身份只使用稳定 roleId 白名单，不使用角色名称', () => {
   const configured = configuredTeacherRoleIds('7, 19,teacher-id');

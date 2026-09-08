@@ -30,6 +30,34 @@ export function hasConfiguredTeacherRole(returnedRoleIds: string[], configuredId
   return returnedRoleIds.some((roleId) => configuredIds.has(roleId));
 }
 
+/**
+ * JWT 只保留鉴权和页面抬头真正需要的身份字段。
+ *
+ * 完整学籍信息已经写入 profiles / external_identities；若把 loginNames、
+ * 专业、年级、班级等全部重复塞进 app_metadata，Supabase Session Cookie
+ * 很容易被分块，而 Coze 网关无法可靠转发多个 Set-Cookie。
+ */
+export function buildCompactChaoxingClaims(
+  userInfo: Omit<ChaoxingIdentity, 'avatar'>,
+  role: 'student' | 'teacher',
+  roleSource: 'student_default' | 'chaoxing_role_id',
+) {
+  return {
+    ...LEGACY_APP_METADATA_KEYS,
+    provider: 'chaoxing',
+    app: { role, roleSource },
+    chaoxing: {
+      openid: userInfo.openid,
+      uid: userInfo.uid,
+      name: userInfo.name,
+      displayName: userInfo.displayName,
+      fid: userInfo.fid,
+      orgName: userInfo.orgName,
+      role: userInfo.role.map(({ roleId, roleName }) => ({ roleId, roleName })),
+    },
+  };
+}
+
 /** 将可信超星身份映射到Supabase用户，并同步双智能体业务角色。 */
 export async function createSupabaseLoginToken(identity: ChaoxingIdentity): Promise<string> {
   const admin = getSupabaseAdminClient();
@@ -50,19 +78,17 @@ export async function createSupabaseLoginToken(identity: ChaoxingIdentity): Prom
     `[角色判定] ${userInfo.displayName || userInfo.uid} uid=${userInfo.uid} fid=${userInfo.fid} 超星角色=[${rawRoles}] → ${role} (${roleSource})`,
   );
   const userMetadata = { preferred_username: null, full_name: userInfo.displayName, avatar_url: avatar };
-  const appMetadata = {
-    ...LEGACY_APP_METADATA_KEYS,
-    provider: 'chaoxing',
-    app: { role, roleSource },
-    chaoxing: userInfo,
-  };
+  const appMetadata = buildCompactChaoxingClaims(userInfo, role, roleSource);
 
-  const { data: created } = await admin.auth.admin.createUser({
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
     email_confirm: true,
     app_metadata: appMetadata,
     user_metadata: userMetadata,
   });
+  if (createError && !/already (been )?registered|already exists/i.test(createError.message)) {
+    throw new Error(`无法创建Supabase用户：${createError.message}`);
+  }
   const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: 'magiclink', email });
   if (linkError || !link.properties?.hashed_token || !link.user?.id) {
     throw new Error(`无法为超星用户生成Supabase登录凭据：${linkError?.message || '未知错误'}`);
