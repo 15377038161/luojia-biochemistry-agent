@@ -3,7 +3,6 @@ import { experimentSteps } from '@/domain/experiment';
 import type { DimensionScores } from '@/domain/agent';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 
 interface RawSession {
   id: string;
@@ -108,11 +107,11 @@ function dimensionScores(result: unknown): DimensionScores | null {
 }
 
 export async function GET(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   if (!identity.user.capabilities.teacherWorkspace) return fail({ code: 'FORBIDDEN', message: '只有教师可以查看班级数据。', retryable: false }, undefined, 403);
   try {
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const [{ data: sessions, error: sessionError }, { data: evaluationRows, error: evaluationError }] = await Promise.all([
       supabase.from('agent_sessions')
         .select('id,current_step,completed_at,profiles!agent_sessions_user_id_fkey(display_name,student_no,major_name,grade_name,class_name),classes(name)')

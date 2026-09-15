@@ -12,7 +12,7 @@ import type { QuizQuestion } from '@/lib/coze-workflows';
  */
 export async function POST(req: NextRequest) {
   try {
-    const identity = await getSessionUser(req.cookies);
+    const identity = await getSessionUser(req);
     if (!identity) {
       return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
     }

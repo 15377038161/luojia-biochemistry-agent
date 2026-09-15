@@ -29,7 +29,7 @@ async function ownEditableSession(sessionId: string, userId: string) {
 }
 
 export async function GET(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   try {
     const sessionId = request.nextUrl.searchParams.get('sessionId') || '';
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   try {
     const body = await request.json() as ProfileInput;

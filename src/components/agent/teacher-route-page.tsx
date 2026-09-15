@@ -1,18 +1,59 @@
-import { cookies } from 'next/headers';
-import { notFound, redirect } from 'next/navigation';
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import TeacherAgent from '@/components/agent/teacher-agent';
-import { getSessionUser } from '@/lib/supabase-auth';
+import { getSupabase } from '@/lib/supabase';
 
 type TeacherView = 'overview' | 'students' | 'student-detail' | 'reviews' | 'content' | 'content-detail';
 
-export default async function TeacherRoutePage({ preview = false, view = 'overview', contentStep, studentSessionId }: { preview?: boolean; view?: TeacherView; contentStep?: number; studentSessionId?: string }) {
-  if (preview) {
-    if (process.env.ENABLE_UI_PREVIEW !== 'true') notFound();
-    return <TeacherAgent displayName="陈思盈老师" demo preview view={view} contentStep={contentStep} studentSessionId={studentSessionId} />;
-  }
+interface Props {
+  preview?: boolean;
+  view?: TeacherView;
+  contentStep?: number;
+  studentSessionId?: string;
+}
 
-  const session = await getSessionUser(await cookies());
-  if (!session) redirect('/');
-  if (!session.user.capabilities.teacherWorkspace) redirect('/student/map');
-  return <TeacherAgent displayName={session.user.profile.displayName} demo={session.user.provider === 'demo'} view={view} contentStep={contentStep} studentSessionId={studentSessionId} />;
+/**
+ * 教师工作区路由入口（客户端权限托管）：
+ * 登录态存于浏览器 localStorage，AuthGuard 已在根 layout 守护未登录访问（跳 /login），
+ * 这里仅异步解析展示名后渲染业务聚合组件；教学工作台能力判断由数据接口的 403 语义保证。
+ */
+export default function TeacherRoutePage({ preview = false, view = 'overview', contentStep, studentSessionId }: Props) {
+  const router = useRouter();
+  const [displayName, setDisplayName] = useState(preview ? '陈思盈老师' : '教师');
+
+  const resolveIdentity = useCallback(async () => {
+    try {
+      const { data } = await getSupabase().auth.getUser();
+      if (!data.user) return;
+      const m = (data.user.user_metadata ?? {}) as Record<string, unknown>;
+      const realname = typeof m.realname === 'string' ? m.realname.trim() : '';
+      setDisplayName(realname || (data.user.email?.split('@')[0]) || '教师');
+    } catch {
+      /* 会话解析失败时保留默认展示名，AuthGuard 会负责导航 */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!preview) void resolveIdentity();
+  }, [preview, resolveIdentity]);
+
+  useEffect(() => {
+    if (preview) return;
+    void getSupabase().auth.getUser().then(({ data }) => {
+      if (!data.user) router.replace('/login');
+    });
+  }, [preview, router]);
+
+  return (
+    <TeacherAgent
+      displayName={displayName}
+      demo={false}
+      preview={preview}
+      view={view}
+      contentStep={contentStep}
+      studentSessionId={studentSessionId}
+    />
+  );
 }

@@ -15,7 +15,7 @@ export interface TeacherStudentRecord {
 }
 
 export async function GET(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   if (!identity.user.capabilities.teacherWorkspace) return fail({ code: 'FORBIDDEN', message: '仅授权教师可查看学生档案。', retryable: false }, undefined, 403);
   const sessionId = request.nextUrl.searchParams.get('sessionId')?.trim();

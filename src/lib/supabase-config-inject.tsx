@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 interface SupabaseConfig {
   url: string;
   anonKey: string;
+  tenantId: string;
 }
 
 interface SupabaseConfigContextType {
@@ -49,7 +50,7 @@ export function SupabaseConfigProvider({ children, disabled = false }: SupabaseC
         return res.json();
       })
       .then((data) => {
-        if (data.url && data.anonKey) {
+        if (data.url && data.anonKey && data.tenantId) {
           setConfig(data);
           (window as unknown as { __SUPABASE_CONFIG__: SupabaseConfig }).__SUPABASE_CONFIG__ = data;
           window.dispatchEvent(new CustomEvent(SUPABASE_CONFIG_READY_EVENT, { detail: data }));

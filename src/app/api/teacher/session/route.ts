@@ -1,17 +1,16 @@
 import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 
 const CLASS_ID = '10000000-0000-4000-8000-000000000002';
 const EXPERIMENT_ID = '10000000-0000-4000-8000-000000000003';
 
 export async function POST(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   if (!identity.user.capabilities.teacherWorkspace) return fail({ code: 'FORBIDDEN', message: '只有教师可以使用教师分析智能体。', retryable: false }, undefined, 403);
   try {
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data: existing } = await supabase.from('agent_sessions').select('id,created_at')
       .eq('user_id', identity.user.id).eq('agent_role', 'teacher').order('created_at', { ascending: false }).limit(1).maybeSingle();
     if (existing) return ok(existing);

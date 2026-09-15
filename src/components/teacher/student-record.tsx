@@ -6,6 +6,7 @@ import { ArrowLeft, BookOpenText, Clock3, FileSearch, LoaderCircle, Radar, UserR
 import type { ApiResult } from '@/domain/agent';
 import type { TeacherStudentRecord } from '@/app/api/teacher/student/route';
 import { experimentSteps } from '@/domain/experiment';
+import { authFetch } from '@/lib/authed-fetch';
 
 type Tab = 'overview' | 'answers' | 'evidence' | 'report' | 'timeline';
 const tabs: Array<[Tab, string]> = [['overview', '总览'], ['answers', '八步回答'], ['evidence', '评测证据'], ['report', '报告雷达'], ['timeline', '时间线']];
@@ -28,7 +29,7 @@ export default function StudentRecord({ sessionId, preview = false }: { sessionI
   const [error, setError] = useState('');
   useEffect(() => {
     if (preview) { setRecord(PREVIEW_RECORD); return; }
-    void fetch(`/api/teacher/student?sessionId=${encodeURIComponent(sessionId)}`, { cache: 'no-store' }).then(async (response) => {
+    void authFetch(`/api/teacher/student?sessionId=${encodeURIComponent(sessionId)}`, { cache: 'no-store' }).then(async (response) => {
       const payload = await response.json() as ApiResult<TeacherStudentRecord>;
       if (!payload.ok) throw new Error(payload.error.message);
       setRecord(payload.data);

@@ -5,7 +5,6 @@ import { evaluateText } from '@/lib/coze-workflows';
 import { buildChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
 import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getExperimentStep } from '@/domain/experiment';
 import {
@@ -15,7 +14,7 @@ import {
 } from '@/lib/services/evaluation-record';
 
 export async function POST(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) {
     return fail({ code: 'AUTH_REQUIRED', message: 'AUTH_REQUIRED', retryable: false }, requestId(), 401);
   }
@@ -25,7 +24,7 @@ export async function POST(request: NextRequest) {
     if (!body.sessionId || !Number.isInteger(stepNo) || stepNo < 1 || stepNo > 8 || !body.answer?.trim()) {
       return fail({ code: 'VALIDATION_ERROR', message: '缺少会话、步骤或作答内容。', retryable: false }, requestId(), 400);
     }
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data: session, error } = await supabase
       .from('agent_sessions')
       .select('id,user_id,current_step,completed_at,agent_role')

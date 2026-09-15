@@ -14,6 +14,8 @@ import { defaultCourseContent } from '@/domain/course-content';
 import { dispatchChaoxingTaskflow } from '@/lib/chaoxing-taskflow-client';
 import type { ChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
 import { clientErrorMessage } from '@/lib/client-request';
+import { authFetch } from '@/lib/authed-fetch';
+import { logout as platformLogout } from '@/lib/auth';
 import { getExperimentStep } from '@/domain/experiment';
 
 interface Props {
@@ -30,7 +32,7 @@ interface Props {
 type Api<T> = ApiResult<T>;
 
 async function apiPost<T>(url: string, body: unknown): Promise<T> {
-  const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const response = await authFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const payload = await response.json() as Api<T>;
   if (!payload.ok) throw new Error(payload.error.message);
   return payload.data;
@@ -97,7 +99,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
   useEffect(() => {
     if (preview || !session) return;
     let cancelled = false;
-    void fetch(`/api/student/content?sessionId=${encodeURIComponent(session.sessionId)}`)
+    void authFetch(`/api/student/content?sessionId=${encodeURIComponent(session.sessionId)}`)
       .then((response) => response.json() as Promise<Api<CourseContentPayload>>)
       .then((payload) => { if (!cancelled && payload.ok) setCourseContent(payload.data); })
       .catch(() => { /* 内容服务异常时继续使用内置已校验版本。 */ });
@@ -193,8 +195,8 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
   }
 
   const handleLogout = async () => {
-    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* 退出失败也回到首页 */ }
-    window.location.replace('/');
+    try { await platformLogout(); } catch { /* 退出失败也回到登录页 */ }
+    window.location.replace('/login');
   };
   const tutorStep = courseContent.steps.find((step) => step.id === session.currentStep) ?? getExperimentStep(session.currentStep);
 

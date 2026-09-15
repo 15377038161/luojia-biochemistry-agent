@@ -2,15 +2,14 @@ import { NextRequest } from 'next/server';
 import { imageQuestionForStep } from '@/domain/media';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 
 export async function POST(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   try {
     const body = (await request.json()) as { sessionId?: string };
     if (!body.sessionId) return fail({ code: 'VALIDATION_ERROR', message: '缺少会话编号。', retryable: false });
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data: session, error: sessionError } = await supabase.from('agent_sessions').select('id,user_id,current_step').eq('id', body.sessionId).single();
     if (sessionError) throw sessionError;
     if (session.user_id !== identity.user.id) throw new Error('FORBIDDEN');

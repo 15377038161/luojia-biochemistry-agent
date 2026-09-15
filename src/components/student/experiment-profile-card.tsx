@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Check, Dna, LoaderCircle, LockKeyhole, Save } from 'lucide-react';
 import type { ApiResult } from '@/domain/agent';
 import { clientErrorMessage } from '@/lib/client-request';
+import { authFetch } from '@/lib/authed-fetch';
 
 type SequenceSource = 'recommended' | 'accession' | 'pasted';
 type CloningStrategy = 'recombination' | 'double_digest';
@@ -36,7 +37,7 @@ export default function ExperimentProfileCard({ sessionId, preview }: Props) {
   useEffect(() => {
     if (preview) return;
     let cancelled = false;
-    void fetch(`/api/student/experiment-profile?sessionId=${encodeURIComponent(sessionId)}`)
+    void authFetch(`/api/student/experiment-profile?sessionId=${encodeURIComponent(sessionId)}`)
       .then((response) => response.json() as Promise<ApiResult<ProfileRecord>>)
       .then((payload) => {
         if (!cancelled && payload.ok) setProfile(payload.data);
@@ -52,7 +53,7 @@ export default function ExperimentProfileCard({ sessionId, preview }: Props) {
     if (preview) { setNotice('预览选择已更新；正式会话会把该设置贯穿八步评测与报告。'); return; }
     setSaving(true); setNotice('');
     try {
-      const response = await fetch('/api/student/experiment-profile', {
+      const response = await authFetch('/api/student/experiment-profile', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId,

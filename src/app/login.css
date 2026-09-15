@@ -1,0 +1,141 @@
+/* 登录页：复用「珞珈山小实验家 · 科学探险手账」视觉系统，独立于首页入口。 */
+.login-page-shell {
+  position: relative;
+  min-height: 100svh;
+  padding: 0 max(22px, calc((100vw - 640px) / 2));
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  background: #fffaf2;
+  isolation: isolate;
+}
+.login-page-art {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background: linear-gradient(135deg, #fffaf2 0%, #fffef9 48%, #edf7f4 100%);
+}
+.login-page-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: .46;
+  background-image:
+    radial-gradient(circle at 14% 20%, rgba(221, 113, 135, .18), transparent 18rem),
+    radial-gradient(circle at 86% 16%, rgba(90, 169, 214, .20), transparent 24rem),
+    radial-gradient(circle at 58% 90%, rgba(85, 217, 154, .13), transparent 28rem);
+}
+.login-page-nav {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid rgba(18, 63, 112, .10);
+}
+.login-page-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.login-page-brand strong { color: var(--ui-blue-strong); font-size: 15px; letter-spacing: .02em; }
+.login-page-brand small { color: var(--ui-muted); font-size: 11px; }
+
+.login-form-wrap {
+  min-height: 0;
+  padding: clamp(36px, 7vh, 78px) 0;
+  display: grid;
+  place-items: center;
+}
+.login-form-brand {
+  display: none;
+}
+.login-form-card {
+  width: min(420px, 100%);
+  padding: clamp(26px, 4vw, 40px);
+  display: grid;
+  gap: 14px;
+  text-align: center;
+  border: 1px solid rgba(35, 111, 91, .16);
+  border-radius: 24px;
+  background: rgba(255, 253, 248, .94);
+  box-shadow: 0 22px 54px rgba(31, 91, 76, .12);
+}
+.login-form-kicker {
+  margin: 0;
+  color: var(--ui-green);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.login-form-title {
+  margin: 0;
+  color: var(--ui-blue-strong);
+  font-family: "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+  font-size: clamp(28px, 5vw, 36px);
+  line-height: 1.12;
+}
+.login-form-desc {
+  margin: 0;
+  color: var(--ui-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.login-form-error {
+  margin: 0;
+  padding: 10px 12px;
+  color: #a6483d;
+  border: 1px solid #f0d4cf;
+  border-radius: 11px;
+  background: #fff5f3;
+  font-size: 12px;
+  text-align: left;
+}
+.login-oauth-button {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 6px;
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #fff;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--ui-blue), #0c5278);
+  box-shadow: 0 14px 30px rgba(0, 37, 84, .20), 0 4px 0 #001c43;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.login-oauth-button:hover { background: linear-gradient(135deg, #07386a, var(--ui-green)); transform: translateY(-2px); }
+.login-oauth-button:disabled { color: #73808b; background: #e2e8ea; box-shadow: none; cursor: not-allowed; transform: none; }
+.login-oauth-icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(255, 255, 255, .82);
+  border-radius: 7px;
+  box-shadow: 0 3px 8px rgba(0, 28, 67, .18);
+  object-fit: cover;
+}
+.login-form-footnote {
+  margin: 0;
+  color: #8797a3;
+  font-size: 11px;
+}
+.login-page-footer {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #718392;
+  border-top: 1px solid rgba(18, 63, 112, .10);
+  font-size: 10px;
+}
+
+@media (max-width: 480px) {
+  .login-form-card { border-radius: 18px; }
+}

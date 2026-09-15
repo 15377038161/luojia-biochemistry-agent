@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, GripHorizontal, History, LoaderCircle, MessageCircle, Minimize2, Send, Sparkles } from 'lucide-react';
 import type { AgentMessage, ApiResult, ExperimentStep } from '@/domain/agent';
 import { clientErrorMessage } from '@/lib/client-request';
+import { authFetch } from '@/lib/authed-fetch';
 
 interface Props {
   sessionId: string;
@@ -63,7 +64,7 @@ export default function GlobalAiTutor({ sessionId, step, mode, messages = [], pr
       setHistory((current) => [...current, reply].slice(-12)); setBusy(false); return;
     }
     try {
-      const response = await fetch('/api/student/messages', {
+      const response = await authFetch('/api/student/messages', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, content, learningStage: mode }),
       });

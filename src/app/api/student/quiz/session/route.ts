@@ -6,7 +6,7 @@ import { publicQuizSession, validateQuizAnswers } from '@/lib/quiz-contract';
 
 export async function GET(req: NextRequest) {
   try {
-    const identity = await getSessionUser(req.cookies);
+    const identity = await getSessionUser(req);
     if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
     const id = req.nextUrl.searchParams.get('session_id');
     if (!id) return fail({ code: 'VALIDATION_ERROR', message: 'session_id 必填', retryable: false });
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const identity = await getSessionUser(req.cookies);
+    const identity = await getSessionUser(req);
     if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
     const body = await req.json() as { session_id?: string; answers?: unknown };
     if (typeof body.session_id !== 'string') return fail({ code: 'VALIDATION_ERROR', message: '测验编号无效。', retryable: false });

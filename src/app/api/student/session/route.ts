@@ -1,16 +1,15 @@
 import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 import { loadStudentSessionView } from '@/lib/student-session';
 import { ensureContentSnapshot } from '@/lib/services/content';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
 
 export async function GET(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   try {
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data, error } = await supabase
       .from('agent_sessions')
       .select('*, step_states(*), agent_messages(*)')
@@ -29,13 +28,13 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   if (identity.user.appRole !== 'student') {
     return fail({ code: 'FORBIDDEN', message: 'FORBIDDEN' }, undefined, 403);
   }
   try {
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data, error } = await supabase.rpc('start_or_resume_student_session');
     if (error) throw error;
     const session = data as { id: string; current_step: number | null; completed_at: string | null } | null;

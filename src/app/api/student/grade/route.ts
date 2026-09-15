@@ -1,5 +1,4 @@
 import type { NextRequest } from 'next/server';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
@@ -13,7 +12,7 @@ interface GradeBody {
 
 export async function GET(request: NextRequest) {
   try {
-    const identity = await getSessionUser(request.cookies);
+    const identity = await getSessionUser(request);
     if (!identity) {
       return fail({ code: 'AUTH_REQUIRED', message: 'AUTH_REQUIRED', retryable: false });
     }
@@ -23,7 +22,7 @@ export async function GET(request: NextRequest) {
       return fail({ code: 'VALIDATION_ERROR', message: '缺少 sessionId。', retryable: false });
     }
 
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data: session, error } = await supabase
       .from('agent_sessions')
       .select('id,user_id,agent_role')
@@ -57,7 +56,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const identity = await getSessionUser(request.cookies);
+    const identity = await getSessionUser(request);
     if (!identity) {
       return fail({ code: 'AUTH_REQUIRED', message: 'AUTH_REQUIRED', retryable: false });
     }
@@ -69,7 +68,7 @@ export async function POST(request: NextRequest) {
       return fail({ code: 'VALIDATION_ERROR', message: '缺少申诉对象或申诉理由。', retryable: false });
     }
 
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data: session, error } = await supabase
       .from('agent_sessions')
       .select('id,user_id,agent_role')

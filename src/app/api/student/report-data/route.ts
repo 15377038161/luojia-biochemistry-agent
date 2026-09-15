@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import type { DimensionScores } from '@/domain/agent';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { computeGradeSummary, loadGradingFacts, type RadarDimension, type ReportIssue } from '@/lib/services/grading';
 
@@ -64,13 +63,13 @@ function asDimension(value: string): keyof DimensionScores | null {
 }
 
 export async function POST(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   try {
     const body = (await request.json()) as { sessionId?: string };
     if (!body.sessionId) return fail({ code: 'VALIDATION_ERROR', message: '缺少会话编号。', retryable: false });
 
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data: session, error } = await supabase.from('agent_sessions')
       .select('id,user_id').eq('id', body.sessionId).maybeSingle();
     if (error) throw error;

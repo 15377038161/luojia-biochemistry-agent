@@ -8,7 +8,7 @@ import { requireTeacherSessionScope } from '@/lib/services/teacher-scope';
 export async function GET(request: NextRequest) {
   const id = requestId();
   try {
-    const identity = await getSessionUser(request.cookies);
+    const identity = await getSessionUser(request);
     if (!identity) return fail({ code: 'AUTH_REQUIRED', message: 'AUTH_REQUIRED', retryable: false }, id, 401);
     if (!identity.user.capabilities.teacherWorkspace) {
       return fail({ code: 'FORBIDDEN', message: 'FORBIDDEN', retryable: false }, id, 403);
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const id = requestId();
   try {
-    const identity = await getSessionUser(request.cookies);
+    const identity = await getSessionUser(request);
     if (!identity) return fail({ code: 'AUTH_REQUIRED', message: 'AUTH_REQUIRED', retryable: false }, id, 401);
     if (!identity.user.capabilities.teacherWorkspace) {
       return fail({ code: 'FORBIDDEN', message: 'FORBIDDEN', retryable: false }, id, 403);

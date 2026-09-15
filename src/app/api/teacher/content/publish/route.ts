@@ -10,7 +10,7 @@ interface PublishBody {
 
 export async function POST(request: NextRequest) {
   try {
-    const identity = await getSessionUser(request.cookies);
+    const identity = await getSessionUser(request);
     if (!identity) return fail({ code: 'AUTH_REQUIRED', message: 'AUTH_REQUIRED' }, undefined, 401);
     if (!identity.user.capabilities.teacherWorkspace) {
       return fail({ code: 'FORBIDDEN', message: 'FORBIDDEN' }, undefined, 403);

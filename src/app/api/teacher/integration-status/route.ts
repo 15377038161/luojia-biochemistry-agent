@@ -5,7 +5,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase-client';
 type SyncStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'manual';
 
 export async function GET(request: NextRequest) {
-  const session = await getSessionUser(request.cookies);
+  const session = await getSessionUser(request);
   if (!session?.user.capabilities.teacherWorkspace) {
     return NextResponse.json({ error: '无教师工作台权限' }, { status: 403 });
   }

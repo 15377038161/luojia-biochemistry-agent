@@ -1,11 +1,8 @@
-import type { User } from '@supabase/supabase-js';
+import type { NextRequest } from 'next/server';
+import type { User, SupabaseClient } from '@supabase/supabase-js';
 import type { ChaoxingRole, ChaoxingUserInfo } from '@/lib/chaoxing-client';
-import { createReadOnlySupabaseClient } from '@/lib/supabase-ssr';
+import { createSupabaseServer } from '@/lib/supabase-server';
 import type { AgentRole } from '@/domain/agent';
-
-interface CookieReader {
-  getAll(): Array<{ name: string; value: string }>;
-}
 
 export interface SessionProfile {
   displayName: string;
@@ -31,8 +28,13 @@ export interface SessionUser {
   profile: SessionProfile;
 }
 
-export interface SessionContext {
+/**
+ * 服务端鉴权结果：除归一化的用户身份外，附带一个携带用户 JWT 的低权限 Supabase 客户端。
+ * 业务路由应直接用该客户端执行 RLS 约束下的数据操作，替代历史基于 cookie 的会话客户端。
+ */
+export interface AuthSession {
   user: SessionUser;
+  supabase: SupabaseClient;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -83,9 +85,12 @@ function normalizeUser(user: User): SessionUser {
   const appMetadata = asRecord(user.app_metadata);
   const chaoxing = asRecord(appMetadata.chaoxing);
   const app = asRecord(appMetadata.app);
-  const uid = getString([chaoxing], ['uid']);
-  const name = getString([chaoxing], ['name']);
-  const openid = getString([chaoxing], ['openid']);
+  // 平台 OAuth 将真实姓名放在 user_metadata.realname、超星身份 cxid 放在 user_metadata.cxid；
+  // 旧自研会话把这些塞在 app_metadata.chaoxing。两处都读，平台字段优先，保证向前兼容。
+  const openid = getString([userMetadata, chaoxing], ['cxid', 'openid']);
+  const uid = getString([userMetadata, chaoxing], ['uid']);
+  const name = getString([userMetadata, chaoxing], ['loginName', 'name']);
+  const displayName = getString([userMetadata, chaoxing], ['realname', 'displayName', 'name']);
 
   const appRole = resolveRole(app, chaoxing);
   const teacherCapable = isTeacherCapable(appRole);
@@ -98,7 +103,7 @@ function normalizeUser(user: User): SessionUser {
   return {
     id: user.id,
     email: user.email ?? null,
-    provider: getString([appMetadata], ['provider']) || (openid ? 'chaoxing' : 'demo'),
+    provider: getString([appMetadata, userMetadata], ['provider']) || (openid ? 'chaoxing' : 'demo'),
     appRole,
     capabilities,
     defaultWorkspace: appRole === 'teacher' ? 'teacher' : 'student',
@@ -108,28 +113,38 @@ function normalizeUser(user: User): SessionUser {
       openid,
       uid,
       name,
-      displayName: getString([chaoxing], ['displayName']),
-      fid: getString([chaoxing], ['fid']),
-      orgName: getString([chaoxing], ['orgName']),
+      displayName,
+      fid: getString([userMetadata, chaoxing], ['fid']),
+      orgName: getString([userMetadata, chaoxing], ['orgName']),
       role: getRoles(chaoxing, 'role'),
       loginNames: getStringArray(chaoxing, 'loginNames'),
-      majorName: getString([chaoxing], ['majorName']),
-      gradeName: getString([chaoxing], ['gradeName']),
-      className: getString([chaoxing], ['className']),
+      majorName: getString([userMetadata, chaoxing], ['majorName']),
+      gradeName: getString([userMetadata, chaoxing], ['gradeName']),
+      className: getString([userMetadata, chaoxing], ['className']),
     },
     profile: {
-      displayName: getString([userMetadata], ['full_name', 'display_name']) || name || uid || openid || '用户',
+      displayName: displayName || getString([userMetadata], ['full_name', 'display_name']) || name || uid || openid || '用户',
       avatar: getString([userMetadata], ['avatar_url', 'picture']),
     },
   };
 }
 
-export async function getSessionUser(cookies: CookieReader): Promise<SessionContext | null> {
+/**
+ * 服务端登录态校验（平台 OAuth 鉴权规范）：
+ * - 前端请求携带 `Authorization: Bearer <token>`；
+ * - OpenSandbox 剥离该头，平台 Nginx 在边界重命名为 `X-Sandbox-Authorization`；
+ * - 后端 API Route 只能从 `x-sandbox-authorization` 头读取 token（`authorization` 头到达服务端时恒为空）。
+ *
+ * 校验通过后返回归一化用户身份 + 携带用户 JWT 的低权限 supabase 客户端。
+ */
+export async function getSessionUser(request: NextRequest): Promise<AuthSession | null> {
+  const accessToken = request.headers.get('x-sandbox-authorization')?.replace(/^Bearer\s+/i, '');
+  if (!accessToken) return null;
   try {
-    const supabase = createReadOnlySupabaseClient(cookies);
+    const supabase = createSupabaseServer(accessToken);
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) return null;
-    return { user: normalizeUser(data.user) };
+    return { user: normalizeUser(data.user), supabase };
   } catch {
     return null;
   }

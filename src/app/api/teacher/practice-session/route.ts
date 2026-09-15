@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
 async function handle(request: NextRequest) {
   const id = requestId();
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, id, 401);
   if (!identity.user.capabilities.teacherPractice) {
     return fail({ code: 'FORBIDDEN', message: '当前身份没有教师学习体验权限。', retryable: false }, id, 403);

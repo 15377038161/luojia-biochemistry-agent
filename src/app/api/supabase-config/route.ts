@@ -3,16 +3,16 @@ import { getSupabaseCredentials } from '@/lib/supabase-client';
 
 export async function GET() {
   try {
-    const { url, anonKey } = getSupabaseCredentials();
+    const { url, anonKey, tenantId } = getSupabaseCredentials();
 
-    if (!url || !anonKey) {
+    if (!url || !anonKey || !tenantId) {
       return NextResponse.json(
         { error: 'Supabase credentials not configured' },
         { status: 500 },
       );
     }
 
-    return NextResponse.json({ url, anonKey }, {
+    return NextResponse.json({ url, anonKey, tenantId }, {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (error) {

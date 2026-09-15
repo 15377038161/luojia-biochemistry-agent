@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import QuizPanel from "@/components/student/quiz-panel";
 import PageBackground from "@/components/page-background";
 import StudentTopbar from "@/components/student/student-topbar";
+import { authFetch } from "@/lib/authed-fetch";
 import type { ApiResult } from "@/domain/agent";
 export default function QuizPage() {
   const { session_id: id } = useParams<{ session_id: string }>();
@@ -12,7 +13,7 @@ export default function QuizPage() {
   const [error, setError] = useState("");
   useEffect(() => {
     let cancelled = false;
-    void fetch("/api/student/quiz/session?session_id=" + encodeURIComponent(id))
+    void authFetch("/api/student/quiz/session?session_id=" + encodeURIComponent(id))
       .then(r => r.json() as Promise<ApiResult<{ stepNo: number }>>).then(result => {
         if (cancelled) return;
         if (result.ok) setStepNo(result.data.stepNo); else setError(result.error.message);

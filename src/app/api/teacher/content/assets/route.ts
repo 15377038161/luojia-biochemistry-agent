@@ -2,7 +2,6 @@ import { randomUUID } from 'crypto';
 import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 
 const ACCEPTED_TYPES = new Map([
   ['image/jpeg', 'jpg'],
@@ -11,7 +10,7 @@ const ACCEPTED_TYPES = new Map([
 ]);
 
 export async function POST(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   if (!identity.user.capabilities.teacherWorkspace) return fail({ code: 'FORBIDDEN', message: '仅教师可上传课程素材。', retryable: false }, undefined, 403);
   try {
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
     const extension = ACCEPTED_TYPES.get(file.type);
     const storagePath = `egfp-v2/step-${stepId}/${randomUUID()}.${extension}`;
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { error } = await supabase.storage.from('course-assets').upload(storagePath, await file.arrayBuffer(), {
       contentType: file.type,
       upsert: false,

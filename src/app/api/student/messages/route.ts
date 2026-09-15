@@ -5,11 +5,10 @@ import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import type { ApiError } from '@/domain/agent';
 import { assertTutorStage, isPeerDataRequest, PEER_DATA_PRIVACY_REPLY, type TutorLearningStage } from '@/lib/tutor';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
 
 export async function POST(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   try {
     const body = (await request.json()) as { sessionId?: string; content?: string; learningStage?: 'task' | 'quiz' | 'simulation' | 'review' };
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest) {
       const apiError = error as ApiError;
       return fail(apiError, undefined, apiError.code === 'STATE_INVALID' ? 409 : 422);
     }
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data: session, error: sessionError } = await supabase.from('agent_sessions')
       .select('id,current_step,user_id,completed_at').eq('id', body.sessionId).single();
     if (sessionError) throw sessionError;

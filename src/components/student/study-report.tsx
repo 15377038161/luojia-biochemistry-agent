@@ -8,6 +8,7 @@ import type { RadarDimensionKey } from '@/lib/services/grading';
 import { useSwipeDismiss } from '@/hooks/use-swipe-dismiss';
 import StudentTopbar from '@/components/student/student-topbar';
 import { clientErrorMessage } from '@/lib/client-request';
+import { authFetch } from '@/lib/authed-fetch';
 
 interface Props {
   name: string;
@@ -111,7 +112,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch('/api/student/report-data', {
+        const response = await authFetch('/api/student/report-data', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId }),
         });
@@ -128,7 +129,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
   useEffect(() => {
     if (preview || practiceMode) return;
     let cancelled = false;
-    void fetch(`/api/student/grade?sessionId=${encodeURIComponent(sessionId)}`)
+    void authFetch(`/api/student/grade?sessionId=${encodeURIComponent(sessionId)}`)
       .then((response) => response.json() as Promise<ApiResult<GradeData>>)
       .then((payload) => { if (!cancelled && payload.ok) setGrade(payload.data); })
       .catch(() => { /* 成绩服务不影响学习报告主体。 */ });
@@ -140,7 +141,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
     if (!grade || reason.length < 10 || appealBusy || preview) return;
     setAppealBusy(true); setAppealNotice('');
     try {
-      const response = await fetch('/api/student/grade', {
+      const response = await authFetch('/api/student/grade', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gradeId: grade.id, reason }),
       });

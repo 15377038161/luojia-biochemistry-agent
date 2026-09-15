@@ -2,10 +2,9 @@ import { NextRequest } from 'next/server';
 import { evaluateVision } from '@/lib/coze-workflows';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 
 export async function POST(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   try {
     const body = (await request.json()) as { sessionId?: string; path?: string; mimeType?: string; size?: number; sha256?: string };
@@ -13,7 +12,7 @@ export async function POST(request: NextRequest) {
       return fail({ code: 'VALIDATION_ERROR', message: '图片登记信息不完整。', retryable: false });
     }
     if (!body.path.startsWith(`${identity.user.id}/`)) throw new Error('FORBIDDEN');
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data: session, error: sessionError } = await supabase.from('agent_sessions').select('id,user_id,current_step').eq('id', body.sessionId).single();
     if (sessionError) throw sessionError;
     if (session.user_id !== identity.user.id) throw new Error('FORBIDDEN');

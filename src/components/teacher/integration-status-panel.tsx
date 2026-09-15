@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { CircleCheckBig, CloudCog, LoaderCircle, RefreshCw, TriangleAlert } from 'lucide-react';
 import type { IntegrationStatus, IntegrationStatusItem } from '@/lib/integration-status';
 import { clientErrorMessage } from '@/lib/client-request';
+import { authFetch } from '@/lib/authed-fetch';
 
 interface Props { preview?: boolean }
 
@@ -37,8 +38,8 @@ export default function IntegrationStatusPanel({ preview = false }: Props) {
     setError('');
     try {
       const [integrationResponse, syncResponse] = await Promise.all([
-        fetch('/api/auth/me', { cache: 'no-store' }),
-        fetch('/api/teacher/integration-status', { cache: 'no-store' }),
+        authFetch('/api/auth/me', { cache: 'no-store' }),
+        authFetch('/api/teacher/integration-status', { cache: 'no-store' }),
       ]);
       const payload = await integrationResponse.json() as { integrations?: IntegrationStatus; error?: string };
       const syncPayload = await syncResponse.json() as SyncSummary & { error?: string };

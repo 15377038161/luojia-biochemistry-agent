@@ -17,7 +17,7 @@ interface QuestionUpdate {
 }
 
 async function requireTeacher(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) throw Object.assign(new Error('请先登录。'), { status: 401, code: 'AUTH_REQUIRED' });
   if (!identity.user.capabilities.teacherWorkspace) throw Object.assign(new Error('只有教师可以维护题库。'), { status: 403, code: 'FORBIDDEN' });
   return identity;

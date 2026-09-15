@@ -10,6 +10,7 @@ declare global {
     __SUPABASE_CONFIG__?: {
       url: string;
       anonKey: string;
+      tenantId: string;
     };
   }
 }
@@ -54,13 +55,16 @@ function getSupabaseBrowserClient(): SupabaseClient {
   if (browserClient === null) {
     const config = window.__SUPABASE_CONFIG__;
 
-    if (!config || !config.url || !config.anonKey) {
+    if (!config || !config.url || !config.anonKey || !config.tenantId) {
       throw new Error(
         'Supabase config not found. Make sure SupabaseConfigProvider is included in your layout.tsx and use useSupabaseConfig() to wait for config to be ready.',
       );
     }
 
     browserClient = createBrowserClient(config.url, config.anonKey, {
+      global: {
+        headers: { 'X-Instance-ID': config.tenantId },
+      },
       cookieEncoding: 'base64url',
       cookieOptions: {
         name: SUPABASE_AUTH_COOKIE_NAME,

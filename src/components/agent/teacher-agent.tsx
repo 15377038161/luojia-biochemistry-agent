@@ -14,6 +14,7 @@ import ContentManager from '@/components/teacher/content-manager';
 import GradeReviewPanel from '@/components/teacher/grade-review-panel';
 import StudentRecord from '@/components/teacher/student-record';
 import { clientErrorMessage } from '@/lib/client-request';
+import { authFetch } from '@/lib/authed-fetch';
 
 type TeacherView = 'overview' | 'students' | 'student-detail' | 'reviews' | 'content' | 'content-detail';
 interface Props { displayName: string; demo: boolean; preview?: boolean; view?: TeacherView; contentStep?: number; studentSessionId?: string }
@@ -144,7 +145,7 @@ export default function TeacherAgent({ displayName, demo, preview = false, view 
   const loadOverview = useCallback(async () => {
     if (preview) { setOverview(previewOverview()); setSelectedId('preview-1'); return; }
     try {
-      const response = await fetch('/api/teacher/overview');
+      const response = await authFetch('/api/teacher/overview');
       const payload = await response.json() as ApiResult<TeacherOverview>;
       if (!payload.ok) throw new Error(payload.error.message);
       setOverview(payload.data);
@@ -205,7 +206,7 @@ export default function TeacherAgent({ displayName, demo, preview = false, view 
     if (preview) { setToast(demo || preview ? '演示模式：复核已记录' : '复核已记录'); setReviewText(''); return; }
     setReviewBusy(true);
     try {
-      const response = await fetch('/api/teacher/reviews', {
+      const response = await authFetch('/api/teacher/reviews', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ evaluationId: selected.detail.evaluationId, decision, comment }),
       });

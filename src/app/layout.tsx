@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Inspector } from 'react-dev-inspector';
 import { SupabaseConfigProvider } from '@/lib/supabase-config-inject';
+import AuthGuard from '@/components/auth-guard';
+import AuthCallback from '@/components/auth-callback';
 import './globals.css';
 import './ui-system.css';
 import './learning-workspace.css';
@@ -18,9 +20,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="zh-CN" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
+        {/* OAuth 回跳闭环：body 直接子级，与 AuthGuard 同层级（守卫只包 children，避免死锁） */}
+        <AuthCallback />
         <SupabaseConfigProvider disabled={isUiPreview}>
           {isDev && <Inspector />}
-          {children}
+          <AuthGuard>{children}</AuthGuard>
         </SupabaseConfigProvider>
       </body>
     </html>

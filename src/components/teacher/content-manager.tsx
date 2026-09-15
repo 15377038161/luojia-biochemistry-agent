@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, FileImage, LoaderCircle, Plus, Save, Send, ShieldCheck, Upload, X } from 'lucide-react';
 import type { ExperimentStep } from '@/domain/agent';
 import { clientErrorMessage } from '@/lib/client-request';
+import { authFetch } from '@/lib/authed-fetch';
 import QuestionBankManager from '@/components/teacher/question-bank-manager';
 import {
   defaultCourseContent,
@@ -36,7 +37,7 @@ export default function ContentManager({ preview = false, initialStep = 1, focus
     if (preview) { const payload = copyDefault(); setContent(payload); setValidation(validateCourseContent(payload)); return; }
     setBusy('load'); setMessage('');
     try {
-      const response = await fetch('/api/teacher/content', { cache: 'no-store' });
+      const response = await authFetch('/api/teacher/content', { cache: 'no-store' });
       const payload = await response.json() as { ok?: boolean; data?: { draft?: DraftRecord | null; payload?: CourseContentPayload; validation?: ContentValidation }; error?: { message?: string } };
       if (!response.ok || !payload.ok || !payload.data?.payload) throw new Error(payload.error?.message || '加载课程内容失败');
       setContent(payload.data.payload); setDraft(payload.data.draft ?? null);
@@ -80,7 +81,7 @@ export default function ContentManager({ preview = false, initialStep = 1, focus
       if (preview) {
         setDraft({ id: 'preview-draft', version: (draft?.version ?? 0) + 1, status: 'draft' });
       } else {
-        const response = await fetch('/api/teacher/content', {
+        const response = await authFetch('/api/teacher/content', {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ draftId: draft?.status === 'draft' ? draft.id : undefined, payload: content, sourceRefs: content.assets.map((asset) => asset.sourceRef) }),
         });
@@ -101,7 +102,7 @@ export default function ContentManager({ preview = false, initialStep = 1, focus
     setBusy('publish'); setMessage('');
     try {
       if (!preview) {
-        const response = await fetch('/api/teacher/content/publish', {
+        const response = await authFetch('/api/teacher/content/publish', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ draftId: draft.id }),
         });
         const payload = await response.json() as { ok?: boolean; error?: { message?: string } };
@@ -122,7 +123,7 @@ export default function ContentManager({ preview = false, initialStep = 1, focus
       let path = URL.createObjectURL(file);
       if (!preview) {
         const form = new FormData(); form.append('file', file); form.append('stepId', String(step.id));
-        const response = await fetch('/api/teacher/content/assets', { method: 'POST', body: form });
+        const response = await authFetch('/api/teacher/content/assets', { method: 'POST', body: form });
         const payload = await response.json() as { ok?: boolean; data?: { url?: string; path?: string }; error?: { message?: string } };
         if (!response.ok || !payload.ok || !payload.data?.url) throw new Error(payload.error?.message || '上传素材失败');
         path = payload.data.url;

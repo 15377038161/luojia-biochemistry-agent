@@ -1,12 +1,11 @@
 import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 
 const allowed = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export async function POST(request: NextRequest) {
-  const identity = await getSessionUser(request.cookies);
+  const identity = await getSessionUser(request);
   if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
   try {
     const body = (await request.json()) as { sessionId?: string; mimeType?: string; extension?: string };
@@ -14,7 +13,7 @@ export async function POST(request: NextRequest) {
       return fail({ code: 'VALIDATION_ERROR', message: '仅支持JPG、PNG或WebP图片。', retryable: false });
     }
     const extension = ['jpg', 'jpeg', 'png', 'webp'].includes(body.extension || '') ? body.extension : 'jpg';
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data: session, error: sessionError } = await supabase.from('agent_sessions').select('id,user_id,current_step').eq('id', body.sessionId).single();
     if (sessionError) throw sessionError;
     if (session.user_id !== identity.user.id) throw new Error('FORBIDDEN');

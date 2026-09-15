@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
-import { createSupabaseRouteClient } from '@/lib/supabase-ssr';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { experimentSteps } from '@/domain/experiment';
@@ -20,7 +19,7 @@ function normalizeStep(value: unknown): number {
 
 export async function POST(request: NextRequest) {
   try {
-    const identity = await getSessionUser(request.cookies);
+    const identity = await getSessionUser(request);
     if (!identity) {
       return fail({ code: 'AUTH_REQUIRED', message: 'AUTH_REQUIRED', retryable: false });
     }
@@ -30,7 +29,7 @@ export async function POST(request: NextRequest) {
       return fail({ code: 'VALIDATION_ERROR', message: '缺少 sessionId 参数。', retryable: false });
     }
 
-    const { supabase } = createSupabaseRouteClient(request);
+    const { supabase } = identity;
     const { data: session, error: sessionError } = await supabase
       .from('agent_sessions')
       .select('id,user_id,agent_role,current_step,completed_at')

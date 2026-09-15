@@ -18,13 +18,9 @@ interface CookieMutation {
 
 /**
  * 判断是否应给 Session Cookie 打 Secure。
- *
- * 不能改用 getRealOrigin() 推断：它会优先返回 COZE_PROJECT_DOMAIN_DEFAULT 并强制补上
- * https 前缀，在实际以 http 提供服务的环境里会给 Cookie 错误地打上 Secure，浏览器直接
- * 丢弃，表现为"登录跳转成功但一刷新就退出"。
  */
 function shouldUseSecureCookie(): boolean {
-  return process.env.NODE_ENV === 'production' || process.env.COZE_PROJECT_ENV === 'PROD';
+  return process.env.NODE_ENV === 'production';
 }
 
 function createBaseServerClient(
@@ -34,8 +30,11 @@ function createBaseServerClient(
     headers: Record<string, string>,
   ) => void,
 ) {
-  const { url, anonKey } = getSupabaseCredentials();
+  const { url, anonKey, tenantId } = getSupabaseCredentials();
   return createServerClient(url, anonKey, {
+    global: {
+      headers: { 'X-Instance-ID': tenantId },
+    },
     cookieEncoding: 'base64url',
     cookieOptions: {
       name: SUPABASE_AUTH_COOKIE_NAME,

@@ -6,7 +6,7 @@ import type { QuizResult } from '@/lib/quiz-contract';
 
 export async function GET(req: NextRequest) {
   try {
-    const identity = await getSessionUser(req.cookies);
+    const identity = await getSessionUser(req);
     if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
     const stepNo = Number(req.nextUrl.searchParams.get('stepNo'));
     const page = Number(req.nextUrl.searchParams.get('page') || 0);

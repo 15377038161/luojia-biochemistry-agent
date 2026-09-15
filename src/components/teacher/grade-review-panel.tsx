@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, LoaderCircle, RefreshCw, Scale, TriangleAlert } from 'lucide-react';
 import { clientErrorMessage } from '@/lib/client-request';
+import { authFetch } from '@/lib/authed-fetch';
 import Link from 'next/link';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
@@ -62,7 +63,7 @@ export default function GradeReviewPanel({ preview = false }: Props) {
   async function load() {
     if (preview) { setReviews(PREVIEW_REVIEWS); return; }
     try {
-      const response = await fetch('/api/teacher/grade-reviews', { cache: 'no-store' });
+      const response = await authFetch('/api/teacher/grade-reviews', { cache: 'no-store' });
       const payload = await response.json() as { ok?: boolean; data?: unknown; error?: { message?: string } };
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message || '加载成绩异议失败');
       const next = normalize(payload.data);
@@ -80,7 +81,7 @@ export default function GradeReviewPanel({ preview = false }: Props) {
     try {
       if (!preview) {
         const score = overrideScore.trim() ? Number(overrideScore) : null;
-        const response = await fetch('/api/teacher/grade-reviews', {
+        const response = await authFetch('/api/teacher/grade-reviews', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ requestId: selected.id, resolution: resolution.trim(), overrideScore: score, accepted }),
         });

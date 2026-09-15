@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Archive, Bot, CheckCircle2, LoaderCircle, PencilLine, Save, Send, X } from 'lucide-react';
 import { clientErrorMessage } from '@/lib/client-request';
+import { authFetch } from '@/lib/authed-fetch';
 
 type QuestionStatus = 'draft' | 'published' | 'archived';
 type QuestionDimension = 'knowledge' | 'detail' | 'data';
@@ -51,7 +52,7 @@ export default function QuestionBankManager({ stepNo, preview = false }: Props) 
     if (preview) { setQuestions(previewQuestions(stepNo)); setEditing(null); return; }
     setBusy('load'); setMessage('');
     try {
-      const response = await fetch(`/api/teacher/questions?stepNo=${stepNo}`, { cache: 'no-store' });
+      const response = await authFetch(`/api/teacher/questions?stepNo=${stepNo}`, { cache: 'no-store' });
       const payload = await response.json() as { ok?: boolean; data?: { questions?: Question[] }; error?: { message?: string } };
       if (!response.ok || !payload.ok) throw new Error(payload.error?.message || '加载题库失败');
       setQuestions(payload.data?.questions ?? []); setEditing(null);
@@ -78,7 +79,7 @@ export default function QuestionBankManager({ stepNo, preview = false }: Props) 
         ]);
         setMessage('已生成 3 道预览草稿；正式环境默认一次生成 10 道。');
       } else {
-        const response = await fetch('/api/teacher/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate', stepNo, count: 10 }) });
+        const response = await authFetch('/api/teacher/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate', stepNo, count: 10 }) });
         const payload = await response.json() as { ok?: boolean; data?: { created?: number }; error?: { message?: string } };
         if (!response.ok || !payload.ok) throw new Error(payload.error?.message || 'AI 出题失败');
         setMessage(`AI 已生成 ${payload.data?.created ?? 0} 道草稿，请审核答案和解析后再发布。`);
@@ -94,7 +95,7 @@ export default function QuestionBankManager({ stepNo, preview = false }: Props) 
     try {
       if (preview) setQuestions((current) => current.map((item) => ({ ...item, status: 'published' })));
       else {
-        const response = await fetch('/api/teacher/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'publish', stepNo }) });
+        const response = await authFetch('/api/teacher/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'publish', stepNo }) });
         const payload = await response.json() as { ok?: boolean; error?: { message?: string } };
         if (!response.ok || !payload.ok) throw new Error(payload.error?.message || '发布题目失败');
         await load();
@@ -110,7 +111,7 @@ export default function QuestionBankManager({ stepNo, preview = false }: Props) 
     setBusy('save'); setMessage('');
     try {
       if (!preview) {
-        const response = await fetch('/api/teacher/questions', {
+        const response = await authFetch('/api/teacher/questions', {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: next.id, stepNo: next.step_no, dimension: next.dimension, questionText: next.question_text, options: next.options, correctOptionId: next.correct_option_id, explanation: next.explanation, status: next.status }),
         });

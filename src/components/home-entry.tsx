@@ -4,17 +4,14 @@ import {
   ArrowRight,
   BrainCircuit,
 } from 'lucide-react';
-import LoginButton from '@/components/login-button';
 import BrandLockup from '@/components/brand-lockup';
 import LabHeroVisual from '@/components/lab-hero-visual';
-import type { ChaoxingLoginOptions } from '@/lib/chaoxing-client';
 
 interface Props {
   demo: boolean;
   authenticated?: boolean;
   displayName?: string;
   defaultWorkspace?: 'student' | 'teacher';
-  options: ChaoxingLoginOptions;
 }
 
 export default function HomeEntry({
@@ -22,7 +19,6 @@ export default function HomeEntry({
   authenticated = false,
   displayName,
   defaultWorkspace = 'student',
-  options,
 }: Props) {
   const destination = defaultWorkspace === 'teacher' ? '/teacher/dashboard' : '/student/map';
 
@@ -68,7 +64,16 @@ export default function HomeEntry({
                 进入智能体开发预览<ArrowRight aria-hidden />
               </Link>
             ) : (
-              <LoginButton {...options} />
+              <Link href="/login" className="unified-entry-primary">
+                <Image
+                  src="/brand/xuexitong-icon.jpg"
+                  alt=""
+                  width={24}
+                  height={24}
+                  className="unified-entry-chaoxing-icon"
+                />
+                使用超星学习通登录<ArrowRight aria-hidden />
+              </Link>
             )}
           </div>
 
