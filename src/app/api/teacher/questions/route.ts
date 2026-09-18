@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { generateQuizQuestions } from '@/lib/coze-workflows';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 
 type QuestionDimension = 'knowledge' | 'detail' | 'data';
 
@@ -40,10 +39,10 @@ function validateQuestion(input: QuestionUpdate) {
 
 export async function GET(request: NextRequest) {
   try {
-    await requireTeacher(request);
+    const identity = await requireTeacher(request);
     const stepNo = validStep(request.nextUrl.searchParams.get('stepNo'));
     if (!stepNo) return fail({ code: 'VALIDATION_ERROR', message: 'stepNo 必须为1—8。', retryable: false }, undefined, 400);
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
     const { data, error } = await admin.from('quiz_questions')
       .select('id,step_no,dimension,question_text,options,correct_option_id,explanation,status,created_by,created_at,updated_at')
       .eq('step_no', stepNo).order('created_at', { ascending: false });
@@ -60,7 +59,7 @@ export async function POST(request: NextRequest) {
   try {
     const identity = await requireTeacher(request);
     const body = await request.json() as { action?: string; stepNo?: unknown; count?: unknown; id?: string; ids?: string[] };
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
 
     if (body.action === 'publish') {
       const ids = Array.isArray(body.ids) ? body.ids.filter(Boolean) : (body.id ? [body.id] : []);
@@ -119,14 +118,13 @@ export async function PUT(request: NextRequest) {
     const identity = await requireTeacher(request);
     const body = await request.json() as QuestionUpdate;
     validateQuestion(body);
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
     const { error } = await admin.from('quiz_questions').update({
       step_no: body.stepNo, dimension: body.dimension,
       question_text: body.questionText, options: body.options,
       correct_option_id: body.correctOptionId, explanation: body.explanation,
     }).eq('id', body.id);
     if (error) throw error;
-    void identity;
     return ok({ updated: true });
   } catch (error) {
     const status = Number((error as { status?: number }).status) || 500;
@@ -137,11 +135,11 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    await requireTeacher(request);
+    const identity = await requireTeacher(request);
     const { searchParams } = request.nextUrl;
     const id = searchParams.get('id');
     if (!id) return fail({ code: 'VALIDATION_ERROR', message: 'id 不能为空。', retryable: false }, undefined, 400);
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
     const { error } = await admin.from('quiz_questions').delete().eq('id', id);
     if (error) throw error;
     return ok({ deleted: true });

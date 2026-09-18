@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { fail, ok, errorFromUnknown } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { loadSessionContentPayload } from '@/lib/services/content';
 
 export async function GET(request: NextRequest) {
@@ -26,8 +25,7 @@ export async function GET(request: NextRequest) {
     if (session.agent_role !== 'student') {
       return fail({ code: 'FORBIDDEN', message: '教师体验会话不加载学生实验内容。' }, undefined, 403);
     }
-    const admin = getSupabaseAdminClient();
-    const payload = await loadSessionContentPayload(admin, sessionId);
+    const payload = await loadSessionContentPayload(supabase, sessionId);
     return ok(payload);
   } catch (error) {
     return fail(errorFromUnknown(error), undefined, 500);

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 
 type SyncStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'manual';
 
@@ -11,14 +10,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const admin = getSupabaseAdminClient();
-    const { data, error } = await admin.from('sync_outbox').select('status').limit(5000);
+    const { data, error } = await session.supabase.rpc('sync_outbox_counts');
     if (error) throw error;
+    const raw = (data ?? {}) as Record<string, number>;
     const counts: Record<SyncStatus, number> = { pending: 0, processing: 0, succeeded: 0, failed: 0, manual: 0 };
-    for (const row of (data || []) as Array<{ status: string }>) {
-      if (row.status in counts) counts[row.status as SyncStatus] += 1;
+    for (const [status, count] of Object.entries(raw)) {
+      if (status in counts) counts[status as SyncStatus] = Number(count);
     }
-    return NextResponse.json({ counts, sampled: (data || []).length >= 5000 });
+    return NextResponse.json({ counts, sampled: false });
   } catch {
     return NextResponse.json({ error: '暂时无法读取同步队列状态' }, { status: 503 });
   }

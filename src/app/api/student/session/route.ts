@@ -3,7 +3,6 @@ import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { loadStudentSessionView } from '@/lib/student-session';
 import { ensureContentSnapshot } from '@/lib/services/content';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 
 export async function GET(request: NextRequest) {
   const identity = await getSessionUser(request);
@@ -41,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (!session) return fail({ code: 'RESOURCE_MISSING', message: '无法开始实验会话，请确认课程授权。', retryable: true }, undefined, 502);
     // 会话开始后固化内容版本快照；失败不影响会话恢复（读取侧有默认内容兜底）
     try {
-      await ensureContentSnapshot(getSupabaseAdminClient(), session.id);
+      await ensureContentSnapshot(supabase, session.id);
     } catch (snapshotError) {
       console.error('[student-session] content snapshot failed', snapshotError);
     }

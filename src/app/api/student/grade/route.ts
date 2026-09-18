@@ -1,5 +1,4 @@
 import type { NextRequest } from 'next/server';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
 import { computeGradeSummary, loadGradingFacts } from '@/lib/services/grading';
@@ -34,7 +33,7 @@ export async function GET(request: NextRequest) {
       return fail({ code: 'FORBIDDEN', message: 'FORBIDDEN', retryable: false });
     }
 
-    const admin = getSupabaseAdminClient();
+    const admin = supabase;
     const facts = await loadGradingFacts(admin, sessionId);
     const summary = computeGradeSummary(facts);
     const appeal = await appealStateForSession(admin, sessionId);
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
       return fail({ code: 'FORBIDDEN', message: 'FORBIDDEN', retryable: false });
     }
 
-    const admin = getSupabaseAdminClient();
+    const admin = supabase;
     const { data: report, error: reportError } = await admin
       .from('learning_reports')
       .select('id')

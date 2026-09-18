@@ -78,11 +78,11 @@ export async function submitAppeal(
       },
     });
   if (messageError) throw messageError;
-  const { error: eventError } = await admin.from('event_logs').insert({
-    user_id: input.userId,
-    event_type: 'grade_review_requested',
-    request_id: requestId,
-    payload: { session_id: input.sessionId, report_id: input.reportId, reason: input.reason },
+  const { error: eventError } = await admin.rpc('log_event', {
+    p_user_id: input.userId,
+    p_event_type: 'grade_review_requested',
+    p_request_id: requestId,
+    p_payload: { session_id: input.sessionId, report_id: input.reportId, reason: input.reason },
   });
   if (eventError) throw eventError;
   return { requestId, createdAt };
@@ -321,11 +321,11 @@ export async function resolveAppeal(admin: SupabaseClient, input: ResolveAppealI
     .eq('id', requestRow.id);
   if (updateRequestError) throw updateRequestError;
 
-  const { error: eventError } = await admin.from('event_logs').insert({
-    user_id: input.teacherId,
-    event_type: 'grade_review_resolved',
-    request_id: input.requestId,
-    payload: {
+  const { error: eventError } = await admin.rpc('log_event', {
+    p_user_id: input.teacherId,
+    p_event_type: 'grade_review_resolved',
+    p_request_id: input.requestId,
+    p_payload: {
       session_id: sessionId,
       report_id: reportId,
       new_report_id: newReport.id,

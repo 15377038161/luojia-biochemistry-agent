@@ -5,7 +5,6 @@ import { evaluateText } from '@/lib/coze-workflows';
 import { buildChaoxingTaskflowPayload } from '@/lib/chaoxing-taskflow-contract';
 import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getExperimentStep } from '@/domain/experiment';
 import {
   buildEvaluationResultEnvelope,
@@ -44,7 +43,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     if (stateError) throw stateError;
     const requestKey = body.requestId?.trim() || randomUUID();
-    const admin = getSupabaseAdminClient();
+    const admin = supabase;
     const { data: experimentProfile, error: profileError } = await admin.from('student_experiment_profiles')
       .select('target_gene,sequence_source,accession,cloning_strategy,design_snapshot').eq('session_id', session.id).maybeSingle();
     if (profileError) throw profileError;

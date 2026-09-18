@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { requireTeacherSessionScope } from '@/lib/services/teacher-scope';
 
 export interface TeacherStudentRecord {
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get('sessionId')?.trim();
   if (!sessionId) return fail({ code: 'VALIDATION_ERROR', message: '缺少学生会话编号。', retryable: false }, undefined, 400);
   try {
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
     const scopedSession = await requireTeacherSessionScope(admin, identity.user.id, sessionId);
     const [{ data: session, error: sessionError }, { data: profile, error: profileError }, { data: experimentProfile, error: experimentError }, { data: attempts, error: attemptError }, { data: reports, error: reportError }] = await Promise.all([
       admin.from('agent_sessions').select('id,user_id,class_id,current_step,completed_at,created_at,updated_at,classes(name,course_id)').eq('id', sessionId).single(),

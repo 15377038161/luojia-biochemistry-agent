@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { requireTeacherEvaluationScope } from '@/lib/services/teacher-scope';
 
 export async function POST(request: NextRequest) {
@@ -11,7 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as { evaluationId?: string; decision?: 'confirm' | 'adjust' | 'comment_only'; comment?: string };
     if (!body.evaluationId || !body.decision || !body.comment?.trim()) return fail({ code: 'VALIDATION_ERROR', message: '请选择复核结论并填写意见。', retryable: false });
-    await requireTeacherEvaluationScope(getSupabaseAdminClient(), identity.user.id, body.evaluationId);
+    await requireTeacherEvaluationScope(identity.supabase, identity.user.id, body.evaluationId);
     const { supabase } = identity;
     const { data, error } = await supabase.rpc('record_teacher_review', {
       target_evaluation: body.evaluationId,

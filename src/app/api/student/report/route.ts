@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { experimentSteps } from '@/domain/experiment';
 import { normalizeStudyReport } from '@/domain/study-report';
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    const admin = getSupabaseAdminClient();
+    const admin = supabase;
     const { data: experimentProfile, error: profileError } = await admin.from('student_experiment_profiles')
       .select('target_gene,sequence_source,accession,cloning_strategy,design_snapshot').eq('session_id', session.id).maybeSingle();
     if (profileError) throw profileError;

@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import type { DimensionScores } from '@/domain/agent';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { computeGradeSummary, loadGradingFacts, type RadarDimension, type ReportIssue } from '@/lib/services/grading';
 
 interface ReportStepRow {
@@ -75,7 +74,7 @@ export async function POST(request: NextRequest) {
     if (error) throw error;
     if (!session || session.user_id !== identity.user.id) throw new Error('FORBIDDEN');
 
-    const facts = await loadGradingFacts(getSupabaseAdminClient(), session.id);
+    const facts = await loadGradingFacts(supabase, session.id);
     const summary = computeGradeSummary(facts);
     const scoreByKey = Object.fromEntries(summary.dimensions.map((item) => [item.key, item.score])) as unknown as DimensionScores;
     const stateByStep = new Map(facts.stepStates.map((state) => [state.stepNo, state]));

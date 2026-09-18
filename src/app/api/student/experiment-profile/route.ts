@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 
 type SequenceSource = 'recommended' | 'accession' | 'pasted';
 type CloningStrategy = 'recombination' | 'double_digest';
@@ -19,13 +19,12 @@ function normalizeSequence(value: string): string {
   return value.replace(/[\s\d]/g, '').toUpperCase();
 }
 
-async function ownEditableSession(sessionId: string, userId: string) {
-  const admin = getSupabaseAdminClient();
-  const { data: session, error } = await admin.from('agent_sessions')
+async function ownEditableSession(supabase: SupabaseClient, sessionId: string, userId: string) {
+  const { data: session, error } = await supabase.from('agent_sessions')
     .select('id,user_id,agent_role,current_step').eq('id', sessionId).maybeSingle();
   if (error) throw error;
   if (!session || session.user_id !== userId || session.agent_role !== 'student') throw new Error('FORBIDDEN');
-  return { admin, session };
+  return session;
 }
 
 export async function GET(request: NextRequest) {
@@ -34,8 +33,8 @@ export async function GET(request: NextRequest) {
   try {
     const sessionId = request.nextUrl.searchParams.get('sessionId') || '';
     if (!sessionId) return fail({ code: 'VALIDATION_ERROR', message: '缺少会话编号。', retryable: false });
-    const { admin } = await ownEditableSession(sessionId, identity.user.id);
-    const { data, error } = await admin.from('student_experiment_profiles').select('*').eq('session_id', sessionId).maybeSingle();
+    await ownEditableSession(identity.supabase, sessionId, identity.user.id);
+    const { data, error } = await identity.supabase.from('student_experiment_profiles').select('*').eq('session_id', sessionId).maybeSingle();
     if (error) throw error;
     return ok(data ?? {
       session_id: sessionId,
@@ -63,8 +62,8 @@ export async function PUT(request: NextRequest) {
     if (!sessionId || !source || !['recommended', 'accession', 'pasted'].includes(source) || !strategy || !['recombination', 'double_digest'].includes(strategy)) {
       return fail({ code: 'VALIDATION_ERROR', message: '实验档案参数不完整。', retryable: false });
     }
-    const { admin, session } = await ownEditableSession(sessionId, identity.user.id);
-    const { count, error: attemptError } = await admin.from('step_attempts')
+    const session = await ownEditableSession(identity.supabase, sessionId, identity.user.id);
+    const { count, error: attemptError } = await identity.supabase.from('step_attempts')
       .select('id', { count: 'exact', head: true }).eq('session_id', sessionId).eq('step_no', 1);
     if (attemptError) throw attemptError;
     if (Number(session.current_step) > 1 || (count ?? 0) > 0) {
@@ -88,7 +87,7 @@ export async function PUT(request: NextRequest) {
       strategy,
       locked: false,
     };
-    const { data, error } = await admin.from('student_experiment_profiles').upsert({
+    const { data, error } = await identity.supabase.from('student_experiment_profiles').upsert({
       session_id: sessionId,
       target_gene: gene,
       sequence_source: source,

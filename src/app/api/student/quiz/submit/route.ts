@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { ok, fail, errorFromUnknown } from '@/lib/api-result';
 import type { QuizQuestion } from '@/lib/coze-workflows';
@@ -16,7 +15,7 @@ export async function POST(req: NextRequest) {
     if (!identity) {
       return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
     }
-    const supabase = getSupabaseAdminClient();
+    const supabase = identity.supabase;
 
     const body = await req.json();
     const { session_id, answers } = body as {

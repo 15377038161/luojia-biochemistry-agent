@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { loadTeacherPracticeSessionView } from '@/lib/services/sessions';
 
 /**
@@ -27,8 +26,7 @@ async function handle(request: NextRequest) {
     return fail({ code: 'FORBIDDEN', message: '当前身份没有教师学习体验权限。', retryable: false }, id, 403);
   }
   try {
-    // step_states 无用户侧写策略，创建/恢复链路统一走 service-role 客户端，身份与范围已在上方校验。
-    const supabase = getSupabaseAdminClient();
+    const supabase = identity.supabase;
     const view = await loadTeacherPracticeSessionView(supabase, identity.user.id, identity.user.profile.displayName);
     return ok(view, id);
   } catch (error) {

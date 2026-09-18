@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { fail, ok, errorFromUnknown } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { publishContentDraft } from '@/lib/services/content';
 
 interface PublishBody {
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (typeof body.draftId !== 'string' || !body.draftId.trim()) {
       return fail({ code: 'VALIDATION_ERROR', message: '缺少要发布的草稿版本。' }, undefined, 400);
     }
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
     const published = await publishContentDraft(admin, body.draftId);
     return ok({
       published: {

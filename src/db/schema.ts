@@ -781,6 +781,31 @@ export const quizQuestions = pgTable(
       table.step_no,
       sql`md5(lower(${table.question_text}))`,
     ),
+    pgPolicy('quiz_questions_published_read', {
+      for: 'select',
+      to: authenticatedRole,
+      using: sql`${table.status} = 'published'`,
+    }),
+    pgPolicy('quiz_questions_teacher_read', {
+      for: 'select',
+      to: authenticatedRole,
+      using: sql`(SELECT is_teacher_user())`,
+    }),
+    pgPolicy('quiz_questions_teacher_insert', {
+      for: 'insert',
+      to: authenticatedRole,
+      withCheck: sql`(SELECT is_teacher_user())`,
+    }),
+    pgPolicy('quiz_questions_teacher_update', {
+      for: 'update',
+      to: authenticatedRole,
+      using: sql`(SELECT is_teacher_user())`,
+    }),
+    pgPolicy('quiz_questions_teacher_delete', {
+      for: 'delete',
+      to: authenticatedRole,
+      using: sql`(SELECT is_teacher_user())`,
+    }),
   ],
 ).enableRLS();
 

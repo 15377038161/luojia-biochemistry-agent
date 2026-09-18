@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok, requestId } from '@/lib/api-result';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { listAppeals, resolveAppeal } from '@/lib/services/appeals';
 import { requireTeacherSessionScope } from '@/lib/services/teacher-scope';
@@ -14,7 +13,7 @@ export async function GET(request: NextRequest) {
       return fail({ code: 'FORBIDDEN', message: 'FORBIDDEN', retryable: false }, id, 403);
     }
 
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
     const items = await listAppeals(admin, identity.user.id);
     return ok(items, id);
   } catch (error) {
@@ -45,7 +44,7 @@ export async function POST(request: NextRequest) {
       return fail({ code: 'VALIDATION_ERROR', message: '确认成绩与调整成绩不能同时进行。', retryable: false }, id, 400);
     }
 
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
     const { data: requestRows, error: requestError } = await admin.from('agent_messages')
       .select('session_id,metadata').eq('kind', 'grade_review_request');
     if (requestError) throw requestError;

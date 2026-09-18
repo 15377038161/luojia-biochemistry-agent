@@ -441,6 +441,20 @@ AS $$
 $$;
 
 --> statement-breakpoint
+CREATE OR REPLACE FUNCTION "is_teacher_user"()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+AS $$
+  select exists (
+    select 1 from enrollments e
+    where e.user_id = auth.uid()
+      and e.role in ('teacher', 'content_admin')
+  );
+$$;
+
+--> statement-breakpoint
 CREATE POLICY "message_session_access" ON "agent_messages" AS PERMISSIVE FOR SELECT TO "authenticated" USING (EXISTS(SELECT 1 FROM agent_sessions s WHERE s.id = "agent_messages"."session_id"
         AND (s.user_id = (SELECT auth.uid()) OR (SELECT is_authorized_teacher(s.class_id)))));--> statement-breakpoint
 CREATE POLICY "message_owner_insert" ON "agent_messages" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (EXISTS(SELECT 1 FROM agent_sessions s WHERE s.id = "agent_messages"."session_id" AND s.user_id = (SELECT auth.uid())));--> statement-breakpoint
@@ -478,6 +492,11 @@ CREATE POLICY "profiles_teacher_read" ON "profiles" AS PERMISSIVE FOR SELECT TO 
 CREATE POLICY "quiz_sessions_own_read" ON "quiz_sessions" AS PERMISSIVE FOR SELECT TO "authenticated" USING ((SELECT auth.uid()) = "quiz_sessions"."user_id");--> statement-breakpoint
 CREATE POLICY "quiz_sessions_own_insert" ON "quiz_sessions" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK ((SELECT auth.uid()) = "quiz_sessions"."user_id");--> statement-breakpoint
 CREATE POLICY "quiz_sessions_own_update" ON "quiz_sessions" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ((SELECT auth.uid()) = "quiz_sessions"."user_id") WITH CHECK ((SELECT auth.uid()) = "quiz_sessions"."user_id");--> statement-breakpoint
+CREATE POLICY "quiz_questions_published_read" ON "quiz_questions" AS PERMISSIVE FOR SELECT TO "authenticated" USING ("quiz_questions"."status" = 'published');--> statement-breakpoint
+CREATE POLICY "quiz_questions_teacher_read" ON "quiz_questions" AS PERMISSIVE FOR SELECT TO "authenticated" USING ((SELECT is_teacher_user()));--> statement-breakpoint
+CREATE POLICY "quiz_questions_teacher_insert" ON "quiz_questions" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK ((SELECT is_teacher_user()));--> statement-breakpoint
+CREATE POLICY "quiz_questions_teacher_update" ON "quiz_questions" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ((SELECT is_teacher_user()));--> statement-breakpoint
+CREATE POLICY "quiz_questions_teacher_delete" ON "quiz_questions" AS PERMISSIVE FOR DELETE TO "authenticated" USING ((SELECT is_teacher_user()));--> statement-breakpoint
 CREATE POLICY "rubric_item_enrolled_read" ON "rubric_items" AS PERMISSIVE FOR SELECT TO "authenticated" USING (EXISTS(SELECT 1 FROM rubrics r JOIN experiment_steps s ON s.id = r.step_id
         JOIN experiments x ON x.id = s.experiment_id JOIN classes c ON c.course_id = x.course_id
         WHERE r.id = "rubric_items"."rubric_id" AND (SELECT is_authorized_teacher(c.id))));--> statement-breakpoint
@@ -710,6 +729,80 @@ begin
   return result;
 end;
 $$;
+--> statement-breakpoint
+CREATE OR REPLACE FUNCTION "log_event"(
+  p_user_id uuid,
+  p_event_type text,
+  p_request_id uuid,
+  p_payload jsonb
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  INSERT INTO event_logs(user_id, event_type, request_id, payload)
+  VALUES (p_user_id, p_event_type, p_request_id, p_payload);
+END;
+$$;
+--> statement-breakpoint
+CREATE OR REPLACE FUNCTION "sync_outbox_counts"()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE result jsonb;
+BEGIN
+  SELECT COALESCE(jsonb_object_agg(status, cnt), '{}'::jsonb) INTO result
+  FROM (SELECT status, count(*) AS cnt FROM sync_outbox GROUP BY status) t;
+  RETURN result;
+END;
+$$;
+--> statement-breakpoint
+CREATE OR REPLACE FUNCTION "claim_pending_outbox"(p_limit integer DEFAULT 20)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE result jsonb;
+BEGIN
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'id', id, 'event_id', event_id, 'payload', payload, 'attempt_count', attempt_count
+  )), '[]'::jsonb) INTO result
+  FROM (
+    SELECT id, event_id, payload, attempt_count
+    FROM sync_outbox
+    WHERE status = 'pending' AND next_attempt_at <= now()
+    ORDER BY created_at
+    LIMIT p_limit
+  ) t;
+  RETURN result;
+END;
+$$;
+--> statement-breakpoint
+CREATE OR REPLACE FUNCTION "update_outbox"(
+  p_id uuid,
+  p_status text,
+  p_attempt_count integer DEFAULT NULL,
+  p_last_error text DEFAULT NULL,
+  p_payload jsonb DEFAULT NULL,
+  p_next_attempt_at timestamptz DEFAULT NULL
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE sync_outbox SET
+    status = p_status,
+    attempt_count = COALESCE(p_attempt_count, attempt_count),
+    last_error = p_last_error,
+    payload = COALESCE(p_payload, payload),
+    next_attempt_at = COALESCE(p_next_attempt_at, next_attempt_at),
+    updated_at = now()
+  WHERE id = p_id;
+END;
+$$;
 -- === managed grants ===
 REVOKE ALL ON TABLE
   "profiles","courses","classes","enrollments","experiments","experiment_steps",
@@ -734,17 +827,29 @@ GRANT INSERT ON TABLE "agent_messages" TO authenticated;
 GRANT INSERT ON TABLE "media_submissions" TO authenticated;
 GRANT INSERT ON TABLE "learning_reports" TO authenticated;
 GRANT INSERT ON TABLE "teacher_reviews" TO authenticated;
+GRANT SELECT ON TABLE "student_experiment_profiles","quiz_sessions","quiz_questions" TO authenticated;
+GRANT INSERT, UPDATE ON TABLE "quiz_sessions" TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE "quiz_questions" TO authenticated;
 REVOKE ALL ON TABLE
-  "student_experiment_profiles","quiz_sessions","quiz_questions","ai_jobs",
-  "event_logs","audit_logs","sync_outbox","external_identities"
+  "ai_jobs","event_logs","audit_logs","sync_outbox","external_identities"
 FROM anon, authenticated;
 REVOKE EXECUTE ON FUNCTION "is_authorized_teacher"(uuid) FROM public, anon;
+REVOKE EXECUTE ON FUNCTION "is_teacher_user"() FROM public, anon;
 REVOKE EXECUTE ON FUNCTION "start_or_resume_student_session"() FROM public, anon;
 REVOKE EXECUTE ON FUNCTION "record_text_evaluation"(uuid,smallint,uuid,text,jsonb,text,text) FROM public, anon;
 REVOKE EXECUTE ON FUNCTION "record_learning_report"(uuid,jsonb,text,text) FROM public, anon;
 REVOKE EXECUTE ON FUNCTION "record_teacher_review"(uuid,text,text) FROM public, anon;
+REVOKE EXECUTE ON FUNCTION "log_event"(uuid,text,uuid,jsonb) FROM public, anon;
+REVOKE EXECUTE ON FUNCTION "sync_outbox_counts"() FROM public, anon;
+REVOKE EXECUTE ON FUNCTION "claim_pending_outbox"(integer) FROM public;
+REVOKE EXECUTE ON FUNCTION "update_outbox"(uuid,text,integer,text,jsonb,timestamptz) FROM public;
 GRANT EXECUTE ON FUNCTION "is_authorized_teacher"(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION "is_teacher_user"() TO authenticated;
 GRANT EXECUTE ON FUNCTION "start_or_resume_student_session"() TO authenticated;
 GRANT EXECUTE ON FUNCTION "record_text_evaluation"(uuid,smallint,uuid,text,jsonb,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION "record_learning_report"(uuid,jsonb,text,text) TO authenticated;
 GRANT EXECUTE ON FUNCTION "record_teacher_review"(uuid,text,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION "log_event"(uuid,text,uuid,jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION "sync_outbox_counts"() TO authenticated;
+GRANT EXECUTE ON FUNCTION "claim_pending_outbox"(integer) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION "update_outbox"(uuid,text,integer,text,jsonb,timestamptz) TO authenticated, anon;

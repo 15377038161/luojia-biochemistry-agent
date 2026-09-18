@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { fail, ok, errorFromUnknown } from '@/lib/api-result';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { validateCourseContent, defaultCourseContent, type CourseContentPayload } from '@/domain/course-content';
 import {
   findCurrentDraft,
@@ -23,7 +22,7 @@ export async function GET(request: NextRequest) {
     if (!identity.user.capabilities.teacherWorkspace) {
       return fail({ code: 'FORBIDDEN', message: 'FORBIDDEN' }, undefined, 403);
     }
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
     const { data: draftRow, error } = await findCurrentDraft(admin);
     if (error) throw error;
     const payload = draftRow ? payloadFromManifest(draftRow.manifest) : null;
@@ -54,7 +53,7 @@ export async function PUT(request: NextRequest) {
       ? body.sourceRefs.filter((item): item is string => typeof item === 'string')
       : [];
     const draftId = typeof body.draftId === 'string' && body.draftId.trim() ? body.draftId : undefined;
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
     const row = await saveContentDraft(admin, body.payload as CourseContentPayload, sourceRefs, identity.user.id, draftId);
     return ok({
       draft: toDraftRecord(row),

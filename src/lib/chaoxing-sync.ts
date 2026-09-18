@@ -198,33 +198,39 @@ async function verifyChaoxingReadback(config: ChaoxingFormConfig, fetchImpl: typ
 export async function processChaoxingOutbox(limit = 20) {
   const admin = getSupabaseAdminClient();
   const config = getChaoxingFormConfig();
-  const { data, error } = await admin.from('sync_outbox').select('id,event_id,payload,attempt_count')
-    .eq('status', 'pending').lte('next_attempt_at', new Date().toISOString()).order('created_at').limit(limit);
+  const { data, error } = await admin.rpc('claim_pending_outbox', { p_limit: limit });
   if (error) throw error;
+  const rows = (data ?? []) as OutboxRow[];
   const result = { processed: 0, succeeded: 0, deferred: 0, manual: 0 };
   let lastSentAt = 0;
-  for (const row of (data || []) as OutboxRow[]) {
+  for (const row of rows) {
     result.processed += 1;
-    await admin.from('sync_outbox').update({ status: 'processing', updated_at: new Date().toISOString() }).eq('id', row.id).eq('status', 'pending');
+    await admin.rpc('update_outbox', { p_id: row.id, p_status: 'processing' });
     try {
       await waitForRateLimit(lastSentAt, config.rateLimitPerSecond);
       const writeResult = await sendToChaoxing(row, config);
       lastSentAt = Date.now();
       const readback = await verifyChaoxingReadback(config, fetch);
-      await admin.from('sync_outbox').update(buildSucceededSyncUpdate(row, writeResult.externalRecordId ?? null, readback)).eq('id', row.id);
+      const update = buildSucceededSyncUpdate(row, writeResult.externalRecordId ?? null, readback);
+      await admin.rpc('update_outbox', {
+        p_id: row.id,
+        p_status: update.status,
+        p_attempt_count: update.attempt_count,
+        p_payload: update.payload,
+      });
       result.succeeded += 1;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const status = (error as Error & { status?: number }).status;
       if (message === 'SYNC_DISABLED') {
-        await admin.from('sync_outbox').update({ status: 'pending', last_error: '接口未授权，等待配置', next_attempt_at: new Date(Date.now() + 3600_000).toISOString(), updated_at: new Date().toISOString() }).eq('id', row.id);
+        await admin.rpc('update_outbox', { p_id: row.id, p_status: 'pending', p_last_error: '接口未授权，等待配置', p_next_attempt_at: new Date(Date.now() + 3600_000).toISOString() });
         result.deferred += 1;
       } else if (status && status >= 400 && status < 500 && status !== 429) {
-        await admin.from('sync_outbox').update({ status: 'manual', attempt_count: row.attempt_count + 1, last_error: message, updated_at: new Date().toISOString() }).eq('id', row.id);
+        await admin.rpc('update_outbox', { p_id: row.id, p_status: 'manual', p_attempt_count: row.attempt_count + 1, p_last_error: message });
         result.manual += 1;
       } else {
         const attempt = row.attempt_count + 1;
-        await admin.from('sync_outbox').update({ status: attempt >= 8 ? 'failed' : 'pending', attempt_count: attempt, last_error: message, next_attempt_at: new Date(Date.now() + backoffMinutes(attempt) * 60_000).toISOString(), updated_at: new Date().toISOString() }).eq('id', row.id);
+        await admin.rpc('update_outbox', { p_id: row.id, p_status: attempt >= 8 ? 'failed' : 'pending', p_attempt_count: attempt, p_last_error: message, p_next_attempt_at: new Date(Date.now() + backoffMinutes(attempt) * 60_000).toISOString() });
         result.deferred += 1;
       }
     }

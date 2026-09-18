@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 import { getSessionUser } from '@/lib/supabase-auth';
 import { ok, fail, errorFromUnknown } from '@/lib/api-result';
 import { publicQuizSession, validateQuizAnswers } from '@/lib/quiz-contract';
@@ -10,7 +9,7 @@ export async function GET(req: NextRequest) {
     if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
     const id = req.nextUrl.searchParams.get('session_id');
     if (!id) return fail({ code: 'VALIDATION_ERROR', message: 'session_id 必填', retryable: false });
-    const { data, error } = await getSupabaseAdminClient().from('quiz_sessions')
+    const { data, error } = await identity.supabase.from('quiz_sessions')
       .select('id,questions,answers,results,status,step_no').eq('id', id).eq('user_id', identity.user.id).maybeSingle();
     if (error) throw error;
     if (!data) return fail({ code: 'RESOURCE_MISSING', message: '测验不存在或无权访问。', retryable: false }, undefined, 404);
@@ -24,7 +23,7 @@ export async function PATCH(req: NextRequest) {
     if (!identity) return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
     const body = await req.json() as { session_id?: string; answers?: unknown };
     if (typeof body.session_id !== 'string') return fail({ code: 'VALIDATION_ERROR', message: '测验编号无效。', retryable: false });
-    const admin = getSupabaseAdminClient();
+    const admin = identity.supabase;
     const { data, error } = await admin.from('quiz_sessions').select('id,questions,status')
       .eq('id', body.session_id).eq('user_id', identity.user.id).maybeSingle();
     if (error) throw error;

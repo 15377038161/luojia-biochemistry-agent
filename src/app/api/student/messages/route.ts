@@ -5,7 +5,6 @@ import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import type { ApiError } from '@/domain/agent';
 import { assertTutorStage, isPeerDataRequest, PEER_DATA_PRIVACY_REPLY, type TutorLearningStage } from '@/lib/tutor';
 import { getSessionUser } from '@/lib/supabase-auth';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
 
 export async function POST(request: NextRequest) {
   const identity = await getSessionUser(request);
@@ -34,7 +33,7 @@ export async function POST(request: NextRequest) {
       return fail({ code: 'STATE_INVALID', message: '该会话已完成，AI 助教不再接受提问。', retryable: false }, undefined, 409);
     }
     const step = getExperimentStep(Number(session.current_step) || 1);
-    const { data: experimentProfile, error: profileError } = await getSupabaseAdminClient().from('student_experiment_profiles')
+    const { data: experimentProfile, error: profileError } = await supabase.from('student_experiment_profiles')
       .select('target_gene,sequence_source,accession,cloning_strategy,design_snapshot').eq('session_id', session.id).maybeSingle();
     if (profileError) throw profileError;
     const privateDataRequest = isPeerDataRequest(content);
