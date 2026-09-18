@@ -8,8 +8,9 @@ const PROJECT_ID = process.env.NEXT_PUBLIC_CODER_PROJECTS_ID
 // → 空字符串 → 相对路径，由 Nginx 转发。禁止硬编码隧道 URL。
 const AUTH_BASE = process.env.NEXT_PUBLIC_CODER_AUTH_PROXY_URL || ''
 
-// 登录后导航去向（唯一事实源）：业务首页。业务代码只在本文件 import 复用，禁止重复声明。
-export const POST_LOGIN_HOME = '/'
+// 登录后导航去向（唯一事实源）：八步地图页。业务代码只在本文件 import 复用，禁止重复声明。
+// 认证成功后直达学生实验地图，不再经过任何中间落地页。
+export const POST_LOGIN_HOME = '/student/map'
 
 const AUTH_HEADERS = {
   'Content-Type': 'application/json',

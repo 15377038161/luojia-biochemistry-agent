@@ -1,34 +1,20 @@
 'use client'
 
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { loginWithChaoxingOAuth, POST_LOGIN_HOME } from '@/lib/auth'
-import { getSupabase } from '@/lib/supabase'
+import { useState } from 'react'
+import { loginWithChaoxingOAuth } from '@/lib/auth'
 import BrandLockup from '@/components/brand-lockup'
 
 /**
  * 超星 OAuth 一键登录表单：登录页 /login 的核心交互组件。
- * - 挂载时 session 自愈：检测到已有 session 即导航 POST_LOGIN_HOME（已登录再访登录页）。
  * - 点击「超星一键登录」→ loginWithChaoxingOAuth() 顶层跳转超星授权页。
+ * - 已登录用户访问 /login 的跳转由根 layout 的 AuthGuard 统一处理（唯一拦截点），
+ *   本组件不重复做 session 自愈导航，避免与守卫产生竞态。
  * - OAuth 回跳/中转闭环由根 layout 的 AuthCallback 统一处理，本组件不重复编排。
  */
 export default function LoginForm() {
-  const router = useRouter()
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState('')
-
-  // session 自愈：登录页不应停留于已登录状态
-  useEffect(() => {
-    getSupabase()
-      .auth.getSession()
-      .then(({ data: { session } }) => {
-        if (session) router.replace(POST_LOGIN_HOME)
-      })
-      .catch(() => {
-        /* 网络/配置异常时忽略，停留在登录页 */
-      })
-  }, [router])
 
   const handleLogin = async () => {
     if (isPending) return

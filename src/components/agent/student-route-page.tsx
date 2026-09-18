@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import StudentAgent from '@/components/agent/student-agent';
 import { getSupabase } from '@/lib/supabase';
 
@@ -12,12 +11,11 @@ interface Props {
 }
 
 /**
- * 学生工作区路由入口（客户端权限托管）：
- * 登录态存于浏览器 localStorage，AuthGuard 已在根 layout 守护未登录访问（跳 /login），
- * 这里仅异步解析展示名（realname → email 前缀）后渲染业务聚合组件。
+ * 学生工作区路由入口（客户端）：
+ * 登录态由根 layout 的 AuthGuard 统一守护（唯一拦截点），这里不再重复校验登录态，
+ * 仅异步解析展示名（realname → email 前缀）后渲染业务聚合组件，避免多层 getUser 检查时序冲突。
  */
 export default function StudentRoutePage({ preview = false, stepId, reportPage = false }: Props) {
-  const router = useRouter();
   const [displayName, setDisplayName] = useState(preview ? '陈同学' : '学生');
 
   const resolveIdentity = useCallback(async () => {
@@ -36,13 +34,6 @@ export default function StudentRoutePage({ preview = false, stepId, reportPage =
     if (!preview) void resolveIdentity();
     // 异步身份解析在首帧后完成，避免阻塞交互
   }, [preview, resolveIdentity]);
-
-  useEffect(() => {
-    if (preview) return;
-    void getSupabase().auth.getUser().then(({ data }) => {
-      if (!data.user) router.replace('/login');
-    });
-  }, [preview, router]);
 
   return (
     <StudentAgent
