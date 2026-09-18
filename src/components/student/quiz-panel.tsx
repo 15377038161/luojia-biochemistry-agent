@@ -4,9 +4,10 @@ import { ArrowLeft, ArrowRight, BookOpenCheck, Check, LoaderCircle, RotateCcw } 
 import { Button } from "@/components/ui/button";
 import type { ApiResult } from "@/domain/agent";
 import type { QuizHistory, QuizSession } from "@/lib/quiz-contract";
+import { authFetch } from "@/lib/authed-fetch";
 
 async function request<T>(url: string, body?: unknown, method = "POST"): Promise<T> {
-  const response = await fetch(url, { method: body === undefined ? "GET" : method,
+  const response = await authFetch(url, { method: body === undefined ? "GET" : method,
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(20000) });
   const result = await response.json() as ApiResult<T>;

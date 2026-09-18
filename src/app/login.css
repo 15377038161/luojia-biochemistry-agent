@@ -34,12 +34,27 @@
   border-bottom: 1px solid rgba(18, 63, 112, .10);
 }
 .login-page-brand {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 12px;
 }
+.login-page-brand > .brand-lockup { flex: 0 0 auto; }
+.login-page-brand > div { min-width: 0; display: grid; gap: 2px; }
 .login-page-brand strong { color: var(--ui-blue-strong); font-size: 15px; letter-spacing: .02em; }
 .login-page-brand small { color: var(--ui-muted); font-size: 11px; }
+.login-page-course {
+  min-height: 36px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ui-green);
+  border: 1px solid rgba(35, 111, 91, .18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .60);
+  font-size: 11px;
+  font-weight: 900;
+}
 
 .login-form-wrap {
   min-height: 0;
@@ -138,4 +153,8 @@
 
 @media (max-width: 480px) {
   .login-form-card { border-radius: 18px; }
+  .login-page-nav { min-height: 64px; }
+  .login-page-brand > .brand-lockup { transform: scale(.88); transform-origin: left center; margin-right: -7px; }
+  .login-page-brand strong { font-size: 13px; }
+  .login-page-course { display: none; }
 }

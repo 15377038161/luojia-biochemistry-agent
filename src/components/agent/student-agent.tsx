@@ -75,7 +75,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
     setError('');
     try {
       const sessionEndpoint = practiceMode ? '/api/teacher/practice-session' : '/api/student/session';
-      const response = await fetch(sessionEndpoint);
+      const response = await authFetch(sessionEndpoint);
       const payload = await response.json() as Api<StudentSessionView | null>;
       if (!payload.ok) throw new Error(payload.error.message);
       if (payload.data) {
