@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { generateQuizQuestions } from '@/lib/coze-workflows';
+import { ensureQuestionPool } from '@/lib/quiz-pool';
 import { getSessionUser } from '@/lib/supabase-auth';
 
 type QuestionDimension = 'knowledge' | 'detail' | 'data';
@@ -75,6 +76,13 @@ export async function POST(request: NextRequest) {
       const { error } = await admin.from('quiz_questions').update({ status: 'draft' }).in('id', ids);
       if (error) throw error;
       return ok({ unpublished: ids.length });
+    }
+
+    if (body.action === 'prefill') {
+      const stepNo = validStep(body.stepNo);
+      if (!stepNo) return fail({ code: 'VALIDATION_ERROR', message: 'stepNo 必须为1—8。', retryable: false }, undefined, 400);
+      const result = await ensureQuestionPool(admin, stepNo);
+      return ok({ stepNo, available: result.available, expanded: result.expanded });
     }
 
     if (body.action !== 'generate') return fail({ code: 'VALIDATION_ERROR', message: '不支持的题库操作。', retryable: false }, undefined, 400);

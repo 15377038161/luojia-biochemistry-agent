@@ -809,6 +809,43 @@ export const quizQuestions = pgTable(
   ],
 ).enableRLS();
 
+/**
+ * 题目分配记录：记录“用户—题目”的已分发关系，是题目随机分发 + 去重的数据库级强保证。
+ * 唯一约束 (user_id, question_id) 确保同一用户永远不会重复分配到同一道题（重复率为 0），
+ * 且不受并发竞争影响（依赖 PostgreSQL 唯一索引原子性）。
+ */
+export const quizQuestionAssignments = pgTable(
+  'quiz_question_assignments',
+  {
+    id: uid('id').primaryKey(),
+    user_id: uuid('user_id').notNull().default(sql`auth.uid()`),
+    question_id: uuid('question_id')
+      .notNull()
+      .references(() => quizQuestions.id, { onDelete: 'cascade' }),
+    step_no: integer('step_no').notNull(),
+    session_id: uuid('session_id').references(() => quizSessions.id, { onDelete: 'set null' }),
+    created_at: now(),
+  },
+  (table) => [
+    uniqueIndex('quiz_question_assignments_user_question_key').on(
+      table.user_id,
+      table.question_id,
+    ),
+    index('idx_quiz_assignments_user_step').on(table.user_id, table.step_no),
+    index('idx_quiz_assignments_question').on(table.question_id),
+    pgPolicy('quiz_assignments_own_read', {
+      for: 'select',
+      to: authenticatedRole,
+      using: sql`(SELECT auth.uid()) = ${table.user_id}`,
+    }),
+    pgPolicy('quiz_assignments_own_insert', {
+      for: 'insert',
+      to: authenticatedRole,
+      withCheck: sql`(SELECT auth.uid()) = ${table.user_id}`,
+    }),
+  ],
+);
+
 export const studentExperimentProfiles = pgTable(
   'student_experiment_profiles',
   {
