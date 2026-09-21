@@ -8,12 +8,10 @@ import BrandLockup from '@/components/brand-lockup'
 /**
  * 超星 OAuth 一键登录表单：登录页 /login 的核心交互组件。
  * - 点击「超星一键登录」→ loginWithChaoxingOAuth() 顶层跳转超星授权页。
- * - 已登录用户访问 /login 的跳转由根 layout 的 AuthGuard 统一处理（唯一拦截点），
- *   本组件不重复做 session 自愈导航，避免与守卫产生竞态。
- * - OAuth 回跳/中转闭环由根 layout 的 AuthCallback 统一处理，本组件不重复编排。
+ * - 已登录用户访问 /login 的跳转由根 layout 的 AuthGuard 统一处理（唯一拦截点）。
  *
  * 视觉结构复用「珞珈山小实验家 · 科学探险手账」系统（login.css）：
- * shell（背景）+ art（渐变光晕）+ nav（品牌导航）+ form 卡片 + footer。
+ * shell（背景图 + 光晕）+ 动效层（气泡/光点/漂浮实验器具）+ nav + form 卡片 + footer。
  */
 export default function LoginForm() {
   const [isPending, setIsPending] = useState(false)
@@ -33,7 +31,26 @@ export default function LoginForm() {
 
   return (
     <div className="login-page-shell">
-      <div className="login-page-art" aria-hidden />
+      {/* 背景：生化实验水彩插画 + 柔和渐变光晕 */}
+      <div className="login-page-art" aria-hidden>
+        <span className="login-page-bg" />
+        <span className="login-page-veil" />
+      </div>
+
+      {/* 动效层：上升气泡、漂浮光点、缓缓摆动的实验器具 */}
+      <div className="login-page-motion" aria-hidden>
+        <span className="login-bubble login-bubble-a" />
+        <span className="login-bubble login-bubble-b" />
+        <span className="login-bubble login-bubble-c" />
+        <span className="login-bubble login-bubble-d" />
+        <span className="login-bubble login-bubble-e" />
+        <span className="login-spark login-spark-a" />
+        <span className="login-spark login-spark-b" />
+        <span className="login-spark login-spark-c" />
+        <span className="login-spark login-spark-d" />
+        <span className="login-sway login-sway-flask" />
+        <span className="login-sway login-sway-helix" />
+      </div>
 
       <header className="login-page-nav">
         <div className="login-page-brand">
