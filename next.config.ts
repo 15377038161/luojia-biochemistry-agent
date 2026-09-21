@@ -1,6 +1,12 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // 限制生产构建的静态页面数据收集 worker 数量。
+    // Next.js 默认取 os.cpus().length - 1（64 核环境为 63 个并行 worker），
+    // 在内存受限的部署环境中会触发 OOM，导致 next build 被 SIGKILL。
+    cpus: 2,
+  },
   turbopack: {
     root: process.cwd(),
   },
