@@ -7,6 +7,7 @@ import type { StudentReportData } from '@/app/api/student/report-data/route';
 import type { RadarDimensionKey } from '@/lib/services/grading';
 import { useSwipeDismiss } from '@/hooks/use-swipe-dismiss';
 import StudentTopbar from '@/components/student/student-topbar';
+import ReportGenerating from '@/components/student/report-generating';
 import { clientErrorMessage } from '@/lib/client-request';
 import { authFetch } from '@/lib/authed-fetch';
 
@@ -218,7 +219,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
           {!standalone && <button type="button" aria-label="关闭学习报告" onClick={onClose} className="w-11 h-11 shrink-0 rounded-xl border border-border bg-card hover:bg-muted transition-colors cursor-pointer inline-flex items-center justify-center"><X className="w-4 h-4" /></button>}
         </div>
 
-        {!data && !error && <p className="mt-6 text-sm text-muted-foreground font-bold inline-flex items-center gap-2"><LoaderCircle className="w-4 h-4 animate-spin" />正在整理学习记录…</p>}
+        {!data && !error && <ReportGenerating kind="full" />}
         {error && <p className="mt-6 text-sm font-bold text-destructive flex items-center gap-1.5"><CircleAlert className="w-4 h-4" />{error}</p>}
 
         {data && (
@@ -393,10 +394,27 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
               </div>
             )}
 
-            {reportTab === 'resources' && <div className="mt-6"><h4 className="font-bold">课程资料索引</h4>{data.steps.filter(s => s.resources?.length).map(s => <details key={s.stepNo}><summary>步骤{s.stepNo} · {s.shortTitle}</summary>{s.resources?.map((resource, i) => <p key={i}>{resource.label} · {resource.source}</p>)}</details>)}</div>}
+            {reportTab === 'resources' && <div className="mt-6">
+              <h4 className="font-extrabold flex items-center gap-2 text-sm"><BookOpen className="w-5 h-5 text-primary" /> 全流程推荐材料汇总</h4>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">整合八步已评阅的课程资料，按步骤归类，便于集中复习与补漏。</p>
+              {data.steps.filter(s => s.resources?.length).length > 0 ? (
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {data.steps.filter(s => s.resources?.length).map(s => (
+                    <article key={s.stepNo} className="rounded-xl border border-border bg-card/70 p-4">
+                      <p className="text-xs font-bold flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-primary-container text-primary flex items-center justify-center text-[10px] font-extrabold shrink-0">{s.stepNo}</span>
+                        {s.shortTitle}
+                      </p>
+                      {s.resources?.map((resource, i) => <p key={i} className="mt-2 text-xs text-muted-foreground leading-relaxed">{resource.label} · {resource.source}</p>)}
+                    </article>
+                  ))}
+                </div>
+              ) : <p className="mt-3 text-xs text-muted-foreground">完成步骤评阅后，这里会汇总各步配套学习材料。</p>}
+              {data.lossAnalysis.length > 0 && <div className="mt-4 rounded-xl border border-border bg-card/70 p-4"><p className="text-xs font-bold">跨步骤不足速览</p><p className="mt-2 text-xs text-muted-foreground leading-relaxed">共识别 {data.lossAnalysis.length} 处待改进点：{data.lossAnalysis.slice(0, 6).map(item => item.label).join('、')}{data.lossAnalysis.length > 6 ? ' 等' : ''}。逐条解析请见「AI 分析」分区的失分点解析。</p></div>}
+            </div>}
             {reportTab === 'resources' && <div className="mt-6">
               <h4 className="font-extrabold flex items-center gap-2 text-sm"><FileText className="w-5 h-5 text-primary" /> 完整学习报告</h4>
-              {markdownBusy && <p className="mt-3 text-sm text-muted-foreground font-bold inline-flex items-center gap-2"><LoaderCircle className="w-4 h-4 animate-spin" />正在生成学习报告…</p>}
+              {markdownBusy && <ReportGenerating kind="full" />}
               {markdownError && <p className="mt-3 text-sm font-bold text-destructive flex items-center gap-1.5"><CircleAlert className="w-4 h-4" />{markdownError}</p>}
               {markdown && !markdownBusy && !markdownError && <details><summary>展开 AI 综合报告正文</summary><div className="mt-3 text-sm leading-relaxed whitespace-pre-wrap">{markdown}</div></details>}
             </div>}

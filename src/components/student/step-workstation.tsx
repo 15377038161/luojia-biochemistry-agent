@@ -22,6 +22,7 @@ import StepReviewReport from "@/components/student/step-review-report";
 import TaskPrinciples from "@/components/student/task-principles";
 import QuizPanel from "@/components/student/quiz-panel";
 import ExperimentWriter from "@/components/student/experiment-writer";
+import ReportGenerating from "@/components/student/report-generating";
 import { dispatchChaoxingTaskflow } from "@/lib/chaoxing-taskflow-client";
 import type { ChaoxingTaskflowPayload } from "@/lib/chaoxing-taskflow-contract";
 import { clientErrorMessage } from "@/lib/client-request";
@@ -387,7 +388,10 @@ export default function StepWorkstation(
                     </section>
                     {stage === 0 && <TaskPrinciples step={step} sessionId={session.sessionId} preview={preview} />}
                     <div hidden={stage !== 1}><QuizPanel key={session.sessionId + "-quiz-" + stepId} stepNo={stepId} preview={preview} onCompleted={() => setQuizCompleted(true)} onContinue={() => setStage(2)} /></div>
-                    {stage === 2 && <ExperimentWriter step={step} answers={descs} onChange={setDescs} onSubmit={() => void submitEvaluation()} busy={busy} error={error} draftNotice={draftNotice} isCurrent={isCurrent} phase={phase} />}
+                    {stage === 2 && <div className="relative">
+                        <ExperimentWriter step={step} answers={descs} onChange={setDescs} onSubmit={() => void submitEvaluation()} busy={busy} error={error} draftNotice={draftNotice} isCurrent={isCurrent} phase={phase} />
+                        {busy && <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[26px] bg-card/85 backdrop-blur-sm"><ReportGenerating kind="step" title={step.shortTitle} /></div>}
+                    </div>}
                     {stage === 3 && evaluation && <section className="student-stage-panel student-stage-panel-review"><StepReviewReport
                             step={step}
                             evaluation={evaluation}

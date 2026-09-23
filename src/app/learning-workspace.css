@@ -145,3 +145,27 @@
 .quiz-workspace .quiz-number-nav button { width: 38px; height: 38px; }
 .quiz-workspace .quiz-question-card { padding: 20px 24px; }
 .quiz-workspace .quiz-question-card h3 { font-size: 18px; line-height: 1.6; margin-top: 4px; }
+
+/* 步骤报告：五维逐项分析、逐项原文对比、推荐材料 */
+.step-dimension-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.step-dimension-card { padding: 18px; border: 1px solid #dce4de; border-radius: 16px; background: #f5f8f2; }
+.step-dimension-card > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.step-dimension-card h4 { margin: 0; font-size: 15px; font-weight: 750; color: #193e50; }
+.step-dimension-card .learning-status { font-size: 12px; }
+.dimension-bar { height: 8px; border-radius: 999px; background: #e3ebe6; overflow: hidden; }
+.dimension-bar-fill { height: 100%; border-radius: 999px; }
+.dimension-level { margin: 6px 0 0; font-size: 12px; font-weight: 700; color: #526c76; }
+.dimension-substeps { margin: 12px 0 4px; display: grid; gap: 6px; }
+.dimension-substep { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #193e50; }
+.step-status-dot { width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0; }
+.step-status-dot.is-ok { background: #16835d; }
+.step-status-dot.is-warn { background: #c87726; }
+.step-evidence-disclosure { margin-top: 10px; }
+.step-evidence-feedback { margin: 12px 0 0; padding: 12px 14px; border-radius: 10px; background: #edf4ef; color: #193e50; line-height: 1.8; }
+.step-resource-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.step-resource-card { padding: 16px; border: 1px dashed #cfe0d5; border-radius: 14px; background: #fffdf8; }
+.step-resource-card h4 { margin: 6px 0 4px; font-size: 14px; color: #193e50; }
+.step-resource-card p { margin: 0; font-size: 12px; color: #526c76; line-height: 1.7; }
+@media (max-width: 640px) {
+  .step-dimension-grid, .step-resource-grid { grid-template-columns: 1fr; }
+}
