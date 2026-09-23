@@ -21,8 +21,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       coder-coding-dev-sdk:
-        specifier: file:/usr/local/lib/node_modules/coder-coding-dev-sdk
-        version: file:../../usr/local/lib/node_modules/coder-coding-dev-sdk(@opentelemetry/api@1.9.1)(openai@7.21.0(undici@7.29.0)(ws@8.21.3)(zod@4.3.6))(undici@7.29.0)(ws@8.21.3)
+        specifier: https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz
+        version: https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz(@opentelemetry/api@1.9.1)(openai@7.21.0(undici@7.29.0)(ws@8.21.3)(zod@4.3.6))(undici@7.29.0)(ws@8.21.3)
       dotenv:
         specifier: ^17.2.3
         version: 17.4.2
@@ -116,7 +116,7 @@ importers:
         version: 2.0.1(@types/react@19.2.10)(eslint@9.39.2(jiti@2.6.1))(react@19.2.3)(typescript@5.9.3)(webpack@5.104.1(esbuild@0.27.3)(postcss@8.5.6))
       shadcn:
         specifier: latest
-        version: 4.17.0(@cfworker/json-schema@4.1.1)(typescript@5.9.3)
+        version: 4.21.0(@cfworker/json-schema@4.1.1)(typescript@5.9.3)
       tailwindcss:
         specifier: ^4
         version: 4.1.18
@@ -312,7 +312,7 @@ packages:
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -2866,11 +2866,17 @@ packages:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
 
+  cn@0.2.6:
+    resolution: {integrity: sha512-+i4L0zUGgRcEnhsxueVrP7iBGxBx5iD0WOTYg1MwFEu2ZyCmH5Ov2V1cul2Ht5UchRQQgftCf4be/RxspuW6QQ==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   code-block-writer@13.0.3:
     resolution: {integrity: sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==}
 
-  coder-coding-dev-sdk@file:../../usr/local/lib/node_modules/coder-coding-dev-sdk:
-    resolution: {directory: ../../usr/local/lib/node_modules/coder-coding-dev-sdk, type: directory}
+  coder-coding-dev-sdk@https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz:
+    resolution: {tarball: https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz}
+    version: 1.0.0-20260922.abfcac8
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -5024,8 +5030,8 @@ packages:
   setprototypeof@1.2.0:
     resolution: {integrity: sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==}
 
-  shadcn@4.17.0:
-    resolution: {integrity: sha512-kphndh72CD7mxLQ/thkbPVgfXpIjzPUllzvTWRJmU3sNGZc/WbOqzJ0FXbBGj6sqNiaGPiOLDQByy8FAtCuVUQ==}
+  shadcn@4.21.0:
+    resolution: {integrity: sha512-UU2mFNusW8C5rvadKdH69vERYZqUlOOlXBcf0MYhYLdTGP6DPti7X4qovCu+RTfCqsAgq/T+YfE0Vnttxh9aiw==}
     engines: {node: '>=20.18.1'}
     hasBin: true
 
@@ -5215,9 +5221,6 @@ packages:
 
   tailwind-merge@2.6.1:
     resolution: {integrity: sha512-Oo6tHdpZsGpkKG88HJ8RR1rg/RdnEkQEfMoEk2x1XRI3F1AxeU+ijRXpiVUF4UbLfcxxRGw6TbUINKYdWVsQTQ==}
-
-  tailwind-merge@3.6.0:
-    resolution: {integrity: sha512-uxL7qAVQriqRQPAyK3pj66VqskWqoZ37PW94jwOTwNfq/z9oyu1V+eqrZqtR2+fCiXdYOZe/Modt8GtvqNzu+w==}
 
   tailwindcss@4.1.18:
     resolution: {integrity: sha512-4+Z+0yiYyEtUVCScyfHCxOYP06L5Ne+JiHhY2IjR2KWMIWhJOYZKLSGZaP5HkZ8+bY0cxfzwDE5uOmzFXyIwxw==}
@@ -8133,9 +8136,11 @@ snapshots:
 
   clsx@2.1.1: {}
 
+  cn@0.2.6: {}
+
   code-block-writer@13.0.3: {}
 
-  coder-coding-dev-sdk@file:../../usr/local/lib/node_modules/coder-coding-dev-sdk(@opentelemetry/api@1.9.1)(openai@7.21.0(undici@7.29.0)(ws@8.21.3)(zod@4.3.6))(undici@7.29.0)(ws@8.21.3):
+  coder-coding-dev-sdk@https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz(@opentelemetry/api@1.9.1)(openai@7.21.0(undici@7.29.0)(ws@8.21.3)(zod@4.3.6))(undici@7.29.0)(ws@8.21.3):
     dependencies:
       axios: 1.20.0
       cheerio: 1.2.0
@@ -8458,7 +8463,7 @@ snapshots:
       has-property-descriptors: 1.0.2
       has-proto: 1.2.0
       has-symbols: 1.1.0
-      hasown: 2.0.2
+      hasown: 2.0.4
       internal-slot: 1.1.0
       is-array-buffer: 3.0.5
       is-callable: 1.2.7
@@ -8525,11 +8530,11 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
       has-tostringtag: 1.0.2
-      hasown: 2.0.2
+      hasown: 2.0.4
 
   es-shim-unscopables@1.1.0:
     dependencies:
-      hasown: 2.0.2
+      hasown: 2.0.4
 
   es-to-primitive@1.3.0:
     dependencies:
@@ -9096,7 +9101,7 @@ snapshots:
       call-bound: 1.0.4
       define-properties: 1.2.1
       functions-have-names: 1.2.3
-      hasown: 2.0.2
+      hasown: 2.0.4
       is-callable: 1.2.7
 
   functions-have-names@1.2.3: {}
@@ -9119,7 +9124,7 @@ snapshots:
       get-proto: 1.0.1
       gopd: 1.2.0
       has-symbols: 1.1.0
-      hasown: 2.0.2
+      hasown: 2.0.4
       math-intrinsics: 1.1.0
 
   get-nonce@1.0.1: {}
@@ -9308,7 +9313,7 @@ snapshots:
   internal-slot@1.1.0:
     dependencies:
       es-errors: 1.3.0
-      hasown: 2.0.2
+      hasown: 2.0.4
       side-channel: 1.1.0
 
   ip-address@10.5.0: {}
@@ -9417,7 +9422,7 @@ snapshots:
       call-bound: 1.0.4
       gopd: 1.2.0
       has-tostringtag: 1.0.2
-      hasown: 2.0.2
+      hasown: 2.0.4
 
   is-regexp@3.1.0: {}
 
@@ -10514,7 +10519,7 @@ snapshots:
 
   setprototypeof@1.2.0: {}
 
-  shadcn@4.17.0(@cfworker/json-schema@4.1.1)(typescript@5.9.3):
+  shadcn@4.21.0(@cfworker/json-schema@4.1.1)(typescript@5.9.3):
     dependencies:
       '@babel/core': 7.28.6
       '@babel/parser': 7.28.6
@@ -10524,6 +10529,7 @@ snapshots:
       '@modelcontextprotocol/sdk': 1.30.0(@cfworker/json-schema@4.1.1)(zod@3.25.76)
       '@types/validate-npm-package-name': 4.0.2
       browserslist: 4.28.1
+      cn: 0.2.6
       commander: 14.0.2
       cosmiconfig: 9.0.0(typescript@5.9.3)
       dedent: 1.7.1
@@ -10542,7 +10548,6 @@ snapshots:
       recast: 0.23.11
       socks: 2.8.9
       stringify-object: 5.0.0
-      tailwind-merge: 3.6.0
       ts-morph: 26.0.0
       tsconfig-paths: 4.2.0
       undici: 7.29.0
@@ -10785,8 +10790,6 @@ snapshots:
   supports-preserve-symlinks-flag@1.0.0: {}
 
   tailwind-merge@2.6.1: {}
-
-  tailwind-merge@3.6.0: {}
 
   tailwindcss@4.1.18: {}
 

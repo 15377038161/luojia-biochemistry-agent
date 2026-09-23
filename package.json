@@ -21,7 +21,7 @@
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "2.110.8",
     "class-variance-authority": "^0.7.1",
-    "coder-coding-dev-sdk": "file:/usr/local/lib/node_modules/coder-coding-dev-sdk",
+    "coder-coding-dev-sdk": "https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.2",
