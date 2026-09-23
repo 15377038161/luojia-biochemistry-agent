@@ -1,3 +1,4 @@
+import { LLMClient, Config } from 'coder-coding-dev-sdk';
 import { AiValidationError } from '@/lib/errors';
 
 export type AiContentPart =
@@ -18,125 +19,63 @@ interface InvokeOptions {
   deepThinking?: boolean;
 }
 
-interface GatewayResponse {
-  choices?: Array<{
-    message?: {
-      content?: string | Array<{ type?: string; text?: string }>;
-    };
-  }>;
-  error?: { message?: string };
-}
+// 内置模型映射（由平台注入，无需外部密钥）。
+// doubao-seed 支持视觉与深度思考，用于 quality 及一切含图/复杂推理场景；
+// deepseek-v4-flash 用于 fast 纯文本场景，追求低延迟。
+const QUALITY_MODEL = 'doubao-seed-1-8-251228';
+const FAST_MODEL = 'deepseek-v4-flash';
 
-const DEFAULT_CHAT_URL = 'http://wg.cxcommon.com/fw/v1/chat/completions';
-const QUALITY_MODEL = 'qwen3.8-max';
-const FAST_MODEL = 'deepseek-v4-flash-0731';
+// 平台代理模型最大输出为 8K token，超过该值需收敛，避免请求被拒。
+const MAX_OUTPUT_TOKENS = 8_000;
 
 function positiveInteger(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function gatewayConfig() {
-  const apiKey = process.env.AI_GATEWAY_API_KEY?.trim();
-  if (!apiKey) throw new Error('AI_GATEWAY_API_KEY_MISSING');
-  return {
-    apiKey,
-    chatUrl: process.env.AI_GATEWAY_CHAT_URL?.trim() || DEFAULT_CHAT_URL,
-    qualityModel: process.env.AI_MODEL_QUALITY?.trim() || QUALITY_MODEL,
-    fastModel: process.env.AI_MODEL_FAST?.trim() || FAST_MODEL,
-    timeoutMs: positiveInteger(process.env.AI_GATEWAY_TIMEOUT_MS, 90_000),
-    retryCount: Math.min(2, positiveInteger(process.env.AI_GATEWAY_RETRY_COUNT, 1)),
-  };
+function clampMaxTokens(value: number): number {
+  const min = Math.max(1, positiveInteger(process.env.AI_MIN_TOKENS, 256));
+  return Math.max(min, Math.min(MAX_OUTPUT_TOKENS, value));
 }
 
-function responseText(payload: GatewayResponse): string {
-  const content = payload.choices?.[0]?.message?.content;
-  if (typeof content === 'string' && content.trim()) return content.trim();
-  if (Array.isArray(content)) {
-    const text = content.map((part) => part.text || '').join('').trim();
-    if (text) return text;
-  }
-  throw new AiValidationError('模型网关未返回可解析的文本内容');
+/** 懒加载单例客户端；Config 自动读取 CODER_CODING_* 环境变量，无需手动注入密钥。 */
+let _client: LLMClient | null = null;
+function getClient(): LLMClient {
+  if (!_client) _client = new LLMClient(new Config());
+  return _client;
 }
 
-async function requestGateway(
+/** 判断消息是否包含图像，含图时必须走支持视觉的 quality 模型。 */
+function containsImage(messages: AiMessage[]): boolean {
+  return messages.some(
+    (message) => Array.isArray(message.content) && message.content.some((part) => part.type === 'image_url'),
+  );
+}
+
+/**
+ * 通过平台内置大模型完成一次非流式对话。
+ * 兼容原外部网关的调用签名，返回 { content, model }，供 coze-workflows / teacher-agent 复用。
+ */
+export async function invokeAi(
   messages: AiMessage[],
-  options: Required<Pick<InvokeOptions, 'temperature' | 'maxTokens' | 'deepThinking'>> & { model: string },
-  allowThinkingField: boolean,
-): Promise<string> {
-  const config = gatewayConfig();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(new Error('AI_TIMEOUT')), config.timeoutMs);
-  const body: Record<string, unknown> = {
-    model: options.model,
-    messages,
-    temperature: options.temperature,
-    max_tokens: options.maxTokens,
-  };
-  if (options.deepThinking && allowThinkingField) body.enable_thinking = true;
+  options: InvokeOptions = {},
+): Promise<{ content: string; model: string }> {
+  const workload = options.workload ?? 'quality';
+  // 含图请求强制走视觉模型；否则按 workload 选择。
+  const model = containsImage(messages) || workload !== 'fast' ? QUALITY_MODEL : FAST_MODEL;
+  const temperature = options.temperature ?? 0.2;
+  const maxTokens = clampMaxTokens(options.maxTokens ?? (workload === 'fast' ? 4_000 : 8_000));
 
-  try {
-    const response = await fetch(config.chatUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-    const payload = await response.json().catch(() => ({})) as GatewayResponse;
-    if (!response.ok) {
-      const message = payload.error?.message || `HTTP ${response.status}`;
-      const error = new Error(`模型网关请求失败：${message}`);
-      error.name = response.status >= 500 || response.status === 429 ? 'NetworkError' : 'AiGatewayError';
-      Object.assign(error, { status: response.status });
-      throw error;
-    }
-    return responseText(payload);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function isThinkingFieldError(error: unknown): boolean {
-  return error instanceof Error
-    && Number((error as Error & { status?: number }).status) === 400
-    && /thinking|unknown field|extra field|unsupported/i.test(error.message);
-}
-
-function isRetryable(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  return error.name === 'NetworkError' || /AI_TIMEOUT|AbortError|fetch failed/i.test(`${error.name}:${error.message}`);
-}
-
-export async function invokeAi(messages: AiMessage[], options: InvokeOptions = {}): Promise<{ content: string; model: string }> {
-  const config = gatewayConfig();
-  const model = options.workload === 'fast' ? config.fastModel : config.qualityModel;
-  const normalized = {
+  const response = await getClient().invoke(messages, {
     model,
-    temperature: options.temperature ?? 0.2,
-    maxTokens: options.maxTokens ?? (options.workload === 'fast' ? 4_000 : 16_000),
-    deepThinking: options.deepThinking ?? false,
-  };
+    temperature,
+    maxTokens,
+    thinking: options.deepThinking ? 'enabled' : 'disabled',
+  });
 
-  let allowThinkingField = normalized.deepThinking;
-  let lastError: unknown;
-  for (let attempt = 0; attempt <= config.retryCount; attempt += 1) {
-    try {
-      const content = await requestGateway(messages, normalized, allowThinkingField);
-      return { content, model };
-    } catch (error) {
-      lastError = error;
-      if (allowThinkingField && isThinkingFieldError(error)) {
-        allowThinkingField = false;
-        continue;
-      }
-      if (!isRetryable(error) || attempt === config.retryCount) throw error;
-    }
-  }
-  throw lastError;
+  const content = response.content?.trim();
+  if (!content) throw new AiValidationError('内置模型未返回可解析的文本内容');
+  return { content, model };
 }
 
 export const AI_MODEL_DEFAULTS = {

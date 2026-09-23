@@ -49,9 +49,9 @@ const TEXT_SCHEMA = `{
   }],
   "strengths": ["学生本次作答写得好的 1-3 个要点（写不出可空数组）"],
   "reasoningReview": "对学生推理路径的复盘评价：思路从哪一步开始偏或成立，依据是否充分",
-  "standardAnswer": "完整参考答案。必须包含：① 本步所有关键知识点的底层原理（如SDS作用机制、分子筛原理、pH影响蛋白稳定性的化学键基础）；② 实验步骤的设计目的、操作顺序、关键参数（温度/浓度/时间）及注意事项；③ 实验数据的推导过程（从观察到结论的逻辑链、异常识别与误差分析）；④ 关联前置与后续知识点（如本步为后续定量分析奠定了什么基础）；⑤ 常见误区与纠正方法。答案详尽到可作教材，禁止只列操作流程或泛泛而谈。",
-  "improvedAnswer": "在学生原作答基础上的改写推荐答案。要求：① 保留学生表达风格与已写对的部分；② 对 missing / incorrect / ambiguous 项逐一补齐或纠正；③ 每处补齐必须注明"（补充：原理是……）"或"（纠正：应为……，因为……）"；④ 补齐内容必须详尽到与 standardAnswer 同等水平（含原理拆解、参数完整、关联前后知识点）；⑤ 若学生本次提交为空或严重偏离，improvedAnswer 可退化为 standardAnswer 的精简版。",
-  "knowledgeExplanation": "本步涉及核心知识点的详细讲解。必须包含：① 核心概念的底层原理拆解（如"SDS为阴离子表面活性剂，带负电荷，与蛋白疏水区结合后统一负电性，使电荷/质量比近似相等，电泳迁移率仅取决于分子量"）；② 关键参数的取值依据与影响（如"pH 8.8 确保Tris-HCl缓冲体系稳定且蛋白不聚集"）；③ 关联前置知识（如"还原剂DTT打开二硫键是因为其巯基(-SH)可与蛋白二硫键(-S-S-)发生硫醇-二硫键交换反应"）与后续影响（如"分离后的条带可用于Western Blot或质谱鉴定"）；④ 常见误区（如"误以为任何去垢剂都能替代SDS——实际上非离子去垢剂不带电，无法统一电荷"）。讲解详尽到学生可直接用于复习备考，禁止泛泛而谈或只重复操作步骤。",
+  "standardAnswer": "简明准确的参考答案，控制在 400 字以内：① 关键原理（底层机制）；② 关键参数与操作要点；③ 数据推导逻辑；④ 1-2 个常见误区。避免堆砌与重复。",
+  "improvedAnswer": "在学生原作答基础上的改写推荐答案，控制在 300 字以内：保留已写对的部分，只补齐缺失、纠正错误，并说明理由。",
+  "knowledgeExplanation": "本步核心知识点的简明讲解，控制在 350 字以内：底层原理、关键参数依据与 1-2 个常见误区。",
   "nextAction": "学生下一步最应做的一件事（明确、可执行）"
 }`;
 
@@ -103,8 +103,20 @@ function extractJson(raw: string): unknown {
   let text = raw.trim();
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fenced) text = fenced[1].trim();
-  const start = text.indexOf('{');
-  const end = text.lastIndexOf('}');
+  // 直接尝试整段解析；失败再按首字符截取（对象 { 或数组 [）。
+  try {
+    return JSON.parse(text);
+  } catch {
+    // fallthrough to bracket trimming below
+  }
+  const firstBrace = text.indexOf('{');
+  const firstBracket = text.indexOf('[');
+  if (firstBrace === -1 && firstBracket === -1) throw new AiValidationError('AI 输出中未找到 JSON 内容');
+  const isObject = firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket);
+  const open = isObject ? '{' : '[';
+  const close = isObject ? '}' : ']';
+  const start = text.indexOf(open);
+  const end = text.lastIndexOf(close);
   if (start === -1 || end <= start) throw new AiValidationError('AI 输出中未找到 JSON 内容');
   try {
     return JSON.parse(text.slice(start, end + 1));
@@ -338,10 +350,17 @@ export interface QuizQuestion {
 }
 
 function normalizeQuizQuestions(value: unknown, count: number): QuizQuestion[] {
-  if (!Array.isArray(value) || value.length !== count) {
-    throw new AiValidationError(`AI 返回的题目数量不符合预期，期望 ${count} 题`);
+  // 兼容对象包装（如 { "questions": [...] }）与纯数组两种返回形式。
+  let list: unknown = value;
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const wrapped = value as Record<string, unknown>;
+    list = wrapped.questions ?? wrapped.data ?? wrapped.list ?? wrapped.items;
   }
-  return value.map((candidate, index) => {
+  if (!Array.isArray(list) || list.length < count) {
+    throw new AiValidationError(`AI 返回的题目数量不符合预期，期望至少 ${count} 题`);
+  }
+  list = list.slice(0, count);
+  return (list as unknown[]).map((candidate, index) => {
     if (!candidate || typeof candidate !== 'object') throw new AiValidationError(`第${index + 1}题不是对象`);
     const item = candidate as Partial<QuizQuestion>;
     if (typeof item.question_text !== 'string' || item.question_text.trim().length < 8) throw new AiValidationError(`第${index + 1}题题干无效`);

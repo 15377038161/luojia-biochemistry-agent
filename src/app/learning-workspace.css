@@ -133,3 +133,15 @@
   .instrument-gallery { grid-template-columns: 1fr; }.execution-grid { grid-template-columns: 1fr; }
   .principle-reading article { gap: 12px; }.learning-tabs button { padding: 12px; font-size: 14px; }
 }
+
+/* 知识检验紧凑布局：题目尽快进入首屏，压缩上方冗余间距 */
+.quiz-workspace { padding-top: 22px; }
+.quiz-workspace .learning-section-heading { margin-bottom: 12px; }
+.quiz-workspace .learning-section-heading h2 { font-size: 22px; margin: 3px 0 5px; line-height: 1.3; }
+.quiz-workspace .learning-section-heading p { font-size: 13px; line-height: 1.6; }
+.quiz-workspace .section-mark { width: 40px; height: 40px; padding: 9px; }
+.quiz-workspace .quiz-toolbar { margin: 8px 0; }
+.quiz-workspace .quiz-number-nav { margin: 12px 0; }
+.quiz-workspace .quiz-number-nav button { width: 38px; height: 38px; }
+.quiz-workspace .quiz-question-card { padding: 20px 24px; }
+.quiz-workspace .quiz-question-card h3 { font-size: 18px; line-height: 1.6; margin-top: 4px; }
