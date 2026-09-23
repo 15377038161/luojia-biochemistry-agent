@@ -306,7 +306,7 @@ export async function loadGradingFacts(admin: SupabaseClient, sessionId: string)
   const [{ data: session, error: sessionError }, { data: states, error: stateError }, { data: attemptRows, error: attemptError }, { data: reportRow, error: reportError }, { data: appealRows, error: appealError }] = await Promise.all([
     admin.from('agent_sessions').select('id,completed_at').eq('id', sessionId).maybeSingle(),
     admin.from('step_states').select('step_no,status,attempt_count,passed_at').eq('session_id', sessionId).order('step_no'),
-    admin.from('step_attempts').select('step_no,version_no,created_at,evaluations(id,decision,total_score,result,requires_teacher_review,created_at)').eq('session_id', sessionId),
+    admin.from('step_attempts').select('step_no,version_no,submitted_at,evaluations(id,decision,total_score,result,requires_teacher_review,created_at)').eq('session_id', sessionId),
     admin.from('learning_reports').select('content').eq('session_id', sessionId).order('version', { ascending: false }).limit(1).maybeSingle(),
     admin.from('agent_messages').select('metadata').eq('session_id', sessionId).eq('kind', 'grade_review_request'),
   ]);
