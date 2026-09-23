@@ -183,6 +183,13 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
 
   const dims = data ? Object.fromEntries(data.radarDimensions.map((item) => [item.key, item.score])) as Record<RadarDimensionKey, number> : null;
   const radarValues = DIMENSIONS.map(({ key }) => dims?.[key] ?? 0);
+  const gradeVerdict = data ? ({
+    final: { text: '教师已认定', cls: 'report-verdict-pass' },
+    appealed: { text: '复核中', cls: 'report-verdict-review' },
+    review_required: { text: '需教师复核', cls: 'report-verdict-review' },
+    provisional: { text: 'AI 暂定', cls: 'report-verdict-revise' },
+  } as Record<string, { text: string; cls: string }>)[data.gradeStatus] ?? { text: 'AI 暂定', cls: 'report-verdict-revise' } : { text: 'AI 暂定', cls: 'report-verdict-revise' };
+  const passedStepCount = data ? data.steps.filter(s => s.status === 'passed').length : 0;
     const dimensionInsights = data && dims ? DIMENSIONS.map((dimension) => {
     const score = dims[dimension.key];
     const percent = toPercent(score, dimension.max);
@@ -224,14 +231,22 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
 
         {data && (
           <>
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <p className="text-4xl font-black text-primary">{data.totalScore ?? '—'}</p>
-                  <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-primary-container text-primary text-xs font-bold">{data.grade}</span>
-                </div>
-                <button type="button" onClick={exportReport} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-sm font-bold hover:bg-muted transition-colors cursor-pointer"><Download className="w-4 h-4" /> 导出报告</button>
+            <div className="report-hero">
+              <div className="report-hero-score">
+                <strong>{data.totalScore ?? '—'}</strong>
+                <span>{data.grade}</span>
               </div>
+              <div className="report-hero-body">
+                <div className="report-hero-verdict">
+                  <span className={`report-verdict-pill ${gradeVerdict.cls}`}>{gradeVerdict.text}</span>
+                  <span className="report-tag report-tag-strength">已完成 {passedStepCount}/8 步</span>
+                </div>
+                {data.latestFeedback && <p className="report-hero-conclusion">{data.latestFeedback}</p>}
+                {data.improvementSuggestions.length > 0 && <p className="report-hero-next"><b>优先提升：</b>{data.improvementSuggestions[0].suggestion}</p>}
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <button type="button" onClick={exportReport} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border text-sm font-bold hover:bg-muted transition-colors cursor-pointer"><Download className="w-4 h-4" /> 导出报告</button>
               <p className="max-w-sm text-xs leading-5 text-muted-foreground">报告只基于已提交的文字、Gate 与 AI 评阅记录；未评阅的步骤不会被推断为能力不足。</p>
               {syncNotice && <p className="mt-2 max-w-sm text-xs font-bold leading-5 text-primary inline-flex items-start gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />{syncNotice}</p>}
             </div>

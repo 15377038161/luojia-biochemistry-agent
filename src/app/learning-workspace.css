@@ -169,3 +169,61 @@
 @media (max-width: 640px) {
   .step-dimension-grid, .step-resource-grid { grid-template-columns: 1fr; }
 }
+
+/* ============ 报告排版体系：核心结论 Hero + 语义分区 ============ */
+/* 顶部结论 Hero：置顶常驻，总分/结论/下一步一眼可见 */
+.report-hero {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px 22px;
+  align-items: center;
+  margin-top: 20px;
+  padding: 22px 24px;
+  border: 1px solid #d7e2dd;
+  border-radius: 20px;
+  background: linear-gradient(118deg, #fdfcf7, #eef6f1);
+}
+.report-hero-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(23, 59, 107, .06);
+}
+.report-hero-score strong { font-size: 42px; line-height: 1; font-weight: 800; color: #193e50; font-variant-numeric: tabular-nums; }
+.report-hero-score span { margin-top: 6px; font-size: 12px; font-weight: 700; color: #526c76; }
+.report-hero-body { min-width: 0; }
+.report-hero-verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.report-hero-verdict .report-verdict-pill { padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.report-verdict-pass { color: #0f6b4f; background: #dcf3e8; }
+.report-verdict-revise { color: #a35a12; background: #fdeeda; }
+.report-verdict-review { color: #7a4a1f; background: #f7ecd9; }
+.report-hero-conclusion { margin: 10px 0 0; font-size: 15px; line-height: 1.85; color: #193e50; }
+.report-hero-next { margin: 12px 0 0; padding: 10px 14px; border-left: 3px solid #80afa3; border-radius: 4px 12px 12px 4px; background: #edf4ef; font-size: 13px; line-height: 1.8; color: #193e50; }
+.report-hero-next b { color: #216b60; }
+
+/* 语义分区卡片：对比 / 不足 / 推荐材料 分区清晰分隔 */
+.report-section { margin-top: 16px; border: 1px solid #dce4de; border-radius: 18px; background: #fffdf8; overflow: hidden; }
+.report-section-header { display: flex; align-items: center; gap: 10px; padding: 15px 20px; border-bottom: 1px solid #e6ede8; }
+.report-section-header .report-section-index { width: 26px; height: 26px; flex-shrink: 0; display: grid; place-items: center; border-radius: 8px; background: #e8f1e7; color: #216b60; font-size: 12px; font-weight: 800; }
+.report-section-header h4 { margin: 0; font-size: 15px; font-weight: 750; color: #193e50; }
+.report-section-header p { margin: 0 0 0 auto; font-size: 11px; color: #7a8d9a; }
+.report-section-body { padding: 18px 20px; }
+.report-section-body p { line-height: 1.85; }
+
+/* 语义徽标：不足 / 对比 / 材料 */
+.report-tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.report-tag-gap { color: #a35a12; background: #fdeeda; }
+.report-tag-compare { color: #1a5f8a; background: #e3f0f8; }
+.report-tag-resource { color: #0f6b4f; background: #dcf3e8; }
+.report-tag-strength { color: #0f6b4f; background: #dcf3e8; }
+
+@media (max-width: 640px) {
+  .report-hero { grid-template-columns: 1fr; padding: 18px; }
+  .report-hero-score { flex-direction: row; gap: 10px; min-width: 0; justify-content: flex-start; }
+  .report-hero-score strong { font-size: 34px; }
+}
