@@ -72,6 +72,7 @@ interface Props {
     onBack: () => void;
     onSessionUpdate: (view: StudentSessionView) => void;
     onOpenReport?: () => void;
+    onNextStep?: (stepId: number) => void;
 }
 
 function previewEvaluation(step: ExperimentStep): TextEvaluation {
@@ -146,7 +147,8 @@ export default function StepWorkstation(
         canSwitchToTeacher = false,
         onBack,
         onSessionUpdate,
-        onOpenReport
+        onOpenReport,
+        onNextStep
     }: Props
 ) {
     const step = catalog.find(item => item.id === stepId) ?? experimentSteps[stepId - 1];
@@ -398,7 +400,8 @@ export default function StepWorkstation(
                             answers={descs}
                             syncNotice={syncNotice}
                             onRevise={() => setStage(2)}
-                            onBack={onBack} /></section>}
+                            onBack={onBack}
+                            onNextStep={onNextStep && stepId < catalog.length ? () => onNextStep(stepId + 1) : undefined} /></section>}
                     <footer
                         className="workstation-footer mt-6 flex items-center justify-between gap-2">
                         <button

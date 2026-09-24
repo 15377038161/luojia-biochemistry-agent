@@ -7,6 +7,7 @@ import type { StudentReportData } from '@/app/api/student/report-data/route';
 import type { RadarDimensionKey } from '@/lib/services/grading';
 import { useSwipeDismiss } from '@/hooks/use-swipe-dismiss';
 import StudentTopbar from '@/components/student/student-topbar';
+import AbilityRadar from '@/components/student/ability-radar';
 import ReportGenerating from '@/components/student/report-generating';
 import { clientErrorMessage } from '@/lib/client-request';
 import { authFetch } from '@/lib/authed-fetch';
@@ -78,23 +79,6 @@ function levelName(percent: number): string {
   if (percent >= 85) return '优势';
   if (percent >= 70) return '基本稳定';
   return '优先提升';
-}
-
-const RADAR_CENTER = { x: 140, y: 115 } as const;
-const RADAR_LABEL_POSITIONS: Array<{ x: number; y: number; textAnchor: 'start' | 'middle' }> = [
-  { x: 140, y: 11, textAnchor: 'middle' },
-  { x: 226, y: 70, textAnchor: 'start' },
-  { x: 210, y: 210, textAnchor: 'middle' },
-  { x: 70, y: 210, textAnchor: 'middle' },
-  { x: 4, y: 70, textAnchor: 'start' },
-];
-
-function radarPoints(values: number[], radius: number): string {
-  return values.map((value, index) => {
-    const angle = (Math.PI * 2 * index) / values.length - Math.PI / 2;
-    const r = (radius * Math.max(Math.min(value, 100), 0)) / 100;
-    return `${(RADAR_CENTER.x + r * Math.cos(angle)).toFixed(1)},${(RADAR_CENTER.y + r * Math.sin(angle)).toFixed(1)}`;
-  }).join(' ');
 }
 
 export default function StudyReport({ name, sessionId, preview, markdown, markdownBusy, markdownError, syncNotice = '', onClose, standalone = false, practiceMode = false, canSwitchToTeacher = false }: Props) {
@@ -182,7 +166,6 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
   }
 
   const dims = data ? Object.fromEntries(data.radarDimensions.map((item) => [item.key, item.score])) as Record<RadarDimensionKey, number> : null;
-  const radarValues = DIMENSIONS.map(({ key }) => dims?.[key] ?? 0);
   const gradeVerdict = data ? ({
     final: { text: '教师已认定', cls: 'report-verdict-pass' },
     appealed: { text: '复核中', cls: 'report-verdict-review' },
@@ -286,37 +269,7 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
                 <h4 className="font-extrabold flex items-center gap-2 text-sm"><RadarIcon className="w-5 h-5 text-primary" /> 五维能力雷达</h4>
                 <p className="mt-2 text-xs leading-5 text-muted-foreground">雷达半径展示各维度的得分率（实际得分 ÷ 该维度满分），不是额外考试分数。面积越外侧，说明已评阅文字中该能力证据越充分。</p>
                 {dims ? (
-                  <div className="mt-3 flex justify-center">
-                    <svg viewBox="0 0 280 240" className="w-full max-w-[360px]" role="img" aria-label="五维能力得分雷达图">
-                      <g fill="none" stroke="currentColor" className="text-border" strokeWidth="1">
-                        {[72, 48, 24].map((radius) => <polygon key={radius} points={radarPoints([100, 100, 100, 100, 100], radius)} />)}
-                        {radarPoints([100, 100, 100, 100, 100], 72).split(' ').map((point, index) => {
-                          const [x, y] = point.split(',');
-                          return <line key={index} x1={RADAR_CENTER.x} y1={RADAR_CENTER.y} x2={x} y2={y} />;
-                        })}
-                      </g>
-                      <g className="text-primary">
-                        <polygon points={radarPoints(radarValues, 72)} fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="2" />
-                        {radarValues.map((value, index) => {
-                          const angle = (Math.PI * 2 * index) / radarValues.length - Math.PI / 2;
-                          const r = (72 * value) / 100;
-                          return <circle key={index} cx={RADAR_CENTER.x + r * Math.cos(angle)} cy={RADAR_CENTER.y + r * Math.sin(angle)} r="3" fill="currentColor" />;
-                        })}
-                      </g>
-                      <g fill="currentColor" className="text-muted-foreground" fontSize="10" fontWeight="700">
-                        {DIMENSIONS.map(({ key, label }, index) => {
-                          const { x, y, textAnchor } = RADAR_LABEL_POSITIONS[index];
-                          const dimension = DIMENSIONS[index];
-                          return (
-                            <text key={key} x={x} y={y} textAnchor={textAnchor}>
-                              <tspan x={x}>{label}</tspan>
-                              <tspan x={x} dy="12" fontSize="8.5" fontWeight="600">{dims[key]}/{dimension.max}</tspan>
-                            </text>
-                          );
-                        })}
-                      </g>
-                    </svg>
-                  </div>
+                  <AbilityRadar className="mt-3" dimensions={DIMENSIONS.map(({ key, label, max }) => ({ key, label, score: dims[key] ?? 0, max }))} />
                 ) : <p className="mt-4 text-xs text-muted-foreground">还没有产生五维评分记录。</p>}
               </div>
               <div className="rounded-2xl border border-border/60 shadow-card p-5 space-y-4">

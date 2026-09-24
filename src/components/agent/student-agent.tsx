@@ -190,6 +190,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
         onOpenReport={openReport}
         onBack={goToMap}
         onSessionUpdate={setSession}
+        onNextStep={goToStep}
       />
     );
   }

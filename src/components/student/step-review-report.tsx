@@ -4,7 +4,7 @@ import type { ExperimentStep, TextEvaluation, DimensionScores } from "@/domain/a
 import { Button } from "@/components/ui/button";
 import { buildStepReviewRows } from "@/lib/step-learning-report";
 
-interface Props { step: ExperimentStep; evaluation: TextEvaluation; answers: Record<string, string>; syncNotice: string; onRevise: () => void; onBack: () => void }
+interface Props { step: ExperimentStep; evaluation: TextEvaluation; answers: Record<string, string>; syncNotice: string; onRevise: () => void; onBack: () => void; onNextStep?: () => void }
 
 // 五个评阅维度及其满分（与评阅口径一致）。
 const DIMENSION_META: Array<{ key: keyof DimensionScores; label: string; max: number }> = [
@@ -29,7 +29,7 @@ function barColor(score: number, max: number): string {
   return "bg-warning";
 }
 
-export default function StepReviewReport({ step, evaluation, answers, syncNotice, onRevise, onBack }: Props) {
+export default function StepReviewReport({ step, evaluation, answers, syncNotice, onRevise, onBack, onNextStep }: Props) {
   const rows = buildStepReviewRows(step, evaluation, answers);
   const passed = evaluation.decision === "pass";
   const totalScore = Object.values(evaluation.scores).reduce((sum, n) => sum + n, 0);
@@ -138,6 +138,6 @@ export default function StepReviewReport({ step, evaluation, answers, syncNotice
     </div>
 
     {syncNotice && <p role="status" className="learning-muted mt-6">{syncNotice}</p>}
-    <footer className="learning-actions"><Button variant="outline" onClick={onRevise}>返回方案修订</Button>{passed && <Button onClick={onBack}>返回地图 · 进入下一步</Button>}</footer>
+    <footer className="learning-actions"><Button variant="outline" onClick={onRevise}>返回方案修订</Button>{passed && onNextStep && <Button onClick={onNextStep}>进入下一步骤</Button>}{passed && !onNextStep && <Button onClick={onBack}>返回地图 · 查看完整报告</Button>}{!passed && <Button variant="outline" onClick={onBack}>返回地图</Button>}</footer>
   </section>;
 }
