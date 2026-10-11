@@ -17,15 +17,16 @@
 1. `ENV_NAMES` 新增 `CODER_SUPABASE_URL`、`CODER_SUPABASE_ANON_KEY`、`CODER_SUPABASE_TENANT_ID`、`NEXT_PUBLIC_CODER_SUPABASE_TENANT_ID`，修复测试隔离。
 2. 「直接 Supabase 环境变量」→ 改用 `CODER_SUPABASE_*` 键名，断言三元组 `{url, anonKey, tenantId}`。
 3. 「显式配置优先」→ 改为「`CODER_SUPABASE_*` 优先于旧 `SUPABASE_*` 键名」，保留优先级测试意图。
-4. 「缺 service role 不误报接通」→ 改为「缺 `tenantId` 不误报接通」（保留负向断言意图：缺关键配置不得误报）。
+4. 「缺 service role 不误报接通」→ 改为「缺 `tenantId` 不误报接通」。依据：`src/lib/supabase-client.ts` 注释明确「平台只提供 anon key，本项目禁止持有 SERVICE_ROLE_KEY」，`getSupabaseCredentials()` 返回结构 `{url, anonKey, tenantId}` 不含 service role，后台授权已由运行时 JWT（`Authorization: Bearer <token>`）+ RLS 替代。故「缺 service role」在新架构下无对应配置维度，负向断言意图迁移到「缺 `tenantId`」（当前真实的必要配置）。
 5. 「非本地 HTTP 被拒绝」→ 改用 `CODER_SUPABASE_URL=http`，保留 HTTPS 安全负向断言，错误文案断言同步。
+6. 新增独立负向测试「后台访问禁止依赖 service role，凭据结构不含 service role」：设置假 `SUPABASE_SERVICE_ROLE_KEY`，断言凭据结构不暴露任何 service role 字段（`serviceRoleKey` 不在返回结构中），保留后台授权保障、不凭猜测要求 SDK 不存在的 service-role 字段、不调用生产。
 
 ## 测试结果
 
 | 命令 | 退出码 | 结果 |
 |---|---|---|
-| `tsx --test tests/supabase-config.test.ts` | 0 | 4/4 通过 |
-| `pnpm test`（全量） | 1 | 77 pass / 5 fail |
+| `tsx --test tests/supabase-config.test.ts` | 0 | 5/5 通过 |
+| `pnpm test`（全量） | 1 | 78 pass / 5 fail（共 83） |
 | `pnpm ts-check` | 0 | 通过 |
 | `pnpm lint` | 0 | 0 error / 20 warning |
 | `pnpm build` | 0 | 通过 |
