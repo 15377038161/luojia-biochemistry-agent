@@ -34,5 +34,40 @@
 ## 剩余未修复失败（如实保留，不在本次范围）
 
 - `tests/ai-gateway.test.ts`（3 项）：AI 网关已迁移到平台内置 LLM SDK，测试仍断言旧模型名/重试语义。密钥不泄漏契约仍有效，本轮不改。
-- `tests/quiz-database-contract.test.ts`（1 项）：`getSessionUser(req.cookies)` 签名已改为 `getSessionUser(req)`。
 - `tests/teacher-workspace.test.ts`（1 项）：引用已删除的 `supabase-chaoxing-user.ts`，职责已并入 `supabase-auth.ts`。
+
+---
+
+# 第二轮：quiz-database-contract 修复（2026-10-11）
+
+## 修复前快照
+
+- backup 分支：`backup/before-quiz-contract-repair-20261011` → `0050f47cabaa26e8d585f0d2902531fd24a15c37`
+
+## 修复原因
+
+`tests/quiz-database-contract.test.ts` 的鉴权入口断言仍引用旧签名 `getSessionUser(req.cookies)` 与旧客户端 `getSupabaseAdminClient()`。实际实现已迁移为：`getSessionUser(req)`（从 `x-sandbox-authorization` 头读 JWT）→ 返回 `identity.supabase`（携带用户 JWT 的低权限客户端），并通过 `.eq('user_id', identity.user.id)` 限定用户归属。
+
+## 修复内容
+
+1. 鉴权入口断言：`getSessionUser(req.cookies)` → `getSessionUser(req)`。
+2. 数据访问客户端断言：`getSupabaseAdminClient()` → `identity.supabase`（用户 JWT 客户端）。
+3. 新增用户归属断言 `user_id`（`.eq('user_id', identity.user.id)`）。
+4. 保留 `doesNotMatch supabase.auth.getUser()`（不直接调用 getUser）。
+5. 新增「题目答案不泄漏」断言：start 的 `clientQuestions` 返回对象仅含 `{ question_id, question_text, options }`，不暴露 `correct_option_id`/`explanation`。
+6. 新增「完成会话返回 results」断言：submit 返回 `{ results, score, total }`。
+
+## 测试结果
+
+| 命令 | 退出码 | 结果 |
+|---|---|---|
+| `tsx --test tests/quiz-database-contract.test.ts` | 0 | 3/3 通过 |
+| `pnpm test`（全量） | 1 | 79 pass / 4 fail（共 83） |
+| `pnpm ts-check` | 0 | 通过 |
+| `pnpm lint` | 0 | 0 error / 20 warning |
+| `pnpm build` | 0 | 通过 |
+
+## 说明
+
+- 本轮仅更新测试静态引用并保留/补充安全契约断言，未改业务实现、未动数据库 DDL、未写生产库、未动密钥文件。
+- 「禁止 service-role 配置」的测试不构成真实 RLS 权限验收；无效/缺 JWT 被拒绝、受限表不可用等仍需真实集成验证。

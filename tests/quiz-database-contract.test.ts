@@ -4,13 +4,20 @@ import test from 'node:test';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
-test('题库接口先读取用户 Cookie 身份，再用管理员客户端访问受保护题目', () => {
+test('题库接口通过 getSessionUser 读取身份，用携带用户 JWT 的客户端限定 user_id 访问', () => {
   for (const route of ['start', 'session', 'submit']) {
     const source = read(`src/app/api/student/quiz/${route}/route.ts`);
-    assert.match(source, /getSessionUser\(req\.cookies\)/);
-    assert.match(source, /getSupabaseAdminClient\(\)/);
+    assert.match(source, /getSessionUser\(req\)/);
+    assert.match(source, /identity\.supabase/);
+    assert.match(source, /user_id/);
     assert.doesNotMatch(source, /supabase\.auth\.getUser\(\)/);
   }
+  // 题目答案不泄漏：start 返回前经 clientQuestions 过滤，仅暴露 question_id/question_text/options
+  const start = read('src/app/api/student/quiz/start/route.ts');
+  assert.match(start, /\{ question_id, question_text, options \}/);
+  // 完成会话返回 results（批改结果、得分、总数）
+  const submit = read('src/app/api/student/quiz/submit/route.ts');
+  assert.match(submit, /return ok\(\{ results, score, total \}\)/);
 });
 
 test('题库接口使用正式状态与时间字段，不引用不存在的 completed_at', () => {
