@@ -21,7 +21,10 @@ export default function AuthCallback() {
       if (result.success) {
         // 先基于服务端能力 + 入口偏好解析目标，再清理入口偏好（顺序不可颠倒）
         const route = await resolveLoginDestination()
-        clearSelectedWorkspace()
+        // 仅在成功解析到工作区时清理入口；失败（回 /login）保留入口供重试，绝不因此授予角色
+        if (route.target !== '/login') {
+          clearSelectedWorkspace()
+        }
         router.replace(withNotice(route.target, route.notice))
       }
     })

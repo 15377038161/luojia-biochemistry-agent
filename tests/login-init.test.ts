@@ -97,8 +97,8 @@ test('[契约] AuthGuard 有 try/catch + 重试按钮 + 公开路由（含预览
   assert.match(src, /isPublicRoute\(pathname\)/);
 });
 
-test('[契约] resolveLoginDestination 对 response.json 有 try/catch 兜底', () => {
+test('[契约] resolveLoginDestination 对 response.json 有 try/catch 兜底 + withTimeout 有界', () => {
   const src = read('src/lib/auth.ts');
   assert.match(src, /身份校验响应异常/);
-  assert.match(src, /AbortSignal\.timeout/);
+  assert.match(src, /withTimeout\(/);
 });

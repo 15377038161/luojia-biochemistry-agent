@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { FlaskConical, Dna, ShieldCheck, ArrowRight, BookOpen, GraduationCap } from 'lucide-react'
-import { loginWithChaoxingOAuth, setSelectedWorkspace, type LoginWorkspace } from '@/lib/auth'
+import { getSelectedWorkspace, loginWithChaoxingOAuth, setSelectedWorkspace, type LoginWorkspace } from '@/lib/auth'
 import BrandLockup from '@/components/brand-lockup'
 
 /** 双入口选项元数据：仅决定登录后跳转目标，不授予任何角色/权限。 */
@@ -27,7 +27,7 @@ const ENTRY_OPTIONS: Array<{ value: LoginWorkspace; label: string; hint: string;
 export default function LoginForm() {
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState('')
-  const [workspace, setWorkspace] = useState<LoginWorkspace>('student')
+  const [workspace, setWorkspace] = useState<LoginWorkspace>(() => getSelectedWorkspace() ?? 'student')
 
   // 读取回跳/守卫跳转携带的无权限或认证失败提示（?notice=...）
   useEffect(() => {

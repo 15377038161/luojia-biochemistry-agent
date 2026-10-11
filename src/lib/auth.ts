@@ -2,6 +2,7 @@
 // 单一事实源：PROJECT_ID / AUTH_BASE / 工作区首页映射（全项目只声明一次）。
 // 超星登录仅 OAuth2.0 一键登录；session 由平台服务端代理换取后写入 Supabase Auth。
 import { getSupabase } from './supabase'
+import { authFetch } from './authed-fetch'
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_CODER_PROJECTS_ID
 // 本地开发平台注入隧道地址（浏览器直连，绕开预览网关）；生产环境该变量不存在
@@ -73,8 +74,9 @@ export async function resolveLoginDestination(): Promise<LoginRoute> {
 
   let response: Response
   try {
-    // 5 秒超时兜底：能力查询挂起时避免登录页/守卫空白卡死（超时/网络异常统一按认证失败回退登录页）
-    response = await fetch('/api/auth/me', { signal: AbortSignal.timeout(5000) })
+    // 复用 authFetch 携带现有会话令牌（Authorization: Bearer <token>，平台 Nginx 重命名为 X-Sandbox-Authorization）；
+    // withTimeout 保证整体有界：getSession 挂起/网络超时统一按认证失败回退登录页，迟到结果被忽略不引发导航。
+    response = await withTimeout(authFetch('/api/auth/me'), 5000)
   } catch {
     return { target: '/login', notice: '身份校验暂不可用，请重新登录。' }
   }
