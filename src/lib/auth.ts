@@ -82,9 +82,15 @@ export async function resolveLoginDestination(): Promise<LoginRoute> {
     return { target: '/login', notice: '登录状态无效，请重新登录。' }
   }
 
-  const body = (await response.json()) as {
+  // JSON 解析失败 / 非 JSON（如网关返回 HTML 200）→ 统一安全回登录，不抛异常、不越权
+  let body: {
     capabilities?: { teacherWorkspace?: boolean; teacherPractice?: boolean }
     defaultWorkspace?: LoginWorkspace
+  }
+  try {
+    body = (await response.json()) as typeof body
+  } catch {
+    return { target: '/login', notice: '身份校验响应异常，请重新登录。' }
   }
   const teacherWorkspace = body.capabilities?.teacherWorkspace === true
   const teacherPractice = body.capabilities?.teacherPractice === true
