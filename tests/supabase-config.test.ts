@@ -6,6 +6,10 @@ import {
 } from '../src/lib/supabase-client';
 
 const ENV_NAMES = [
+  'CODER_SUPABASE_URL',
+  'CODER_SUPABASE_ANON_KEY',
+  'CODER_SUPABASE_TENANT_ID',
+  'NEXT_PUBLIC_CODER_SUPABASE_TENANT_ID',
   'COZE_SUPABASE_URL',
   'COZE_SUPABASE_ANON_KEY',
   'COZE_SUPABASE_SERVICE_ROLE_KEY',
@@ -30,49 +34,51 @@ function withCleanSupabaseEnv(run: () => void): void {
   }
 }
 
-test('直接 Supabase 环境变量可建立统一公开配置', () => {
+test('CODER_SUPABASE 环境变量可建立统一公开配置', () => {
   withCleanSupabaseEnv(() => {
-    process.env.SUPABASE_URL = 'https://example.supabase.co/path-that-must-be-removed';
-    process.env.SUPABASE_PUBLISHABLE_KEY = 'publishable-test-key';
-    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-test-key';
+    process.env.CODER_SUPABASE_URL = 'https://example.supabase.co/path-that-must-be-removed';
+    process.env.CODER_SUPABASE_ANON_KEY = 'publishable-test-key';
+    process.env.CODER_SUPABASE_TENANT_ID = 'tenant-test-id';
 
     assert.deepEqual(getSupabaseCredentials(), {
       url: 'https://example.supabase.co',
       anonKey: 'publishable-test-key',
+      tenantId: 'tenant-test-id',
     });
     assert.equal(hasCompleteSupabaseConfiguration(), true);
   });
 });
 
-test('显式 Supabase 配置优先于扣子自动注入的旧数据库', () => {
+test('CODER_SUPABASE 配置优先于旧 SUPABASE 键名', () => {
   withCleanSupabaseEnv(() => {
-    process.env.COZE_SUPABASE_URL = 'https://old.example.supabase.co';
-    process.env.COZE_SUPABASE_ANON_KEY = 'old-publishable-key';
-    process.env.COZE_SUPABASE_SERVICE_ROLE_KEY = 'old-service-key';
-    process.env.SUPABASE_URL = 'https://new.example.supabase.co';
-    process.env.SUPABASE_PUBLISHABLE_KEY = 'new-publishable-key';
-    process.env.SUPABASE_SERVICE_ROLE_KEY = 'new-service-key';
+    process.env.SUPABASE_URL = 'https://old.example.supabase.co';
+    process.env.SUPABASE_PUBLISHABLE_KEY = 'old-publishable-key';
+    process.env.CODER_SUPABASE_URL = 'https://new.example.supabase.co';
+    process.env.CODER_SUPABASE_ANON_KEY = 'new-publishable-key';
+    process.env.CODER_SUPABASE_TENANT_ID = 'tenant-test-id';
 
     assert.deepEqual(getSupabaseCredentials(), {
       url: 'https://new.example.supabase.co',
       anonKey: 'new-publishable-key',
+      tenantId: 'tenant-test-id',
     });
     assert.equal(hasCompleteSupabaseConfiguration(), true);
   });
 });
 
-test('缺少 service role 时不得误报数据库已经接通', () => {
+test('缺少 tenantId 时不得误报数据库已经接通', () => {
   withCleanSupabaseEnv(() => {
-    process.env.COZE_SUPABASE_URL = 'https://example.supabase.co';
-    process.env.COZE_SUPABASE_ANON_KEY = 'publishable-test-key';
+    process.env.CODER_SUPABASE_URL = 'https://example.supabase.co';
+    process.env.CODER_SUPABASE_ANON_KEY = 'publishable-test-key';
     assert.equal(hasCompleteSupabaseConfiguration(), false);
   });
 });
 
 test('非本地 HTTP Supabase 地址被拒绝', () => {
   withCleanSupabaseEnv(() => {
-    process.env.COZE_SUPABASE_URL = 'http://example.supabase.co';
-    process.env.COZE_SUPABASE_ANON_KEY = 'publishable-test-key';
+    process.env.CODER_SUPABASE_URL = 'http://example.supabase.co';
+    process.env.CODER_SUPABASE_ANON_KEY = 'publishable-test-key';
+    process.env.CODER_SUPABASE_TENANT_ID = 'tenant-test-id';
     assert.throws(() => getSupabaseCredentials(), /必须使用 HTTPS/);
   });
 });
