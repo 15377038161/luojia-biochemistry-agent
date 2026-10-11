@@ -22,10 +22,15 @@ test('学生管理接口返回专业、年级、班级筛选维度', () => {
 
 test('学习通身份学籍字段有正式落库迁移且缺失时不伪造', () => {
   const migration = read('supabase/migrations/202609020002_teacher_student_dimensions.sql');
-  const identity = read('src/lib/supabase-chaoxing-user.ts');
+  const identity = read('src/lib/supabase-auth.ts');
+  // 落库迁移含 4 个学籍字段（snake_case）
   for (const column of ['major_name', 'grade_name', 'class_name', 'academic_source']) {
     assert.match(migration, new RegExp(column));
-    assert.match(identity, new RegExp(column));
   }
-  assert.match(identity, /userInfo\.majorName \|\| null/);
+  // 身份归一化层暴露 3 个学籍字段（camelCase），经 getString 归一化，缺失返回空串不伪造
+  for (const field of ['majorName', 'gradeName', 'className']) {
+    assert.match(identity, new RegExp(field));
+  }
+  assert.match(identity, /majorName: getString/);
+  assert.match(identity, /return ''/);
 });

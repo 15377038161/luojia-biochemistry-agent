@@ -71,3 +71,37 @@
 
 - 本轮仅更新测试静态引用并保留/补充安全契约断言，未改业务实现、未动数据库 DDL、未写生产库、未动密钥文件。
 - 「禁止 service-role 配置」的测试不构成真实 RLS 权限验收；无效/缺 JWT 被拒绝、受限表不可用等仍需真实集成验证。
+
+---
+
+# 第三轮：teacher-workspace 修复（2026-10-11）
+
+## 修复前快照
+
+- backup 分支：`backup/before-teacher-workspace-repair-20261011` → `0d9d94b492a72477a28ff75bd05e9bd8df4f6b94`
+
+## 修复原因
+
+`tests/teacher-workspace.test.ts` 的「学习通身份学籍字段有正式落库迁移且缺失时不伪造」断言引用已删除文件 `src/lib/supabase-chaoxing-user.ts`，且旧断言 `userInfo.majorName || null` 语义已过时。学籍字段归一化职责已并入 `src/lib/supabase-auth.ts`，缺失值语义为经 `getString` 归一化后返回空串 `''`（非 `null`）。
+
+## 修复内容
+
+1. 身份文件引用：`src/lib/supabase-chaoxing-user.ts` → `src/lib/supabase-auth.ts`。
+2. 落库迁移断言：保留 4 个 snake_case 学籍字段（`major_name`、`grade_name`、`class_name`、`academic_source`）在迁移 SQL 中的断言。
+3. 身份归一化层断言：改为暴露 3 个 camelCase 字段（`majorName`、`gradeName`、`className`），缺失经 `getString` 归一化返回空串 `''` 不伪造。
+4. 保留「正式落库迁移」与「缺失不伪造」两个核心契约意图，未改业务实现。
+
+## 测试结果
+
+| 命令 | 退出码 | 结果 |
+|---|---|---|
+| `tsx --test tests/teacher-workspace.test.ts` | 0 | 3/3 通过 |
+| `pnpm test`（全量） | 1 | 80 pass / 3 fail（共 83） |
+| `pnpm ts-check` | 0 | 通过 |
+| `pnpm lint` | 0 | 通过（eslint --quiet） |
+| `pnpm build` | 0 | 通过 |
+
+## 说明
+
+- 本轮仅更新测试静态引用并适配当前身份实现，未改业务实现、未动数据库 DDL、未写生产库、未动密钥文件。
+- 剩余 3 项失败为 `tests/ai-gateway.test.ts`（AI 网关已迁移到平台内置 LLM SDK，模型名/重试语义断言过期），密钥不泄漏契约仍有效，本轮明确保留不改。
