@@ -67,12 +67,40 @@ test('网络错误（name=NetworkError）含哨兵时收敛为 NETWORK_ERROR 且
   assert.ok(!JSON.stringify(result).includes(SENTINEL), '收敛后的整个 ApiError 不得含哨兵');
 });
 
-test('SDK APIError 无有效状态（结构错误）收敛为 AI_OUTPUT_INVALID 且不泄漏原始消息', () => {
-  const structureError = Object.assign(new Error(`无效的模型响应结构 ${SENTINEL}`), { name: 'APIError' });
-  const result = errorFromUnknown(structureError);
-  assert.equal(result.code, 'AI_OUTPUT_INVALID');
+test('SDK APIError 缺 status 仍收敛为 AI_UPSTREAM_ERROR（不推断为结构错误）', () => {
+  const apiErrorMissingStatus = Object.assign(new Error(`无效的模型响应结构 ${SENTINEL}`), { name: 'APIError' });
+  const result = errorFromUnknown(apiErrorMissingStatus);
+  assert.equal(result.code, 'AI_UPSTREAM_ERROR');
   assert.ok(!result.message.includes(SENTINEL), '收敛后的 message 不得含哨兵');
-  assert.ok(!result.message.includes('模型响应结构'), '不得透传原始结构错误 message');
+  assert.ok(!result.message.includes('模型响应结构'), '不得透传原始 message');
+});
+
+test('SDK APIError 非法 status 仍收敛为 AI_UPSTREAM_ERROR 且不保留非法数字', () => {
+  const apiErrorInvalidStatus = Object.assign(new Error(`bad status ${SENTINEL}`), { name: 'APIError', status: 'abc' });
+  const result = errorFromUnknown(apiErrorInvalidStatus);
+  assert.equal(result.code, 'AI_UPSTREAM_ERROR');
+  assert.equal(result.status, undefined, '非法 status 不应保留为数字字段');
+  assert.ok(!result.message.includes(SENTINEL), '收敛后的 message 不得含哨兵');
+});
+
+test('只有 AiValidationError 才映射为 AI_OUTPUT_INVALID', () => {
+  const aiValidation = Object.assign(new Error('智能体返回内容未通过校验'), { name: 'AiValidationError' });
+  const result = errorFromUnknown(aiValidation);
+  assert.equal(result.code, 'AI_OUTPUT_INVALID');
+});
+
+test('errorFromUnknown 收敛过程不向日志输出原始 SDK 错误对象', () => {
+  const originalError = console.error;
+  const logged: unknown[][] = [];
+  console.error = (...args: unknown[]) => { logged.push(args); };
+  try {
+    const sdkError = Object.assign(new Error(`secret ${SENTINEL}`), { name: 'APIError', status: 500, data: { key: SENTINEL } });
+    const result = errorFromUnknown(sdkError);
+    assert.equal(result.code, 'AI_UPSTREAM_ERROR');
+    assert.equal(logged.length, 0, 'errorFromUnknown 不得 console.error 原始错误对象');
+  } finally {
+    console.error = originalError;
+  }
 });
 
 test('成功响应正常返回内容', { concurrency: false }, async () => {

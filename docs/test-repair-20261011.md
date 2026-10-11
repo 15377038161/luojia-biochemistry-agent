@@ -200,3 +200,48 @@
 ## 说明
 
 - 本轮仅改错误边界（`errors.ts`/`api-result.ts`/`domain/agent.ts`）+ 新增错误边界测试 + 修复记录；未改业务实现、未改密钥文件、未写生产库、未改 DDL、未 push、未调用真实付费模型。
+
+---
+
+# 第六轮：错误分类纠正（2026-10-11）
+
+## 修复前快照
+
+- backup 分支：`backup/before-ai-error-classification-20261011` → `c10181f5f689e4002e008f2788715e51bc707798`
+
+## 纠正原因
+
+第五轮实现违规：`errorFromUnknown` 中 `if (error.name === 'APIError' && status === null) return errorFromAiValidation();` 凭「SDK 错误 name + 缺 status」推断为「真实 AI 输出结构错误」，把 `AI_OUTPUT_INVALID` 的来源扩大到非 `AiValidationError` 场景。`AI_OUTPUT_INVALID` 必须只来自 `AiValidationError`。
+
+## 纠正内容
+
+1. 删除「APIError 缺 status → AI_OUTPUT_INVALID」推断分支：所有 SDK `APIError`（含缺 status / 非法 status）统一收敛为 `AI_UPSTREAM_ERROR` + 通用中文消息。
+2. `AI_OUTPUT_INVALID` 仅由 `isAiValidationError` 分支产生（真实 AI 输出结构校验错误）。
+3. `NetworkError` 仍 `NETWORK_ERROR`，未泛化数据库/认证错误。
+
+## 调用链 console.error 检查证据
+
+- `src/lib/coze-workflows.ts` / `src/lib/teacher-agent.ts`（invokeAi 直接调用方）：无 `console.error`，直接 `await invokeAi(...)` 错误向上抛。
+- API route（`student/evaluate`、`teacher/query` 等）：catch 统一 `fail(errorFromUnknown(error), ...)`，无 `console.error`。
+- `src/lib` 下 `console.error` 仅 `supabase-config-inject.tsx`（Supabase 配置加载，与 invokeAi 无关）。
+- `src/server.ts:40/46` 为 Next.js 全局兜底（仅 route 未捕获异常时触发），invokeAi 调用链已由 try/catch + `errorFromUnknown` 收敛，不会带原始 SDK 错误到达此处。
+- 新增日志捕获测试：`errorFromUnknown` 收敛过程不 `console.error` 原始 SDK 错误对象。
+
+## 测试结果
+
+| 命令 | 退出码 | 结果 |
+|---|---|---|
+| `tsx --test tests/ai-error-boundary.test.ts` | 0 | 7/7 通过 |
+| `pnpm test`（全量） | 1 | 91 pass / 1 fail（共 92） |
+| `pnpm ts-check` | 0 | 通过 |
+| `pnpm lint` | 0 | 0 error / 20 warning |
+| `pnpm build` | 0 | 通过 |
+
+## 剩余 1 项失败（如实保留）
+
+- `tests/ai-gateway.test.ts` 第 2 项「深度思考」：深度思考实现未接线，SDK 类型不能证明 doubao 上游接受该字段，本轮不改。
+
+## 说明
+
+- 本轮仅纠正错误分类（`api-result.ts`）+ 补测试；c10181f 尚未部署，待本纠正审核后平台部署。
+- 未改业务实现、未改密钥文件、未写生产库、未改 DDL、未 push、未调用真实付费模型。

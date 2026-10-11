@@ -46,15 +46,13 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (isAiValidationError(error)) return errorFromAiValidation();
   if (isSupabaseAuthError(error)) return { code: 'AUTH_REQUIRED', message: '登录状态无效，请重新登录。', retryable: false };
   // SDK 上游模型异常：上游响应 message/data 可能回显密钥/请求上下文，不透传原始 message，
-  // 收敛为安全错误；网络错误仍 NETWORK_ERROR，无有效状态的 APIError 才归 AI_OUTPUT_INVALID。
+  // 收敛为安全错误；网络错误仍 NETWORK_ERROR，其余（含缺/非法 status 的 APIError）统一 AI_UPSTREAM_ERROR。
+  // AI_OUTPUT_INVALID 只来自 AiValidationError（上方 isAiValidationError 分支），不凭 name+缺 status 推断。
   if (isLlmSdkError(error)) {
     if (isLlmNetworkError(error)) {
       return { code: 'NETWORK_ERROR', message: '模型服务网络异常，请稍后重试。', retryable: true };
     }
     const status = llmSdkErrorStatus(error);
-    if (error.name === 'APIError' && status === null) {
-      return errorFromAiValidation();
-    }
     const upstream: ApiError = {
       code: 'AI_UPSTREAM_ERROR',
       message: '模型服务暂时不可用，请稍后重试。',
