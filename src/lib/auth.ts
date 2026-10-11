@@ -117,6 +117,29 @@ export function withNotice(target: string, notice?: string): string {
   return `${target}${separator}notice=${encodeURIComponent(notice)}`
 }
 
+/**
+ * 公开路由：首页 /、登录页 /login、预览页 /preview/*。
+ * 无需登录即可访问，session 检查放后台、不阻塞渲染，避免初始化失败导致永久空白。
+ */
+export function isPublicRoute(pathname: string): boolean {
+  return pathname === '/' || pathname === '/login' || pathname.startsWith('/preview/')
+}
+
+/**
+ * Promise 超时兜底：超时后 reject（旧结果被忽略）。
+ * getSession 不支持 AbortSignal，无法真正取消底层请求；用 race + 超时 reject
+ * 保证调用方不被无限挂起，超时后旧 promise 的 settle 不再影响调用方。
+ */
+export function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs)
+  })
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer)
+  })
+}
+
 const AUTH_HEADERS = {
   'Content-Type': 'application/json',
   // 本地模式绕过 ngrok 免费版浏览器警告页；生产环境无副作用，必须保留

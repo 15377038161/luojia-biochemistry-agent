@@ -89,12 +89,12 @@ test('[契约] getSupabase 优先读运行时 window.__SUPABASE_CONFIG__，回�
   assert.doesNotMatch(src, /SERVICE_ROLE|service_role/i);
 });
 
-test('[契约] AuthGuard 有 try/catch + 重试按钮 + 游客预览直接放行', () => {
+test('[契约] AuthGuard 有 try/catch + 重试按钮 + 公开路由（含预览）直接放行', () => {
   const src = read('src/components/auth-guard.tsx');
   assert.match(src, /try/);
   assert.match(src, /catch/);
   assert.match(src, /重试/);
-  assert.match(src, /startsWith\('\/preview\/'\)/);
+  assert.match(src, /isPublicRoute\(pathname\)/);
 });
 
 test('[契约] resolveLoginDestination 对 response.json 有 try/catch 兜底', () => {
