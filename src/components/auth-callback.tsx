@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { handleOAuthLoginFlow, resolveLoginDestination, clearSelectedWorkspace } from '@/lib/auth'
+import { handleOAuthLoginFlow, resolveLoginDestination, clearSelectedWorkspace, withNotice } from '@/lib/auth'
 
 /**
  * OAuth 回跳闭环：必须在根 layout `body` 的直接子层级、与 AuthGuard 同层级挂载，
@@ -20,9 +20,9 @@ export default function AuthCallback() {
     handleOAuthLoginFlow().then(async (result) => {
       if (result.success) {
         // 先基于服务端能力 + 入口偏好解析目标，再清理入口偏好（顺序不可颠倒）
-        const home = await resolveLoginDestination()
+        const route = await resolveLoginDestination()
         clearSelectedWorkspace()
-        router.replace(home)
+        router.replace(withNotice(route.target, route.notice))
       }
     })
   }, [router])

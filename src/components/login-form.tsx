@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FlaskConical, Dna, ShieldCheck, ArrowRight, BookOpen, GraduationCap } from 'lucide-react'
 import { loginWithChaoxingOAuth, setSelectedWorkspace, type LoginWorkspace } from '@/lib/auth'
 import BrandLockup from '@/components/brand-lockup'
@@ -28,6 +28,12 @@ export default function LoginForm() {
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState('')
   const [workspace, setWorkspace] = useState<LoginWorkspace>('student')
+
+  // 读取回跳/守卫跳转携带的无权限或认证失败提示（?notice=...）
+  useEffect(() => {
+    const notice = new URLSearchParams(window.location.search).get('notice')
+    if (notice) setError(notice)
+  }, [])
 
   const handleSelect = (next: LoginWorkspace) => {
     if (isPending) return

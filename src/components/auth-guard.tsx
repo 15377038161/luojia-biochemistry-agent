@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
-import { resolveLoginDestination } from '@/lib/auth'
+import { resolveLoginDestination, withNotice } from '@/lib/auth'
 
 /** 回跳进行中信号（字段与 auth.ts 的 sessionStorage 键一致，改动需同步） */
 function isOAuthCallbackInProgress(): boolean {
@@ -43,8 +43,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         return
       }
       if (session && pathname === '/login') {
-        const home = await resolveLoginDestination()
-        router.replace(home)
+        const route = await resolveLoginDestination()
+        router.replace(withNotice(route.target, route.notice))
         return
       }
       setReady(true)

@@ -51,42 +51,63 @@ export function clearSelectedWorkspace(): void {
   window.sessionStorage.removeItem(LOGIN_WORKSPACE_KEY)
 }
 
+/** 登录后落地路由结果：目标路径 + 可选明确提示（无权限/认证失败）。 */
+export interface LoginRoute {
+  target: string
+  notice?: string
+}
+
 /**
  * 登录后安全路由：入口偏好（sessionStorage，可被篡改的导航偏好）+ 服务端能力（权限唯一判据）。
  * 服务端能力来自 /api/auth/me 返回的 capabilities / defaultWorkspace。
  * - 教师入口：服务端确认 teacherWorkspace 能力 → /teacher/dashboard；
- *   学生选教师入口（无能力）→ 回退学生首页，不越权、不误入教师工作台。
- * - 学生入口：教师身份 → 教师体验隔离路径 TEACHER_PRACTICE_HOME（不写正式学生数据）；
+ *   学生选教师入口（无能力）→ 回退学生首页并带无权限提示（notice），不越权。
+ * - 学生入口：具备 teacherPractice 能力（教师）→ 教师体验隔离路径 TEACHER_PRACTICE_HOME；
  *   学生身份 → /student/map。
  * - 无入口偏好（旧会话/直接访问）→ 以服务端 defaultWorkspace 决定方向。
- * 能力查询失败时最保守回退学生首页，绝不误入教师工作台。
+ * - /api/auth/me 非 200（401/session 失效）或网络失败 → 安全返回登录页并带提示，
+ *   绝不假装正常学生跳转（能力未知不猜测）。
  */
-export async function resolveLoginDestination(): Promise<string> {
+export async function resolveLoginDestination(): Promise<LoginRoute> {
   const entry = getSelectedWorkspace()
-  let teacherWorkspace = false
-  let defaultWorkspace: LoginWorkspace = 'student'
+
+  let response: Response
   try {
-    const response = await fetch('/api/auth/me')
-    if (response.ok) {
-      const body = (await response.json()) as {
-        capabilities?: { teacherWorkspace?: boolean }
-        defaultWorkspace?: LoginWorkspace
-      }
-      teacherWorkspace = body.capabilities?.teacherWorkspace === true
-      defaultWorkspace = body.defaultWorkspace === 'teacher' ? 'teacher' : 'student'
-    }
+    response = await fetch('/api/auth/me')
   } catch {
-    /* 能力查询失败退回最保守默认 */
+    return { target: '/login', notice: '身份校验暂不可用，请重新登录。' }
+  }
+  if (!response.ok) {
+    return { target: '/login', notice: '登录状态无效，请重新登录。' }
   }
 
+  const body = (await response.json()) as {
+    capabilities?: { teacherWorkspace?: boolean; teacherPractice?: boolean }
+    defaultWorkspace?: LoginWorkspace
+  }
+  const teacherWorkspace = body.capabilities?.teacherWorkspace === true
+  const teacherPractice = body.capabilities?.teacherPractice === true
+  const defaultWorkspace: LoginWorkspace = body.defaultWorkspace === 'teacher' ? 'teacher' : 'student'
+
   const effective: LoginWorkspace = entry ?? defaultWorkspace
+
   if (effective === 'teacher') {
     // 教师方向：仅当服务端确认 teacherWorkspace 能力才进教师工作台；
-    // 学生选教师入口（无能力）或能力查询失败 → 回退学生首页，绝不越权/误入教师工作台。
-    return teacherWorkspace ? WORKSPACE_HOME.teacher : WORKSPACE_HOME.student
+    // 学生选教师入口（无能力）→ 明确无权限提示，回退学生首页，绝不越权。
+    if (teacherWorkspace) return { target: WORKSPACE_HOME.teacher }
+    return { target: WORKSPACE_HOME.student, notice: '当前身份没有教师权限，已为你进入学生端。' }
   }
-  // 学生方向：教师身份 → 教师体验隔离路径；学生身份 → 正式学生首页。
-  return teacherWorkspace ? TEACHER_PRACTICE_HOME : WORKSPACE_HOME.student
+
+  // 学生方向：教师身份（具备 teacherPractice 能力）→ 隔离体验；学生身份 → 正式学生首页。
+  if (teacherPractice) return { target: TEACHER_PRACTICE_HOME }
+  return { target: WORKSPACE_HOME.student }
+}
+
+/** 将明确提示（notice）拼入目标路径的 query 参数，供目标页面读取展示。 */
+export function withNotice(target: string, notice?: string): string {
+  if (!notice) return target
+  const separator = target.includes('?') ? '&' : '?'
+  return `${target}${separator}notice=${encodeURIComponent(notice)}`
 }
 
 const AUTH_HEADERS = {

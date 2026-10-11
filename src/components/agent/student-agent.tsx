@@ -68,7 +68,14 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
   const [reportError, setReportError] = useState('');
   const [reportSyncNotice, setReportSyncNotice] = useState('');
   const [courseContent, setCourseContent] = useState<CourseContentPayload>(defaultCourseContent());
-  const routeHref = useCallback((path: string) => `${routeBase}/${path}${preview ? '?preview=1' : ''}`, [preview, routeBase]);
+  const routeHref = useCallback((path: string) => {
+    const params = new URLSearchParams();
+    if (preview) params.set('preview', '1');
+    // 教师体验模式需在后续导航（步骤/报告/返回地图）中保留 practice=1，否则会中途切回正式学生会话
+    if (practiceMode) params.set('practice', '1');
+    const qs = params.toString();
+    return `${routeBase}/${path}${qs ? `?${qs}` : ''}`;
+  }, [preview, practiceMode, routeBase]);
 
   const loadSession = useCallback(async () => {
     setLoading(true);

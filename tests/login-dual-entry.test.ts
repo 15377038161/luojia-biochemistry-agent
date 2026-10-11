@@ -30,9 +30,9 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-function mockMe(teacherWorkspace: boolean, defaultWorkspace: 'student' | 'teacher'): void {
+function mockMe(caps: { teacherWorkspace: boolean; teacherPractice: boolean }, defaultWorkspace: 'student' | 'teacher'): void {
   globalThis.fetch = async () =>
-    new Response(JSON.stringify({ capabilities: { teacherWorkspace }, defaultWorkspace }), {
+    new Response(JSON.stringify({ capabilities: caps, defaultWorkspace }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -56,40 +56,58 @@ test('[真实] setSelectedWorkspace / getSelectedWorkspace / clearSelectedWorksp
 });
 
 test('[真实] resolveLoginDestination 按服务端能力 + 入口偏好安全路由', async () => {
-  // 教师身份选「学生入口」→ 教师体验隔离路径（不写正式学生数据）
-  mockMe(true, 'teacher');
+  // 教师身份（teacherPractice=true）选「学生入口」→ 教师体验隔离路径
+  mockMe({ teacherWorkspace: true, teacherPractice: true }, 'teacher');
   auth.setSelectedWorkspace('student');
-  assert.equal(await auth.resolveLoginDestination(), '/student/map?practice=1');
+  assert.deepEqual(await auth.resolveLoginDestination(), { target: '/student/map?practice=1' });
 
-  // 学生身份选「学生入口」→ 正式学生首页
-  mockMe(false, 'student');
+  // 学生身份（teacherPractice=false）选「学生入口」→ 正式学生首页
+  mockMe({ teacherWorkspace: false, teacherPractice: false }, 'student');
   auth.setSelectedWorkspace('student');
-  assert.equal(await auth.resolveLoginDestination(), '/student/map');
+  assert.deepEqual(await auth.resolveLoginDestination(), { target: '/student/map' });
 
   // 教师身份选「教师入口」→ 教师工作台
-  mockMe(true, 'teacher');
+  mockMe({ teacherWorkspace: true, teacherPractice: true }, 'teacher');
   auth.setSelectedWorkspace('teacher');
-  assert.equal(await auth.resolveLoginDestination(), '/teacher/dashboard');
+  assert.deepEqual(await auth.resolveLoginDestination(), { target: '/teacher/dashboard' });
 
-  // 学生身份选「教师入口」→ 回退学生首页（无教师能力，不越权、不误入教师工作台）
-  mockMe(false, 'student');
+  // 学生身份选「教师入口」→ 回退学生首页 + 无权限提示（不越权）
+  mockMe({ teacherWorkspace: false, teacherPractice: false }, 'student');
   auth.setSelectedWorkspace('teacher');
-  assert.equal(await auth.resolveLoginDestination(), '/student/map');
+  const denied = await auth.resolveLoginDestination();
+  assert.equal(denied.target, '/student/map');
+  assert.ok(denied.notice && denied.notice.length > 0, '应携带明确无权限提示');
 
-  // 无入口偏好（旧会话/直接访问）→ 服务端 defaultWorkspace 决定方向
+  // 无入口偏好（旧会话）→ 服务端 defaultWorkspace 决定方向
   auth.clearSelectedWorkspace();
-  mockMe(true, 'teacher');
-  assert.equal(await auth.resolveLoginDestination(), '/teacher/dashboard');
+  mockMe({ teacherWorkspace: true, teacherPractice: true }, 'teacher');
+  assert.deepEqual(await auth.resolveLoginDestination(), { target: '/teacher/dashboard' });
 
   auth.clearSelectedWorkspace();
-  mockMe(false, 'student');
-  assert.equal(await auth.resolveLoginDestination(), '/student/map');
+  mockMe({ teacherWorkspace: false, teacherPractice: false }, 'student');
+  assert.deepEqual(await auth.resolveLoginDestination(), { target: '/student/map' });
 });
 
-test('[真实] 能力查询失败回退最保守学生首页（即使入口偏好被篡改为 teacher）', async () => {
+test('[真实] 能力查询 401/网络失败 → 安全返回登录页（不假装学生跳转）', async () => {
+  // 401（session 失效）
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: '未登录' }), { status: 401 });
+  auth.setSelectedWorkspace('teacher');
+  const authFail = await auth.resolveLoginDestination();
+  assert.equal(authFail.target, '/login');
+  assert.ok(authFail.notice && authFail.notice.length > 0);
+
+  // 网络失败
   globalThis.fetch = async () => { throw new Error('network down'); };
   auth.setSelectedWorkspace('teacher');
-  assert.equal(await auth.resolveLoginDestination(), '/student/map');
+  const netFail = await auth.resolveLoginDestination();
+  assert.equal(netFail.target, '/login');
+  assert.ok(netFail.notice && netFail.notice.length > 0);
+});
+
+test('[真实] withNotice 将提示拼入 query 参数', () => {
+  assert.equal(auth.withNotice('/student/map', '无权限'), '/student/map?notice=' + encodeURIComponent('无权限'));
+  assert.equal(auth.withNotice('/student/map?practice=1', 'x'), '/student/map?practice=1&notice=x');
+  assert.equal(auth.withNotice('/login', undefined), '/login');
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -117,19 +135,28 @@ test('[契约] 学生会话创建拒绝非学生身份（教师不可写正式�
 
 test('[契约] 教师体验评价绕过 sync_outbox，且校验 sessionId 归属 + agent_role=teacher', () => {
   const evaluate = read('src/app/api/student/evaluate/route.ts');
-  assert.match(evaluate, /session\.user_id !== identity\.user\.id/); // sessionId 归属
-  assert.match(evaluate, /agent_role === 'teacher'/); // 教师体验分支
-  assert.match(evaluate, /recordTeacherPracticeEvaluation/); // 教师体验走隔离记录
-  assert.match(evaluate, /rpc\('record_text_evaluation'/); // 正式学生才走 RPC（含 outbox）
+  assert.match(evaluate, /session\.user_id !== identity\.user\.id/);
+  assert.match(evaluate, /agent_role === 'teacher'/);
+  assert.match(evaluate, /recordTeacherPracticeEvaluation/);
+  assert.match(evaluate, /rpc\('record_text_evaluation'/);
 
   const record = read('src/lib/services/evaluation-record.ts');
   assert.match(record, /agent_role !== 'teacher' \|\| session\.user_id !== input\.userId/);
-  assert.match(record, /sync_outbox/); // 教师体验绕过 sync_outbox
+  assert.match(record, /sync_outbox/);
 });
 
 test('[契约] 班级统计只允许学生正式会话（agent_role=student）', () => {
   const scope = read('src/lib/services/teacher-scope.ts');
   assert.match(scope, /\.eq\('agent_role', 'student'\)/);
+});
+
+test('[契约] 教师体验 practice 参数在后续导航（步骤/报告/返回地图）中保留', () => {
+  const agent = read('src/components/agent/student-agent.tsx');
+  assert.match(agent, /params\.set\('practice', '1'\)/);
+  const step = read('src/app/student/step/[stepId]/page.tsx');
+  assert.match(step, /practice/);
+  const report = read('src/app/student/report/page.tsx');
+  assert.match(report, /practice/);
 });
 
 test('[契约] 登录表单双入口 radio + 落地路由按能力解析接线', () => {
@@ -142,4 +169,5 @@ test('[契约] 登录表单双入口 radio + 落地路由按能力解析接线',
   const cb = read('src/components/auth-callback.tsx');
   assert.match(cb, /resolveLoginDestination/);
   assert.match(cb, /clearSelectedWorkspace/);
+  assert.match(cb, /withNotice/);
 });
