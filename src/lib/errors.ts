@@ -53,3 +53,23 @@ export function asTimeoutError(error: unknown): string | null {
   }
   return null;
 }
+
+// SDK 上游模型异常（coder-coding-dev-sdk 的 CoderCodingError 体系）。
+// 靠 name 识别，不 import SDK 以避免耦合；上游响应 message/data 可能回显密钥/请求上下文，
+// 必须不透传原始 message，仅在统一错误边界收敛为安全错误。
+const LLM_SDK_ERROR_NAMES = new Set(['APIError', 'NetworkError', 'CoderCodingError', 'ConfigurationError', 'ValidationError']);
+
+export function isLlmSdkError(error: unknown): error is Error {
+  return error instanceof Error && LLM_SDK_ERROR_NAMES.has(error.name);
+}
+
+export function isLlmNetworkError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'NetworkError';
+}
+
+/** 提取 SDK 上游错误的有效 HTTP 状态数字；非有限数字返回 null。 */
+export function llmSdkErrorStatus(error: unknown): number | null {
+  if (!(error instanceof Error)) return null;
+  const status = (error as { status?: unknown }).status;
+  return typeof status === 'number' && Number.isFinite(status) ? status : null;
+}

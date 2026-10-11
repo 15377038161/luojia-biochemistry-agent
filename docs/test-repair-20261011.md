@@ -152,3 +152,51 @@
 ## 说明
 
 - 本轮修改 `ai-gateway.ts`（配置层）+ 对应测试 + 修复记录；未动密钥文件、未写生产库、未改 DDL、未 push。
+
+---
+
+# 第五轮：AI 上游错误边界脱敏（2026-10-11）
+
+## 修复前快照
+
+- backup 分支：`backup/before-ai-error-boundary-20261011` → `c76d75affcc53f0639a8f9e3c3e85e3e36ff52c3`
+
+## 修复原因
+
+运行时哨兵回显探针证实：上游模型服务在 `message`/`data` 中回显密钥时，SDK 的 `APIError` 会原样透传（`error.message`/`error.data`/可枚举属性均含哨兵），而统一错误分类入口 `errorFromUnknown` 的 fallback 分支 `{ code: 'VALIDATION_ERROR', message }` 直接透传原始 `message`，导致密钥泄漏到客户端响应。日志同样需脱敏（禁止完整原始错误含 message/data 入日志）。
+
+## 修复内容（最小统一服务端边界，仅错误边界文件）
+
+1. `src/lib/errors.ts`：新增 SDK 上游异常识别（靠 `name` 识别 `APIError`/`NetworkError`/`CoderCodingError`/`ConfigurationError`/`ValidationError`，不 import SDK 避免耦合），及 `llmSdkErrorStatus` 提取有效 HTTP 状态数字。
+2. `src/lib/api-result.ts` 的 `errorFromUnknown`：在 fallback 之前收敛 SDK 上游异常——
+   - `NetworkError` → `NETWORK_ERROR`（通用消息，不透传原始 message）
+   - `APIError` 无有效 status → `AI_OUTPUT_INVALID`（真实 AI 输出结构错误）
+   - 其余（含 `APIError` 有 status）→ `AI_UPSTREAM_ERROR`（通用中文消息，保留有效 HTTP 状态数字）
+3. `src/domain/agent.ts`：`ApiError` 新增 `AI_UPSTREAM_ERROR` code 与可选 `status?: number` 字段。
+4. 未泛化重写数据库/认证错误（`DB_ERROR`/`AUTH_REQUIRED` 等透出逻辑保持不变）。
+
+## 运行时离线 mock 负向测试（`tests/ai-error-boundary.test.ts`）
+
+- 上游 message/data 回显哨兵 → 收敛为 `AI_UPSTREAM_ERROR`（status 保留，message/整对象不含哨兵）。
+- 网络错误（name=NetworkError）含哨兵 → 收敛为 `NETWORK_ERROR`（不含哨兵）。
+- SDK `APIError` 无有效状态 → 收敛为 `AI_OUTPUT_INVALID`（不透传原始结构错误 message）。
+- 成功响应正常返回内容。
+- 保留原深度思考失败契约（`ai-gateway.test.ts` 第 2 项）未改绿。
+
+## 测试结果
+
+| 命令 | 退出码 | 结果 |
+|---|---|---|
+| `tsx --test tests/ai-error-boundary.test.ts` | 0 | 4/4 通过 |
+| `pnpm test`（全量） | 1 | 88 pass / 1 fail（共 89） |
+| `pnpm ts-check` | 0 | 通过 |
+| `pnpm lint` | 0 | 0 error / 20 warning |
+| `pnpm build` | 0 | 通过 |
+
+## 剩余 1 项失败（如实保留）
+
+- `tests/ai-gateway.test.ts` 第 2 项「深度思考」：深度思考实现未接线（SDK 类型声明 `thinking?: 'enabled' | 'disabled'`，但 `buildRequestBody` 未读取），且 SDK 类型不能证明 doubao 上游接受该字段，本轮不改。
+
+## 说明
+
+- 本轮仅改错误边界（`errors.ts`/`api-result.ts`/`domain/agent.ts`）+ 新增错误边界测试 + 修复记录；未改业务实现、未改密钥文件、未写生产库、未改 DDL、未 push、未调用真实付费模型。

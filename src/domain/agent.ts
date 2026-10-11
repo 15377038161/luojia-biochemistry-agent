@@ -144,9 +144,12 @@ export interface ApiError {
     | 'NETWORK_ERROR'
     | 'MEDIA_QUALITY_LOW'
     | 'RESOURCE_MISSING'
-    | 'SYNC_DEFERRED';
+    | 'SYNC_DEFERRED'
+    | 'AI_UPSTREAM_ERROR';
   message: string;
   retryable?: boolean;
+  /** 上游模型服务返回的 HTTP 状态（有效数字），仅 AI_UPSTREAM_ERROR 场景保留，供客户端判断。 */
+  status?: number;
 }
 
 export type ApiResult<T> =

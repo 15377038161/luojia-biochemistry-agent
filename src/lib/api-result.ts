@@ -5,7 +5,10 @@ import {
   asSupabaseDatabaseError,
   asTimeoutError,
   isAiValidationError,
+  isLlmNetworkError,
+  isLlmSdkError,
   isSupabaseAuthError,
+  llmSdkErrorStatus,
 } from './errors';
 
 export function requestId(): string {
@@ -42,6 +45,24 @@ export function errorFromTimeout(message = '智能体响应超时，回答已经
 export function errorFromUnknown(error: unknown): ApiError {
   if (isAiValidationError(error)) return errorFromAiValidation();
   if (isSupabaseAuthError(error)) return { code: 'AUTH_REQUIRED', message: '登录状态无效，请重新登录。', retryable: false };
+  // SDK 上游模型异常：上游响应 message/data 可能回显密钥/请求上下文，不透传原始 message，
+  // 收敛为安全错误；网络错误仍 NETWORK_ERROR，无有效状态的 APIError 才归 AI_OUTPUT_INVALID。
+  if (isLlmSdkError(error)) {
+    if (isLlmNetworkError(error)) {
+      return { code: 'NETWORK_ERROR', message: '模型服务网络异常，请稍后重试。', retryable: true };
+    }
+    const status = llmSdkErrorStatus(error);
+    if (error.name === 'APIError' && status === null) {
+      return errorFromAiValidation();
+    }
+    const upstream: ApiError = {
+      code: 'AI_UPSTREAM_ERROR',
+      message: '模型服务暂时不可用，请稍后重试。',
+      retryable: true,
+    };
+    if (status !== null) upstream.status = status;
+    return upstream;
+  }
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes('AUTH_REQUIRED')) return { code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false };
   if (message.includes('FORBIDDEN')) return { code: 'FORBIDDEN', message: '你无权访问这条记录。', retryable: false };
