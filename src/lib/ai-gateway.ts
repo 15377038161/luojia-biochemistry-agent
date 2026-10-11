@@ -38,11 +38,27 @@ function clampMaxTokens(value: number): number {
   return Math.max(min, Math.min(MAX_OUTPUT_TOKENS, value));
 }
 
-/** 懒加载单例客户端；Config 自动读取 CODER_CODING_* 环境变量，无需手动注入密钥。 */
-let _client: LLMClient | null = null;
+// 重试预算：AI_GATEWAY_RETRY_COUNT 控制失败重试次数，缺省 3，允许 0（避免慢评阅跨越平台请求窗口）。
+// 非法/越界配置明确报错而非静默回退；重试仅由 SDK 内部完成，业务层不叠加（避免乘法重试）。
+const DEFAULT_RETRY_TIMES = 3;
+const MAX_RETRY_TIMES = 5;
+
+function resolveRetryTimes(): number {
+  const raw = process.env.AI_GATEWAY_RETRY_COUNT;
+  if (raw === undefined || raw.trim() === '') return DEFAULT_RETRY_TIMES;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`AI_GATEWAY_RETRY_COUNT 必须是非负整数，当前值 "${raw}"`);
+  }
+  if (parsed > MAX_RETRY_TIMES) {
+    throw new Error(`AI_GATEWAY_RETRY_COUNT 超出上界 ${MAX_RETRY_TIMES}，当前值 "${raw}"`);
+  }
+  return parsed;
+}
+
+/** 每次按当前环境变量解析重试预算，保证运行时配置即时生效（避免单例缓存导致配置不生效）。 */
 function getClient(): LLMClient {
-  if (!_client) _client = new LLMClient(new Config());
-  return _client;
+  return new LLMClient(new Config({ retryTimes: resolveRetryTimes() }));
 }
 
 /** 判断消息是否包含图像，含图时必须走支持视觉的 quality 模型。 */

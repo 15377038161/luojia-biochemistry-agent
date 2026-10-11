@@ -105,3 +105,50 @@
 
 - 本轮仅更新测试静态引用并适配当前身份实现，未改业务实现、未动数据库 DDL、未写生产库、未动密钥文件。
 - 剩余 3 项失败为 `tests/ai-gateway.test.ts`（AI 网关已迁移到平台内置 LLM SDK，模型名/重试语义断言过期），密钥不泄漏契约仍有效，本轮明确保留不改。
+
+---
+
+# 第四轮：ai-gateway 重试预算修复（2026-10-11）
+
+## 修复前快照
+
+- backup 分支：`backup/before-ai-retry-budget-20261011` → `c9a3e34bda4c2216b6679c8ea54d4d4b1ef62639`
+
+## 修复原因
+
+`AI_GATEWAY_RETRY_COUNT` 环境变量控制随网关迁移到平台内置 LLM SDK 后失效：SDK 只读 `Config.retryTimes`（默认 3），不读 `AI_GATEWAY_RETRY_COUNT`；原 `getClient()` 用 `new Config()` 未暴露重试预算，且单例缓存导致运行时配置无法切换，导致「生产配置允许将网关重试次数设为 0」契约失效。
+
+## 修复内容（仅 ai-gateway.ts 配置层 + 对应测试）
+
+1. `getClient()` 移除单例缓存，改为每次按当前环境变量构造 `new Config({ retryTimes: resolveRetryTimes() })`，保证运行时配置即时生效。
+2. 新增 `resolveRetryTimes()`：读取 `AI_GATEWAY_RETRY_COUNT`，缺省 3、允许 0；校验非负有限整数（`Number.isInteger`）及合理上界（`MAX_RETRY_TIMES = 5`）；非法/越界值明确 `throw Error`，不静默回退。
+3. 重试仅由 SDK 内部完成（`Config.retryTimes`），业务层不叠加重试，避免乘法重试。
+4. 保留原生模型映射（doubao-seed / deepseek），未改模型分工。
+
+## 离线 mock 验证
+
+- 定位 SDK 打包实际 axios 位置：`require.resolve('coder-coding-dev-sdk')` 入口 + `realpathSync` 得到 `.pnpm/coder-coding-dev-sdk@.../node_modules/coder-coding-dev-sdk/dist/cjs/index.js`，再 `createRequire(真实路径)('axios')` 解析到 `.pnpm/axios@1.20.0/node_modules/axios/dist/node/axios.cjs`。
+- 确认 axios 1.x 自定义 adapter 需自行 reject 非 2xx（带 `response` 字段），而非返回 status（否则 503 被当成功）。
+- 运行时验证：`retryTimes=0` → 1 次请求；`retryTimes=1` → 2 次请求（503 被识别为可重试错误）。
+
+## 测试结果
+
+| 命令 | 退出码 | 结果 |
+|---|---|---|
+| `tsx --test tests/ai-gateway.test.ts` | 1 | 4/5 通过（thinking 契约保留失败） |
+| `pnpm test`（全量） | 1 | 84 pass / 1 fail（共 85） |
+| `pnpm ts-check` | 0 | 通过 |
+| `pnpm lint` | 0 | 0 error / 20 warning |
+| `pnpm build` | 0 | 通过 |
+
+## 剩余 1 项失败（如实保留）
+
+- `tests/ai-gateway.test.ts` 第 2 项「深度思考扩展字段不兼容时自动移除后重试」：SDK 已不发送 `thinking` 字段（被 `buildRequestBody` 忽略），无「移除后重试」语义，深度思考能力已退化。按用户要求不改该契约测试、不猜字段、不改业务，保留失败。
+
+## 密钥安全结论撤回
+
+- 此前「密钥不进入错误/返回值」的结论**撤回**：上游响应的 `message`/`data` 可能回显密钥（请求头/鉴权信息），静态 `new Config()` 与 `APIError` 字段结构不足以证明不泄密。密钥安全验收待独立真实集成验证，本轮不以静态结构证明。
+
+## 说明
+
+- 本轮修改 `ai-gateway.ts`（配置层）+ 对应测试 + 修复记录；未动密钥文件、未写生产库、未改 DDL、未 push。
