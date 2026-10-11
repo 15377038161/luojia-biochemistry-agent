@@ -73,7 +73,8 @@ export async function resolveLoginDestination(): Promise<LoginRoute> {
 
   let response: Response
   try {
-    response = await fetch('/api/auth/me')
+    // 5 秒超时兜底：能力查询挂起时避免登录页/守卫空白卡死（超时/网络异常统一按认证失败回退登录页）
+    response = await fetch('/api/auth/me', { signal: AbortSignal.timeout(5000) })
   } catch {
     return { target: '/login', notice: '身份校验暂不可用，请重新登录。' }
   }
