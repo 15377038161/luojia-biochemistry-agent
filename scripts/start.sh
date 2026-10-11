@@ -10,7 +10,7 @@ DEPLOY_RUN_PORT="${DEPLOY_RUN_PORT:-${EXPOSE_PORT}}"
 start_service() {
     cd "${PROJECT_DIR}"
     echo "Starting HTTP service on port ${DEPLOY_RUN_PORT} for deploy..."
-    PORT=${DEPLOY_RUN_PORT} HOSTNAME=0.0.0.0 node dist/server.js
+    NODE_ENV=production PORT=${DEPLOY_RUN_PORT} HOSTNAME=0.0.0.0 node dist/server.js
 }
 
 echo "Starting HTTP service on port ${DEPLOY_RUN_PORT} for deploy..."

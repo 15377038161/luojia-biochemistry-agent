@@ -33,4 +33,4 @@ echo "Clearing port ${DEPLOY_RUN_PORT} before start."
 kill_port_if_listening
 echo "Starting HTTP service on port ${DEPLOY_RUN_PORT} for dev..."
 
-PORT=${DEPLOY_RUN_PORT} HOSTNAME=0.0.0.0 pnpm tsx watch src/server.ts
+NODE_ENV=development PORT=${DEPLOY_RUN_PORT} HOSTNAME=0.0.0.0 pnpm tsx watch src/server.ts

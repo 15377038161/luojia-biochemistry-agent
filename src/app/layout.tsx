@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const isDev = process.env.COZE_PROJECT_ENV === 'DEV';
+  const isDev = process.env.NODE_ENV === 'development';
   const isUiPreview = process.env.ENABLE_UI_PREVIEW === 'true';
   return (
     <html lang="zh-CN" data-scroll-behavior="smooth" suppressHydrationWarning>
