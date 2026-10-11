@@ -8,14 +8,16 @@ interface Props {
   preview?: boolean;
   stepId?: number;
   reportPage?: boolean;
+  practiceMode?: boolean;
 }
 
 /**
  * 学生工作区路由入口（客户端）：
  * 登录态由根 layout 的 AuthGuard 统一守护（唯一拦截点），这里不再重复校验登录态，
  * 仅异步解析展示名（realname → email 前缀）后渲染业务聚合组件，避免多层 getUser 检查时序冲突。
+ * practiceMode=true 时走教师体验隔离会话（/api/teacher/practice-session，不写正式学生数据）。
  */
-export default function StudentRoutePage({ preview = false, stepId, reportPage = false }: Props) {
+export default function StudentRoutePage({ preview = false, stepId, reportPage = false, practiceMode = false }: Props) {
   const [displayName, setDisplayName] = useState(preview ? '陈同学' : '学生');
 
   const resolveIdentity = useCallback(async () => {
@@ -40,6 +42,7 @@ export default function StudentRoutePage({ preview = false, stepId, reportPage =
       displayName={displayName}
       demo={false}
       preview={preview}
+      practiceMode={practiceMode}
       routeBase="/student"
       initialStep={stepId}
       reportPage={reportPage}

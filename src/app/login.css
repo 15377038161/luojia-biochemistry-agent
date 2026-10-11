@@ -201,6 +201,63 @@
   line-height: 1.5;
   text-align: left;
 }
+
+/* 双入口选择：学生 / 教师 */
+.login-entry-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 9px;
+}
+.login-entry-legend {
+  padding: 0;
+  color: #718392;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-align: left;
+}
+.login-entry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.login-entry-option {
+  min-height: 66px;
+  padding: 11px 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  border: 1px solid rgba(35, 111, 91, .16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .72);
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.login-entry-option:hover { border-color: rgba(35, 111, 91, .38); background: rgba(255, 255, 255, .9); }
+.login-entry-option:focus-visible { outline: 3px solid rgba(90, 169, 214, .5); outline-offset: 2px; }
+.login-entry-option.is-active {
+  border-color: var(--ui-green);
+  background: linear-gradient(135deg, rgba(85, 217, 154, .12), rgba(255, 255, 255, .82));
+  box-shadow: 0 0 0 3px rgba(85, 217, 154, .16), 0 8px 20px rgba(31, 91, 76, .08);
+}
+.login-entry-option:disabled { opacity: .6; cursor: not-allowed; }
+.login-entry-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--ui-green);
+  border-radius: 10px;
+  background: rgba(35, 111, 91, .10);
+}
+.login-entry-option.is-active .login-entry-icon { color: #fff; background: var(--ui-green); }
+.login-entry-text { min-width: 0; display: grid; gap: 2px; }
+.login-entry-text strong { color: var(--ui-blue-strong); font-size: 13px; }
+.login-entry-text small { color: var(--ui-muted); font-size: 11px; }
 .login-oauth-button {
   width: 100%;
   min-height: 54px;

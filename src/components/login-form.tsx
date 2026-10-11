@@ -2,14 +2,23 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
-import { FlaskConical, Dna, ShieldCheck, ArrowRight } from 'lucide-react'
-import { loginWithChaoxingOAuth } from '@/lib/auth'
+import { FlaskConical, Dna, ShieldCheck, ArrowRight, BookOpen, GraduationCap } from 'lucide-react'
+import { loginWithChaoxingOAuth, setSelectedWorkspace, type LoginWorkspace } from '@/lib/auth'
 import BrandLockup from '@/components/brand-lockup'
+
+/** 双入口选项元数据：仅决定登录后跳转目标，不授予任何角色/权限。 */
+const ENTRY_OPTIONS: Array<{ value: LoginWorkspace; label: string; hint: string; icon: typeof BookOpen }> = [
+  { value: 'student', label: '学生入口', hint: '进入八步实验地图', icon: BookOpen },
+  { value: 'teacher', label: '教师入口', hint: '进入教学工作台', icon: GraduationCap },
+]
 
 /**
  * 超星 OAuth 一键登录表单：登录页 /login 的核心交互组件。
- * - 点击「超星一键登录」→ loginWithChaoxingOAuth() 顶层跳转超星授权页。
+ * - 先选择学生/教师入口（写入 sessionStorage，OAuth 回跳跨页保留），
+ *   再点击「超星一键登录」→ loginWithChaoxingOAuth() 顶层跳转超星授权页。
  * - 已登录用户访问 /login 的跳转由根 layout 的 AuthGuard 统一处理（唯一拦截点）。
+ *
+ * 入口选择只决定登录后的落地页；权限仍由服务端能力（capabilities）与各接口 403 语义约束。
  *
  * 视觉结构复用「珞珈山小实验家 · 科学探险手账」系统（login.css）：
  * 桌面端左右分栏——左侧品牌宣传区（标题 + 特性），右侧登录卡片；
@@ -18,11 +27,20 @@ import BrandLockup from '@/components/brand-lockup'
 export default function LoginForm() {
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState('')
+  const [workspace, setWorkspace] = useState<LoginWorkspace>('student')
+
+  const handleSelect = (next: LoginWorkspace) => {
+    if (isPending) return
+    setWorkspace(next)
+    setSelectedWorkspace(next)
+  }
 
   const handleLogin = async () => {
     if (isPending) return
     setIsPending(true)
     setError('')
+    // 确保入口选择在跳转前已持久化（覆盖直接点击但未触发 onSelect 的边界）
+    setSelectedWorkspace(workspace)
     const result = await loginWithChaoxingOAuth()
     if (!result.success) {
       setIsPending(false)
@@ -106,6 +124,33 @@ export default function LoginForm() {
             <p className="login-form-desc">使用学习通身份进入 EGFP 八步文字实验，无需注册账号。</p>
 
             {error && <p className="login-form-error" role="alert">{error}</p>}
+
+            <fieldset className="login-entry-fieldset">
+              <legend className="login-entry-legend">选择你的登录身份</legend>
+              <div className="login-entry-grid" role="radiogroup" aria-label="登录入口选择">
+                {ENTRY_OPTIONS.map((option) => {
+                  const Icon = option.icon
+                  const active = workspace === option.value
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      className={`login-entry-option${active ? ' is-active' : ''}`}
+                      disabled={isPending}
+                      onClick={() => handleSelect(option.value)}
+                    >
+                      <span className="login-entry-icon"><Icon size={18} strokeWidth={1.8} /></span>
+                      <span className="login-entry-text">
+                        <strong>{option.label}</strong>
+                        <small>{option.hint}</small>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </fieldset>
 
             <button type="button" className="login-oauth-button" disabled={isPending} onClick={handleLogin}>
               <Image src="/brand/xuexitong-icon.jpg" alt="" width={24} height={24} className="login-oauth-icon" />

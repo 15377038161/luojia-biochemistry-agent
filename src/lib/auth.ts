@@ -1,5 +1,5 @@
 // src/lib/auth.ts — 平台超星 OAuth 统一认证（登录基座）
-// 单一事实源：PROJECT_ID / AUTH_BASE / POST_LOGIN_HOME（全项目只声明一次）。
+// 单一事实源：PROJECT_ID / AUTH_BASE / 工作区首页映射（全项目只声明一次）。
 // 超星登录仅 OAuth2.0 一键登录；session 由平台服务端代理换取后写入 Supabase Auth。
 import { getSupabase } from './supabase'
 
@@ -8,9 +8,86 @@ const PROJECT_ID = process.env.NEXT_PUBLIC_CODER_PROJECTS_ID
 // → 空字符串 → 相对路径，由 Nginx 转发。禁止硬编码隧道 URL。
 const AUTH_BASE = process.env.NEXT_PUBLIC_CODER_AUTH_PROXY_URL || ''
 
-// 登录后导航去向（唯一事实源）：八步地图页。业务代码只在本文件 import 复用，禁止重复声明。
-// 认证成功后直达学生实验地图，不再经过任何中间落地页。
-export const POST_LOGIN_HOME = '/student/map'
+/**
+ * 登录工作区类型：仅代表「登录页选择的入口」，是导航偏好而非权限。
+ * 能否真正进入对应工作区，由服务端能力（capabilities）与各业务接口的 403 语义唯一约束。
+ */
+export type LoginWorkspace = 'student' | 'teacher'
+
+/** 登录入口选择在 sessionStorage 中的键：OAuth 回跳跨页保留，登录闭环/退出登录时清理。 */
+export const LOGIN_WORKSPACE_KEY = 'login_workspace'
+
+/** 各工作区落地首页（allowlist 映射，唯一事实源，业务代码只 import 复用，禁止重复声明）。 */
+export const WORKSPACE_HOME: Record<LoginWorkspace, string> = {
+  student: '/student/map',
+  teacher: '/teacher/dashboard',
+}
+
+/**
+ * 教师选「学生入口」的隔离体验落地路径：practiceMode=true → 前端走 /api/teacher/practice-session，
+ * 会话 agent_role='teacher'，不写正式学生成绩、班级统计与学习通同步。区别于正式学生首页。
+ */
+export const TEACHER_PRACTICE_HOME = '/student/map?practice=1'
+
+// 兜底落地页：学生八步实验地图。无入口偏好且能力查询失败时的最保守默认，向后兼容既有单入口行为。
+export const POST_LOGIN_HOME = WORKSPACE_HOME.student
+
+/** 读取登录入口偏好；无偏好返回 null（区分「未选择」与「选择学生」）。 */
+export function getSelectedWorkspace(): LoginWorkspace | null {
+  if (typeof window === 'undefined') return null
+  const value = window.sessionStorage.getItem(LOGIN_WORKSPACE_KEY)
+  return value === 'teacher' || value === 'student' ? value : null
+}
+
+/** 保存登录入口偏好（仅导航偏好，可被篡改，不参与权限判定）。 */
+export function setSelectedWorkspace(workspace: LoginWorkspace): void {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.setItem(LOGIN_WORKSPACE_KEY, workspace)
+}
+
+/** 清理登录入口偏好（登录闭环完成或退出登录时调用，避免陈旧偏好污染后续会话）。 */
+export function clearSelectedWorkspace(): void {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.removeItem(LOGIN_WORKSPACE_KEY)
+}
+
+/**
+ * 登录后安全路由：入口偏好（sessionStorage，可被篡改的导航偏好）+ 服务端能力（权限唯一判据）。
+ * 服务端能力来自 /api/auth/me 返回的 capabilities / defaultWorkspace。
+ * - 教师入口：服务端确认 teacherWorkspace 能力 → /teacher/dashboard；
+ *   学生选教师入口（无能力）→ 回退学生首页，不越权、不误入教师工作台。
+ * - 学生入口：教师身份 → 教师体验隔离路径 TEACHER_PRACTICE_HOME（不写正式学生数据）；
+ *   学生身份 → /student/map。
+ * - 无入口偏好（旧会话/直接访问）→ 以服务端 defaultWorkspace 决定方向。
+ * 能力查询失败时最保守回退学生首页，绝不误入教师工作台。
+ */
+export async function resolveLoginDestination(): Promise<string> {
+  const entry = getSelectedWorkspace()
+  let teacherWorkspace = false
+  let defaultWorkspace: LoginWorkspace = 'student'
+  try {
+    const response = await fetch('/api/auth/me')
+    if (response.ok) {
+      const body = (await response.json()) as {
+        capabilities?: { teacherWorkspace?: boolean }
+        defaultWorkspace?: LoginWorkspace
+      }
+      teacherWorkspace = body.capabilities?.teacherWorkspace === true
+      defaultWorkspace = body.defaultWorkspace === 'teacher' ? 'teacher' : 'student'
+    }
+  } catch {
+    /* 能力查询失败退回最保守默认 */
+  }
+
+  const effective: LoginWorkspace = entry ?? defaultWorkspace
+  if (effective === 'teacher') {
+    // 教师方向：仅当服务端确认 teacherWorkspace 能力才进教师工作台；
+    // 学生选教师入口（无能力）或能力查询失败 → 回退学生首页，绝不越权/误入教师工作台。
+    return teacherWorkspace ? WORKSPACE_HOME.teacher : WORKSPACE_HOME.student
+  }
+  // 学生方向：教师身份 → 教师体验隔离路径；学生身份 → 正式学生首页。
+  return teacherWorkspace ? TEACHER_PRACTICE_HOME : WORKSPACE_HOME.student
+}
 
 const AUTH_HEADERS = {
   'Content-Type': 'application/json',
@@ -29,8 +106,9 @@ export async function getCurrentUser() {
   return user
 }
 
-/** 退出登录 */
+/** 退出登录：同时清理登录入口偏好，避免陈旧偏好污染下一次登录。 */
 export async function logout() {
+  clearSelectedWorkspace()
   await getSupabase().auth.signOut()
 }
 
