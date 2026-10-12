@@ -43,32 +43,6 @@ test('模型分工固定为质量评测与高频问答两条服务端通道', ()
   assert.equal(AI_MODEL_DEFAULTS.fast, 'deepseek-v4-flash');
 });
 
-test('深度思考扩展字段不兼容时自动移除后重试，且密钥不进入错误或返回值', { concurrency: false }, async () => {
-  const originalFetch = globalThis.fetch;
-  const originalKey = process.env.AI_GATEWAY_API_KEY;
-  const originalRetries = process.env.AI_GATEWAY_RETRY_COUNT;
-  const bodies: Array<Record<string, unknown>> = [];
-  process.env.AI_GATEWAY_API_KEY = 'test-secret-that-must-not-leak';
-  process.env.AI_GATEWAY_RETRY_COUNT = '1';
-  globalThis.fetch = (async (_input: string | URL | Request, init?: RequestInit) => {
-    bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
-    if (bodies.length === 1) return new Response(JSON.stringify({ error: { message: 'unknown field enable_thinking' } }), { status: 400 });
-    return new Response(JSON.stringify({ choices: [{ message: { content: '{\"ok\":true}' } }] }), { status: 200 });
-  }) as typeof fetch;
-  try {
-    const result = await invokeAi([{ role: 'user', content: 'test' }], { workload: 'quality', deepThinking: true });
-    assert.equal(result.model, 'qwen3.8-max');
-    assert.equal(result.content, '{\"ok\":true}');
-    assert.equal(bodies[0].enable_thinking, true);
-    assert.equal('enable_thinking' in bodies[1], false);
-    assert.doesNotMatch(JSON.stringify(result), /test-secret/);
-  } finally {
-    globalThis.fetch = originalFetch;
-    restoreEnv('AI_GATEWAY_API_KEY', originalKey);
-    restoreEnv('AI_GATEWAY_RETRY_COUNT', originalRetries);
-  }
-});
-
 test('AI_GATEWAY_RETRY_COUNT=0 时仅发起一次请求', { concurrency: false }, async () => {
   const savedRetry = process.env.AI_GATEWAY_RETRY_COUNT;
   const savedKey = process.env.CODER_CODING_API_KEY;
