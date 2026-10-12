@@ -94,7 +94,11 @@ export function normalizeEvaluation(stepId: number, answer: string, input: TextE
   const scores = Object.fromEntries(
     Object.entries(DIMENSION_MAX).map(([key, max]) => {
       const raw = input.scores[key as keyof DimensionScores];
-      return [key, Math.max(0, Math.min(max, Number.isFinite(raw) ? raw : 0))];
+      // 有限数校验（NaN/Infinity → 0）+ 范围限制（0~max）+ 明确四舍五入：
+      // 五维分值必须为整数，与 record_text_evaluation RPC 的 `::integer` 存储口径一致，
+      // 避免小数分值在 SQL cast 时报 `invalid input syntax for type integer`。
+      const finite = Number.isFinite(raw) ? (raw as number) : 0;
+      return [key, Math.round(Math.max(0, Math.min(max, finite)))];
     }),
   ) as unknown as DimensionScores;
   const total = Object.values(scores).reduce((sum, score) => sum + score, 0);
