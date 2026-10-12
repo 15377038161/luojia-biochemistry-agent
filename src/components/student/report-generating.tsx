@@ -1,38 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-const STEP_HINTS = [
-  '正在保存你的实验方案…',
-  '正在对照课程要点逐项评阅…',
-  '正在计算五维能力得分…',
-  '正在生成本步学习报告…',
-];
-
-const FULL_HINTS = [
-  '正在汇总八步学习记录…',
-  '正在整合逐项评阅证据…',
-  '正在计算五维能力雷达…',
-  '正在生成完整学习报告…',
-];
+import { elapsedText } from '@/lib/report-loading';
 
 interface Props {
   kind: 'step' | 'full';
   title?: string;
+  /** 生成开始时间戳（毫秒）。传入后按真实流逝时长显示「已等待 N 秒」，不伪造阶段/百分比。 */
+  startMs?: number | null;
 }
 
 /**
- * 生化主题报告生成加载动画：锥形瓶 + 上升气泡 + 循环阶段文案。
+ * 生化主题报告生成加载动画：锥形瓶 + 上升气泡。
+ * 只显示「正在生成」与真实已等待秒数，不轮换伪造的阶段提示，也不伪造进度百分比。
  * 符合「科学探险手账」设计语言，且对 prefers-reduced-motion 降级。
  */
-export default function ReportGenerating({ kind, title }: Props) {
-  const hints = kind === 'step' ? STEP_HINTS : FULL_HINTS;
-  const [index, setIndex] = useState(0);
+export default function ReportGenerating({ kind, title, startMs }: Props) {
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => setIndex((current) => (current + 1) % hints.length), 1600);
+    if (startMs == null) {
+      setElapsed(0);
+      return;
+    }
+    setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    const timer = setInterval(() => {
+      setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    }, 1000);
     return () => clearInterval(timer);
-  }, [hints.length]);
+  }, [startMs]);
 
   const label = title ?? (kind === 'step' ? '本步报告' : '完整学习报告');
 
@@ -48,12 +44,9 @@ export default function ReportGenerating({ kind, title }: Props) {
         .report-generating-bubble:nth-of-type(4){animation-delay:1.8s}
         .report-generating-title{margin:0;color:var(--science-ink,#092e59);font-size:15px;font-weight:750}
         .report-generating-hint{margin:6px 0 0;color:var(--science-muted,#63788a);font-size:13px;line-height:1.7}
-        .report-generating-dots{display:flex;justify-content:center;gap:6px;margin-top:12px}
-        .report-generating-dots span{width:6px;height:6px;border-radius:999px;background:#cfe0ea;transition:background .3s ease,transform .3s ease}
-        .report-generating-dots span.is-active{background:var(--science-green,#115740);transform:scale(1.35)}
         @keyframes reportGenLiquid{0%,100%{transform:translateY(0)}50%{transform:translateY(1.6px)}}
         @keyframes reportGenBubble{0%{transform:translateY(0) scale(.6);opacity:0}18%{opacity:.9}70%{opacity:.7}100%{transform:translateY(-46px) scale(1);opacity:0}}
-        @media (prefers-reduced-motion:reduce){.report-generating-liquid,.report-generating-bubble{animation:none;opacity:.9}.report-generating-dots span{transition:none}}
+        @media (prefers-reduced-motion:reduce){.report-generating-liquid,.report-generating-bubble{animation:none;opacity:.9}}
       `}</style>
       <svg className="report-generating-flask" viewBox="0 0 120 150" aria-hidden="true">
         {/* 瓶颈 */}
@@ -76,12 +69,7 @@ export default function ReportGenerating({ kind, title }: Props) {
       </svg>
       <div>
         <p className="report-generating-title">{label}生成中</p>
-        <p className="report-generating-hint" key={index}>{hints[index]}</p>
-        <div className="report-generating-dots" aria-hidden="true">
-          {hints.map((_, dotIndex) => (
-            <span key={dotIndex} className={dotIndex === index ? 'is-active' : ''} />
-          ))}
-        </div>
+        <p className="report-generating-hint">{startMs == null ? '正在生成，请稍候…' : `已等待 ${elapsedText(startMs)}，生成完成后自动展示。`}</p>
       </div>
     </div>
   );

@@ -19,6 +19,8 @@ interface Props {
   markdown: string;
   markdownBusy: boolean;
   markdownError: string;
+  reportElapsedStart?: number | null;
+  onRetryMarkdown?: () => void;
   syncNotice?: string;
   onClose: () => void;
   standalone?: boolean;
@@ -81,7 +83,7 @@ function levelName(percent: number): string {
   return '优先提升';
 }
 
-export default function StudyReport({ name, sessionId, preview, markdown, markdownBusy, markdownError, syncNotice = '', onClose, standalone = false, practiceMode = false, canSwitchToTeacher = false }: Props) {
+export default function StudyReport({ name, sessionId, preview, markdown, markdownBusy, markdownError, reportElapsedStart = null, onRetryMarkdown, syncNotice = '', onClose, standalone = false, practiceMode = false, canSwitchToTeacher = false }: Props) {
   const [reportTab, setReportTab] = useState<'overview' | 'gates' | 'analysis' | 'resources'>('overview');
   const [selectedStep, setSelectedStep] = useState(1);
   useEffect(() => { const step = Number(new URLSearchParams(window.location.search).get('step')); if (step >= 1 && step <= 8) { setSelectedStep(step); setReportTab('gates'); } }, []);
@@ -382,8 +384,8 @@ export default function StudyReport({ name, sessionId, preview, markdown, markdo
             </div>}
             {reportTab === 'resources' && <div className="mt-6">
               <h4 className="font-extrabold flex items-center gap-2 text-sm"><FileText className="w-5 h-5 text-primary" /> 完整学习报告</h4>
-              {markdownBusy && <ReportGenerating kind="full" />}
-              {markdownError && <p className="mt-3 text-sm font-bold text-destructive flex items-center gap-1.5"><CircleAlert className="w-4 h-4" />{markdownError}</p>}
+              {markdownBusy && <ReportGenerating kind="full" startMs={reportElapsedStart} />}
+              {markdownError && <div className="mt-3 flex flex-col gap-2"><p className="text-sm font-bold text-destructive flex items-center gap-1.5"><CircleAlert className="w-4 h-4" />{markdownError}</p>{onRetryMarkdown && <button type="button" onClick={onRetryMarkdown} className="self-start inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer"><LoaderCircle className="w-3.5 h-3.5" />重新查询</button>}</div>}
               {markdown && !markdownBusy && !markdownError && <details><summary>展开 AI 综合报告正文</summary><div className="mt-3 text-sm leading-relaxed whitespace-pre-wrap">{markdown}</div></details>}
             </div>}
           </>

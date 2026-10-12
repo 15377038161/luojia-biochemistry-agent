@@ -10,6 +10,7 @@ import {
   type ChaoxingTaskflowPayload,
 } from '@/lib/chaoxing-taskflow-contract';
 import { buildLearningReportContent, computeGradeSummary, loadGradingFacts } from '@/lib/services/grading';
+import { isReportFresh } from '@/lib/report-loading';
 
 function normalizeStep(value: unknown): number {
   const step = Number(value);
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     const stepIds = steps.map((step) => normalizeStep(step.id));
     const { data: stepStates, error: stateError } = await supabase
       .from('step_states')
-      .select('step_no,status')
+      .select('step_no,status,passed_at')
       .eq('session_id', session.id);
     if (stateError) throw stateError;
     const readySteps = (stepStates ?? [])
@@ -52,14 +53,14 @@ export async function POST(request: NextRequest) {
     if (missingSteps.length > 0) {
       return fail({
         code: 'STATE_INVALID',
-        message: `还有步骤未完成：第 ${missingSteps.join('、')} 步。`,
+        message: `还有步骤未完成：第 ${missingSteps.join('、')} 步。请先完成这些步骤，再返回实验地图继续学习。`,
         retryable: false,
       });
     }
 
     const { data: evaluations, error: evaluationError } = await supabase
       .from('evaluations')
-      .select('step_no,decision,confidence,total_score,result,step_attempts!inner(answer)')
+      .select('step_no,decision,confidence,total_score,result,created_at,step_attempts!inner(answer)')
       .eq('step_attempts.session_id', session.id)
       .order('created_at', { ascending: true });
     if (evaluationError) throw evaluationError;
@@ -88,6 +89,51 @@ export async function POST(request: NextRequest) {
       .select('target_gene,sequence_source,accession,cloning_strategy,design_snapshot').eq('session_id', session.id).maybeSingle();
     if (profileError) throw profileError;
 
+    // 请求标识：仅用于关联本请求内的非敏感耗时日志，不记录学生原文/会话/凭证。
+    const reqId = randomUUID();
+
+    // 幂等边界（无 DDL）：先读最近一份学习报告，若其生成时间不早于任何评分事实
+    // （评阅/步骤通过）的最新时间，则直接复用，避免重复付费生成。此判断为时间戳近似，
+    // 不感知 teacher_reviews 表（教师复核走独立 grade 流程），也不提供跨实例并发幂等；
+    // 见 docs/report-loading-fix-*.md 的边界说明。
+    const { data: latestReport, error: latestReportError } = await supabase
+      .from('learning_reports')
+      .select('id,version,content,rendered_markdown,workflow_run_id,created_at')
+      .eq('session_id', session.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latestReportError) throw latestReportError;
+
+    const maxEvaluationCreatedAt = (evaluations ?? [])
+      .map((evaluation) => String(evaluation.created_at ?? ''))
+      .filter((value) => value.length > 0)
+      .reduce<string | null>((max, value) => (max === null || value > max ? value : max), null);
+    const maxStepPassedAt = (stepStates ?? [])
+      .map((state) => String(state.passed_at ?? ''))
+      .filter((value) => value.length > 0)
+      .reduce<string | null>((max, value) => (max === null || value > max ? value : max), null);
+
+    if (latestReport && isReportFresh({
+      reportCreatedAt: String(latestReport.created_at ?? ''),
+      maxEvaluationCreatedAt,
+      maxStepPassedAt,
+    })) {
+      // 复用已有报告：不再次调用大模型，也不重复触发超星桥接同步（报告与同步队列此前已落库）。
+      const facts = await loadGradingFacts(admin, session.id);
+      const summary = computeGradeSummary(facts);
+      return ok({
+        id: latestReport.id,
+        version: Number(latestReport.version) || 1,
+        content: latestReport.content,
+        rendered_markdown: latestReport.rendered_markdown,
+        workflow_run_id: latestReport.workflow_run_id ?? null,
+        grading: summary,
+        chaoxingTaskflow: null,
+      }, reqId);
+    }
+
+    const generateStart = Date.now();
     const report = await generateReport({
       student_name: identity.user.profile.displayName ?? '学生',
       steps: steps.map((step) => ({
@@ -104,6 +150,7 @@ export async function POST(request: NextRequest) {
       experiment_profile: experimentProfile ?? { target_gene: 'EGFP', sequence_source: 'recommended', cloning_strategy: 'recombination' },
       constraints: '用中文生成总学习报告；逐步引用学生原文和评阅证据，覆盖优势、失分点、参数遗漏、推理链、知识短板、误差分析、改写答案、五维能力、可执行建议与教师确认事项。推荐资料只能使用每步resource_refs，不得生成外部链接。',
     });
+    console.log(`[report] requestId=${reqId} phase=generate durationMs=${Date.now() - generateStart}`);
     const normalizedReport = normalizeStudyReport(report.data);
     const markdown = normalizedReport.markdown;
 
@@ -112,12 +159,14 @@ export async function POST(request: NextRequest) {
     const summary = computeGradeSummary(facts);
     const content = buildLearningReportContent(summary, normalizedReport as unknown as Record<string, unknown>, facts.finalization);
 
+    const saveStart = Date.now();
     const { data, error } = await supabase.rpc('record_learning_report', {
       target_session: session.id,
       report_content: content,
       report_markdown: markdown,
       workflow_run_value: report.runId || null,
     });
+    console.log(`[report] requestId=${reqId} phase=record durationMs=${Date.now() - saveStart}`);
     if (error) throw error;
 
     // 教师体验报告不进入学习通同步；学生报告保留既有 taskflow 契约。
