@@ -58,6 +58,15 @@ test('不引入 lock 状态，步骤无 Gate 拦截直接跳转', () => {
   assert.doesNotMatch(component, /'lock'/);
 });
 
+test('地图热区定位 transform 不被通用 :active 按下反馈覆盖', () => {
+  // 定位依赖 translate(-50%,-50%) 把按钮中心锚定到坐标点，任何覆盖都会导致按压漂移
+  assert.match(uiCss, /\.island-map-hotspot \{ [^}]*transform:translate\(-50%,-50%\)/);
+  // 通用 :active 按下反馈必须用 :not(.island-map-hotspot) 排除地图定位按钮
+  assert.match(uiCss, /button:not\(:disabled\):not\(\.island-map-hotspot\):active/);
+  // 不允许残留「未排除地图热区」的 active transform 规则
+  assert.doesNotMatch(uiCss, /button:not\(:disabled\):active \{ transform: translateY\(1px\)/);
+});
+
 test('废弃 map-node / production-route / map-current-ring / mobile-route-lock 选择器已清理', () => {
   assert.doesNotMatch(uiCss, /\.map-node \{/);
   assert.doesNotMatch(uiCss, /\.map-node-status/);
