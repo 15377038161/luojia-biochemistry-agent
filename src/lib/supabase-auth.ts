@@ -173,9 +173,6 @@ export async function getSessionUser(request: NextRequest): Promise<AuthSession 
     const supabase = createSupabaseServer(accessToken);
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) return null;
-    // [TEMP-DIAG] 诊断平台 OAuth 登录后 app_metadata 实际契约（定位教师身份判定来源），验证后移除
-    console.error('[auth-diag] app_metadata=', JSON.stringify(data.user.app_metadata ?? null));
-    console.error('[auth-diag] user_metadata=', JSON.stringify(data.user.user_metadata ?? null));
     const serverRole = await resolveServerRole(supabase, data.user.id);
     return { user: normalizeUser(data.user, serverRole), supabase };
   } catch {
