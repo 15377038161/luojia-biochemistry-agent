@@ -134,28 +134,9 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .student-preview-badge,.student-map-teacher-return { position:absolute; right:28px; top:24px; z-index:2; min-height:36px; padding:0 10px; display:inline-flex; align-items:center; color:var(--ui-blue); border:1px solid var(--ui-line); border-radius:10px; background:#fff; font-size:11px; font-weight:800; text-decoration:none; }
 .student-map-teacher-return { top:68px; }
 .desktop-route-board { min-height:570px!important; overflow:hidden; border-color:rgba(18,63,112,.14)!important; border-radius:var(--ui-radius-lg)!important; background:linear-gradient(rgba(255,253,248,.60),rgba(255,253,248,.80)),url('/illustrations/biochem-notebook-watercolor.webp') center/cover!important; box-shadow:var(--ui-shadow)!important; }
-.production-route-shadow { fill:none; stroke:rgba(8,47,93,.16); stroke-width:32; }
-.production-route-main { fill:none; stroke:#3d6fe0; stroke-width:20; }
-.production-route-flow { fill:none; stroke:rgba(255,255,255,.94); stroke-width:4; stroke-dasharray:16 20; animation:production-route-flow 1.2s linear infinite; }
-.lab-map-page .map-node { width:198px!important; min-width:198px!important; grid-template-columns:68px 1fr!important; gap:10px!important; padding:11px!important; transform:translate(-50%,-50%)!important; border:1px solid rgba(18,63,112,.14)!important; border-radius:var(--ui-radius)!important; background:rgba(255,255,255,.92)!important; box-shadow:0 7px 18px rgba(18,63,112,.09)!important; backdrop-filter:blur(7px); transition:border-color .18s ease,box-shadow .18s ease,filter .18s ease!important; }
-.lab-map-page .map-node:hover,.lab-map-page .map-node:focus-visible { transform:translate(-50%,-50%)!important; box-shadow:var(--ui-shadow-hover)!important; }
-.lab-map-page .map-node-visual { width:66px!important; height:62px!important; border-radius:12px!important; background:#f0f7fa!important; transition:transform .18s ease!important; }
-.lab-map-page .map-node:hover .map-node-visual,.lab-map-page .map-node:focus-visible .map-node-visual { transform:translateY(-2px) scale(1.025); }
-.lab-map-page .map-node-copy strong { color:var(--ui-blue-strong); font-family:inherit!important; font-size:12px; line-height:1.45; }
-.lab-map-page .map-node-copy small { margin-top:5px; color:var(--ui-muted); font-size:10px; }
-.lab-map-page .map-node-cur { border-color:rgba(232,117,97,.72)!important; box-shadow:0 0 0 3px rgba(232,117,97,.12)!important; }
-.lab-map-page .map-node-revise { border-color:#e8b36f!important; background:#fffaf1!important; }
-.lab-map-page .map-node-done { border-color:#abd1c2!important; }
-.lab-map-page .map-node-lock { opacity:.62; filter:saturate(.45); }
-.lab-map-page .map-node-open { border-color:rgba(18,63,112,.22)!important; }
-.map-node-status { position:absolute; right:-5px; top:-5px; width:21px; height:21px; display:grid; place-items:center; border:2px solid #fff; border-radius:50%; }
-.map-node-status svg { width:11px; }
-.map-node-status.is-done { color:#fff; background:var(--ui-green); }
-.map-node-status.is-locked { color:#586b79; background:#e6eaeb; }
-.map-current-ring { position:absolute; inset:-4px; border:2px solid rgba(232,117,97,.60); border-radius:14px; pointer-events:none; animation:production-current-ring 1.6s ease-out infinite; }
 .mobile-step-list { padding:8px 0 28px 48px; gap:12px; }
 .mobile-step-list::before { display:none; }
-.mobile-route-line { position:absolute; left:21px; top:18px; bottom:46px; width:4px; display:block!important; border-radius:999px; background:repeating-linear-gradient(to bottom,#3d6fe0 0 12px,transparent 12px 21px); animation:production-route-y 1.1s linear infinite; opacity:.9; }
+.mobile-route-line { position:absolute; left:21px; top:18px; bottom:46px; width:4px; display:block!important; pointer-events:none; border-radius:999px; background:repeating-linear-gradient(to bottom,#3d6fe0 0 12px,transparent 12px 21px); animation:production-route-y 1.1s linear infinite; opacity:.9; }
 .lab-map-page .mobile-route-card,.lab-map-page .mobile-step-list button:nth-child(even),.lab-map-page .mobile-step-list button:nth-child(odd) { width:100%!important; min-height:82px!important; align-self:stretch!important; transform:none!important; }
 .lab-map-page .mobile-route-card { padding:10px 12px; border:1px solid rgba(18,63,112,.14)!important; border-radius:var(--ui-radius)!important; background:rgba(255,255,255,.91)!important; box-shadow:0 6px 18px rgba(18,63,112,.08)!important; backdrop-filter:blur(6px); }
 .lab-map-page .mobile-step-list { border:1px solid rgba(61,111,224,.15); border-radius:22px; background:linear-gradient(rgba(255,253,249,.66),rgba(255,253,249,.82)),url('/illustrations/biochem-notebook-watercolor.webp') center/cover; }
@@ -163,8 +144,6 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .lab-map-page .mobile-route-icon { width:58px!important; height:58px!important; border-radius:12px!important; background:#eff7fa!important; }
 .lab-map-page .mobile-route-icon .step-illustration { width:54px!important; height:47px!important; }
 .lab-map-page .mobile-route-copy>span:first-child { color:var(--ui-blue-strong)!important; font-family:inherit!important; font-size:13px!important; }
-.mobile-route-lock { position:absolute; right:-3px; bottom:-3px; width:18px; height:18px; display:grid; place-items:center; color:#586b79; border:2px solid #fff; border-radius:50%; background:#e6eaeb; }
-.mobile-route-lock svg { width:9px; }
 
 /* 正式八步群岛地图：插画承载空间路线，网页热区承载交互与状态。 */
 .island-route-board { min-height:0!important; padding:0!important; overflow:hidden; background:#dff3f5!important; }
@@ -176,9 +155,11 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .island-map-hotspot:hover .island-map-focus,.island-map-hotspot:focus-visible .island-map-focus { border-color:rgba(0,37,84,.62); box-shadow:0 0 0 5px rgba(255,255,255,.70),0 12px 28px rgba(0,37,84,.16); background:rgba(255,255,255,.06); }
 .island-map-hotspot-cur .island-map-focus { border-color:var(--ui-coral); box-shadow:0 0 0 5px rgba(255,255,255,.78),0 0 0 9px rgba(221,113,135,.24); animation:production-current-ring 1.6s ease-out infinite; }
 .island-map-hotspot-revise .island-map-focus { border-color:var(--ui-gold); box-shadow:0 0 0 5px rgba(255,255,255,.72); }
+.island-map-hotspot-open .island-map-focus { border-color:rgba(0,37,84,.22); background:rgba(255,255,255,.05); }
 .island-map-label { position:absolute; left:50%; bottom:-7px; min-width:132px; max-width:190px; padding:8px 11px; display:grid; gap:1px; transform:translate(-50%,6px); pointer-events:none; opacity:0; color:var(--ui-blue-strong); border:1px solid rgba(0,37,84,.14); border-radius:11px; background:rgba(255,253,248,.95); box-shadow:0 9px 24px rgba(0,37,84,.16); backdrop-filter:blur(8px); transition:opacity .18s ease,transform .18s ease; }
 .island-map-label strong { font-size:10px; color:var(--ui-green); }.island-map-label small { overflow:hidden; font-size:12px; font-weight:900; text-overflow:ellipsis; white-space:nowrap; }.island-map-label em { color:var(--ui-muted); font-size:9px; font-style:normal; font-weight:800; }
 .island-map-hotspot:hover .island-map-label,.island-map-hotspot:focus-visible .island-map-label,.island-map-hotspot-cur .island-map-label,.island-map-hotspot-done .island-map-label { transform:translate(-50%,0); opacity:1; }
+@media (hover:none) { .island-map-hotspot .island-map-label { transform:translate(-50%,0); opacity:1; } }
 
 /* 分步任务：桌面双栏，移动端单列。 */
 .workstation-shell { min-height:100svh; padding-bottom:82px; }
@@ -318,9 +299,9 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 }
 
 @media (prefers-reduced-motion:reduce) {
-  .lab-map-page .map-node-visual { transition:none!important; }
   .lab-hero-image,.lab-hero-glow,.lab-hero-liquid i,.lab-hero-bubbles i,.lab-hero-drop,.lab-hero-sparkles i,.lab-hero-stats b { animation:none!important; transition:none!important; }
-  .production-route-flow,.map-current-ring,.mobile-route-line,.unified-entry-art::before,.science-orbit,.science-bubble { animation:none!important; }
+  .mobile-route-line,.unified-entry-art::before,.science-orbit,.science-bubble,.island-map-hotspot-cur .island-map-focus { animation:none!important; }
+  .island-map-focus,.island-map-label { transition:none!important; }
 }
 
 /* 学生端最终视觉规范：统一控件状态、层级与空间节奏。 */
@@ -400,11 +381,6 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
 .student-map-heading h1 { color: var(--student-ink)!important; letter-spacing: -.02em!important; }
 .student-map-heading>span { max-width: 680px; color: var(--student-muted)!important; line-height: 1.8!important; }
 .student-map-progress { border-color: var(--student-line)!important; background: var(--student-surface-soft)!important; }
-.lab-map-page .map-node { border-color: var(--student-line)!important; border-radius: 16px!important; background: var(--student-surface)!important; box-shadow: 0 8px 20px rgba(16,47,70,.07)!important; }
-.lab-map-page .map-node:hover,.lab-map-page .map-node:focus-visible { border-color: #9fc6bb!important; box-shadow: var(--student-shadow-hover)!important; }
-.lab-map-page .map-node-cur { border-color: #db9b7d!important; box-shadow: 0 0 0 3px rgba(217,123,82,.14), var(--student-shadow)!important; }
-.lab-map-page .map-node-revise { border-color: #e3bd83!important; background: #fffaf1!important; }
-.lab-map-page .map-node-copy strong { color: var(--student-ink)!important; }
 
 .workstation-layout { gap: 18px!important; }
 .workstation-step-heading { min-height: 82px!important; border-radius: 16px!important; }
@@ -428,7 +404,6 @@ body { font-family:"Noto Sans CJK SC","Source Han Sans SC","Microsoft YaHei","Pi
   .report-page-card { padding: 18px 14px!important; border-radius: 16px!important; }
 }
 
-@keyframes production-route-flow { to { stroke-dashoffset:-36; } }
 @keyframes lab-hero-glow { 0%,100% { opacity:.42; transform:scale(.92); } 50% { opacity:.78; transform:scale(1.07); } }
 @keyframes lab-hero-liquid { to { transform:translateX(32px); } }
 @keyframes lab-hero-bubble { 0% { opacity:0; transform:translate3d(0,6px,0) scale(.7); } 24% { opacity:.82; } 78% { opacity:.46; } 100% { opacity:0; transform:translate3d(5px,-48px,0) scale(1.08); } }
