@@ -1,59 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { isReportFresh, missingSteps, elapsedText } from '../src/lib/report-loading';
+import { missingSteps, elapsedText } from '../src/lib/report-loading';
 import { withTimeout } from '../src/lib/auth';
 
 const read = (path: string): string => readFileSync(path, 'utf8');
-
-// ─────────────────────────────────────────────────────────────
-// [真实] isReportFresh：已有报告新鲜度判断（旧报告不误复用）
-// ─────────────────────────────────────────────────────────────
-
-test('[真实] 无报告 → 不新鲜，应生成', () => {
-  assert.equal(isReportFresh({ reportCreatedAt: null, maxEvaluationCreatedAt: null, maxStepPassedAt: null }), false);
-});
-
-test('[真实] 报告生成时间不早于所有评分事实 → 新鲜，可复用', () => {
-  assert.equal(
-    isReportFresh({
-      reportCreatedAt: '2026-01-03T10:00:00Z',
-      maxEvaluationCreatedAt: '2026-01-02T09:00:00Z',
-      maxStepPassedAt: '2026-01-02T09:30:00Z',
-    }),
-    true,
-  );
-});
-
-test('[真实] 有晚于报告的新评阅 → 不新鲜，需重新生成', () => {
-  assert.equal(
-    isReportFresh({
-      reportCreatedAt: '2026-01-02T10:00:00Z',
-      maxEvaluationCreatedAt: '2026-01-03T09:00:00Z',
-      maxStepPassedAt: '2026-01-01T09:00:00Z',
-    }),
-    false,
-  );
-});
-
-test('[真实] 有晚于报告的新步骤通过 → 不新鲜，需重新生成', () => {
-  assert.equal(
-    isReportFresh({
-      reportCreatedAt: '2026-01-02T10:00:00Z',
-      maxEvaluationCreatedAt: '2026-01-01T09:00:00Z',
-      maxStepPassedAt: '2026-01-03T09:00:00Z',
-    }),
-    false,
-  );
-});
-
-test('[真实] 报告时间非法 → 不新鲜（保守生成，不误复用脏数据）', () => {
-  assert.equal(isReportFresh({ reportCreatedAt: 'not-a-date', maxEvaluationCreatedAt: null, maxStepPassedAt: null }), false);
-});
-
-test('[真实] 无评分事实但有报告 → 新鲜（仍可复用）', () => {
-  assert.equal(isReportFresh({ reportCreatedAt: '2026-01-03T10:00:00Z', maxEvaluationCreatedAt: null, maxStepPassedAt: null }), true);
-});
 
 // ─────────────────────────────────────────────────────────────
 // [真实] missingSteps：八步未全部通过不触发生成
@@ -110,25 +61,29 @@ test('[真实] 快速返回 → 透传结果，不受超时影响', async () => 
 });
 
 // ─────────────────────────────────────────────────────────────
-// [契约] 源码接线断言：锁定前端防重复/迟到/取消/超时与后端复用/日志接线不漂移
+// [契约] 前端：POST 生成与 GET 只读查询分离，超时后只读、无结果不盲目生成
 // ─────────────────────────────────────────────────────────────
 
-test('[契约] 前端 loadReport 具备防重复 + 迟到忽略 + 取消 + 有界超时 + 显式重试', () => {
+test('[契约] 前端保留防重复/迟到/取消/超时，且超时后只读查询与重新生成分离', () => {
   const src = read('src/components/agent/student-agent.tsx');
-  assert.match(src, /reportRunRef/);        // 迟到结果忽略
-  assert.match(src, /reportBusy/);          // 防重复
-  assert.match(src, /AbortController/);     // 取消（停止前端等待）
-  assert.match(src, /REPORT_TIMEOUT_MS/);   // 有界等待
-  assert.match(src, /withTimeout/);         // 超时原语
-  assert.match(src, /retryReport/);         // 显式重试入口
-  assert.match(src, /reportAttemptedRef/);  // 成功后不自动重复
+  assert.match(src, /reportRunRef/);          // 迟到结果忽略
+  assert.match(src, /reportBusy/);            // 防重复/防并发
+  assert.match(src, /AbortController/);       // 取消（停止前端等待）
+  assert.match(src, /REPORT_TIMEOUT_MS/);     // 有界等待
+  assert.match(src, /withTimeout/);           // 超时原语
+  assert.match(src, /reportTimedOut/);        // 超时标记（区分按钮）
+  assert.match(src, /apiGet/);                // GET 只读查询（不调模型）
+  assert.match(src, /queryExistingReport/);   // 超时后「查看是否已生成」只读查询
+  assert.match(src, /retryGenerate/);         // 独立「重新生成」按钮（POST）
+  assert.doesNotMatch(src, /retryReport/);    // 旧的「重新查询=POST」已移除，不再盲目生成
 });
 
-test('[契约] 后端报告 API 具备新鲜度复用 + 非敏感耗时日志 + 未完成拦截', () => {
+test('[契约] 后端报告 API：删除时间戳近似缓存复用，POST 仅生成，GET 只读，保留非敏感耗时与未完成拦截', () => {
   const src = read('src/app/api/student/report/route.ts');
-  assert.match(src, /isReportFresh/);          // 已有报告新鲜度判断
-  assert.match(src, /phase=generate durationMs/); // 生成阶段非敏感耗时
-  assert.match(src, /phase=record durationMs/);   // 保存阶段非敏感耗时
-  assert.match(src, /还有步骤未完成/);          // 未完成明确提示
-  assert.match(src, /rendered_markdown/);       // 复用已有报告正文
+  assert.doesNotMatch(src, /isReportFresh/);        // 删除时间戳近似缓存（不掩盖教师复核/新评价）
+  assert.doesNotMatch(src, /maxEvaluationCreatedAt/); // 删除新鲜度时间戳比较
+  assert.match(src, /export async function GET/);   // 只读查询已有报告端点
+  assert.match(src, /phase=generate durationMs/);   // 生成阶段非敏感耗时
+  assert.match(src, /phase=record durationMs/);     // 保存阶段非敏感耗时
+  assert.match(src, /还有步骤未完成/);               // 未完成明确提示 + 返回地图
 });

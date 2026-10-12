@@ -38,8 +38,15 @@ async function apiPost<T>(url: string, body: unknown, signal?: AbortSignal): Pro
   return payload.data;
 }
 
+async function apiGet<T>(url: string): Promise<T> {
+  const response = await authFetch(url);
+  const payload = await response.json() as Api<T>;
+  if (!payload.ok) throw new Error(payload.error.message);
+  return payload.data;
+}
+
 // 完整学习报告由大模型生成，可能耗时 30–90s；给前端一个有界等待上限，
-// 超时后停止前端等待并提示「可能仍在后台生成，可重新查询」，不盲目重复生成。
+// 超时后停止前端等待并提示「可查看是否已生成」，不盲目重复生成。
 const REPORT_TIMEOUT_MS = 120_000;
 
 function buildPreviewSession(displayName: string): StudentSessionView {
@@ -72,6 +79,8 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
   const [reportError, setReportError] = useState('');
   const [reportSyncNotice, setReportSyncNotice] = useState('');
   const [reportElapsedStart, setReportElapsedStart] = useState<number | null>(null);
+  const [reportTimedOut, setReportTimedOut] = useState(false);
+  const [reportQuerying, setReportQuerying] = useState(false);
   // 迟到结果忽略：每次加载递增 runId，旧 runId 的 settle 一律丢弃；abort 仅停止前端等待，不声称已取消后台模型。
   const reportRunRef = useRef(0);
   const reportAbortRef = useRef<AbortController | null>(null);
@@ -131,6 +140,7 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
     const runId = ++reportRunRef.current;
     setReportBusy(true);
     setReportError('');
+    setReportTimedOut(false);
     if (preview) {
       setReportMarkdown(PREVIEW_REPORT_MARKDOWN);
       setReportBusy(false);
@@ -163,7 +173,8 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
       // 主动取消或超时后又有新 runId：静默忽略，不覆盖后续状态。
       if (runId !== reportRunRef.current || controller.signal.aborted) return;
       if (reason instanceof Error && reason.message === 'TIMEOUT') {
-        setReportError('报告生成时间较长，可能仍在后台生成。请稍后点击「重新查询」查看结果，不会重复计费。');
+        setReportTimedOut(true);
+        setReportError('报告生成时间较长，可能仍在后台生成。请先「查看是否已生成」，若尚未生成再「重新生成」。');
       } else {
         setReportError(clientErrorMessage(reason, '学习报告生成失败'));
       }
@@ -175,10 +186,35 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
     }
   }, [preview, reportBusy, session]);
 
-  // 显式重试入口：失败/超时后由用户触发，清空错误并强制重新查询（后端对「已生成的新鲜报告」直接复用，不重复付费）。
-  const retryReport = useCallback(() => {
+  // 只读查询已有报告（GET，不调用模型）：超时后「查看是否已生成」用，不触发重复付费生成。
+  const queryExistingReport = useCallback(async () => {
+    if (!session || reportQuerying) return;
+    const runId = ++reportRunRef.current;
+    setReportQuerying(true);
+    setReportError('');
+    try {
+      const payload = await apiGet<{ exists?: boolean; rendered_markdown?: string | null }>(`/api/student/report?sessionId=${encodeURIComponent(session.sessionId)}`);
+      if (runId !== reportRunRef.current) return;
+      if (payload.exists && payload.rendered_markdown) {
+        setReportMarkdown(payload.rendered_markdown);
+        setReportTimedOut(false);
+      } else {
+        setReportTimedOut(true);
+        setReportError('报告尚未生成完成，后台是否完成尚未可知。请返回实验地图稍后再查看。');
+      }
+    } catch (reason) {
+      if (runId !== reportRunRef.current) return;
+      setReportError(clientErrorMessage(reason, '查询已有报告失败'));
+    } finally {
+      if (runId === reportRunRef.current) setReportQuerying(false);
+    }
+  }, [session, reportQuerying]);
+
+  // 显式「重新生成」入口（POST，独立按钮，防并发/重复误触）。与「查看是否已生成」分离。
+  const retryGenerate = useCallback(() => {
     if (reportBusy) return;
     setReportError('');
+    setReportTimedOut(false);
     void loadReport(true);
   }, [reportBusy, loadReport]);
 
@@ -270,7 +306,9 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
           markdownBusy={reportBusy}
           markdownError={reportError}
           reportElapsedStart={reportElapsedStart}
-          onRetryMarkdown={retryReport}
+          reportTimedOut={reportTimedOut}
+          onQueryExisting={queryExistingReport}
+          onRetryGenerate={retryGenerate}
           syncNotice={reportSyncNotice}
           onClose={closeReport}
           standalone
@@ -308,7 +346,9 @@ export default function StudentAgent({ displayName, demo = false, preview = fals
           markdownBusy={reportBusy}
           markdownError={reportError}
           reportElapsedStart={reportElapsedStart}
-          onRetryMarkdown={retryReport}
+          reportTimedOut={reportTimedOut}
+          onQueryExisting={queryExistingReport}
+          onRetryGenerate={retryGenerate}
           syncNotice={reportSyncNotice}
           onClose={closeReport}
           practiceMode={practiceMode}

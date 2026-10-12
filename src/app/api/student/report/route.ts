@@ -10,7 +10,6 @@ import {
   type ChaoxingTaskflowPayload,
 } from '@/lib/chaoxing-taskflow-contract';
 import { buildLearningReportContent, computeGradeSummary, loadGradingFacts } from '@/lib/services/grading';
-import { isReportFresh } from '@/lib/report-loading';
 
 function normalizeStep(value: unknown): number {
   const step = Number(value);
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
     const stepIds = steps.map((step) => normalizeStep(step.id));
     const { data: stepStates, error: stateError } = await supabase
       .from('step_states')
-      .select('step_no,status,passed_at')
+      .select('step_no,status')
       .eq('session_id', session.id);
     if (stateError) throw stateError;
     const readySteps = (stepStates ?? [])
@@ -60,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     const { data: evaluations, error: evaluationError } = await supabase
       .from('evaluations')
-      .select('step_no,decision,confidence,total_score,result,created_at,step_attempts!inner(answer)')
+      .select('step_no,decision,confidence,total_score,result,step_attempts!inner(answer)')
       .eq('step_attempts.session_id', session.id)
       .order('created_at', { ascending: true });
     if (evaluationError) throw evaluationError;
@@ -92,47 +91,10 @@ export async function POST(request: NextRequest) {
     // 请求标识：仅用于关联本请求内的非敏感耗时日志，不记录学生原文/会话/凭证。
     const reqId = randomUUID();
 
-    // 幂等边界（无 DDL）：先读最近一份学习报告，若其生成时间不早于任何评分事实
-    // （评阅/步骤通过）的最新时间，则直接复用，避免重复付费生成。此判断为时间戳近似，
-    // 不感知 teacher_reviews 表（教师复核走独立 grade 流程），也不提供跨实例并发幂等；
-    // 见 docs/report-loading-fix-*.md 的边界说明。
-    const { data: latestReport, error: latestReportError } = await supabase
-      .from('learning_reports')
-      .select('id,version,content,rendered_markdown,workflow_run_id,created_at')
-      .eq('session_id', session.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (latestReportError) throw latestReportError;
-
-    const maxEvaluationCreatedAt = (evaluations ?? [])
-      .map((evaluation) => String(evaluation.created_at ?? ''))
-      .filter((value) => value.length > 0)
-      .reduce<string | null>((max, value) => (max === null || value > max ? value : max), null);
-    const maxStepPassedAt = (stepStates ?? [])
-      .map((state) => String(state.passed_at ?? ''))
-      .filter((value) => value.length > 0)
-      .reduce<string | null>((max, value) => (max === null || value > max ? value : max), null);
-
-    if (latestReport && isReportFresh({
-      reportCreatedAt: String(latestReport.created_at ?? ''),
-      maxEvaluationCreatedAt,
-      maxStepPassedAt,
-    })) {
-      // 复用已有报告：不再次调用大模型，也不重复触发超星桥接同步（报告与同步队列此前已落库）。
-      const facts = await loadGradingFacts(admin, session.id);
-      const summary = computeGradeSummary(facts);
-      return ok({
-        id: latestReport.id,
-        version: Number(latestReport.version) || 1,
-        content: latestReport.content,
-        rendered_markdown: latestReport.rendered_markdown,
-        workflow_run_id: latestReport.workflow_run_id ?? null,
-        grading: summary,
-        chaoxingTaskflow: null,
-      }, reqId);
-    }
-
+    // 本 POST 仅做「生成」。已有报告的读取由 GET 方法单独提供（只读、不调用模型），
+    // 避免「超时后重新查询」误触发重复付费生成。后端不做时间戳近似缓存复用：
+    // 无法无 DDL 安全取得「评分事实 + 内容快照 + 教师复核」的完整 fingerprint，
+    // 时间戳近似会掩盖教师复核（record_teacher_review）与新评价，故显式关闭复用。
     const generateStart = Date.now();
     const report = await generateReport({
       student_name: identity.user.profile.displayName ?? '学生',
@@ -191,6 +153,51 @@ export async function POST(request: NextRequest) {
     }
 
     return ok({ ...data, grading: summary, chaoxingTaskflow }, randomUUID());
+  } catch (error) {
+    return fail(errorFromUnknown(error), undefined, 500);
+  }
+}
+
+// 只读查询最近一份学习报告：不调用模型、不写入，供「超时后查看是否已生成」使用。
+// 与 POST（生成）分离，避免超时重试误触发重复付费生成。
+export async function GET(request: NextRequest) {
+  try {
+    const identity = await getSessionUser(request);
+    if (!identity) {
+      return fail({ code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false }, undefined, 401);
+    }
+    const sessionId = request.nextUrl.searchParams.get('sessionId');
+    if (!sessionId) {
+      return fail({ code: 'VALIDATION_ERROR', message: '缺少 sessionId 参数。', retryable: false });
+    }
+    const { supabase } = identity;
+    const { data: session, error: sessionError } = await supabase
+      .from('agent_sessions')
+      .select('id,user_id')
+      .eq('id', sessionId)
+      .maybeSingle();
+    if (sessionError) throw sessionError;
+    if (!session) return fail({ code: 'RESOURCE_MISSING', message: '学生实验会话不存在。', retryable: false }, undefined, 404);
+    if (session.user_id !== identity.user.id) return fail({ code: 'FORBIDDEN', message: '无权查看该会话。', retryable: false }, undefined, 403);
+
+    const { data: report, error: reportError } = await supabase
+      .from('learning_reports')
+      .select('id,version,content,rendered_markdown,workflow_run_id,created_at')
+      .eq('session_id', session.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (reportError) throw reportError;
+
+    return ok({
+      exists: Boolean(report),
+      id: report?.id ?? null,
+      version: report ? Number(report.version) || 1 : null,
+      content: report?.content ?? null,
+      rendered_markdown: report?.rendered_markdown ?? null,
+      workflow_run_id: report?.workflow_run_id ?? null,
+      created_at: report?.created_at ?? null,
+    });
   } catch (error) {
     return fail(errorFromUnknown(error), undefined, 500);
   }
