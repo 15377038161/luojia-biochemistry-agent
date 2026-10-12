@@ -69,10 +69,40 @@ function getRoles(source: Record<string, unknown>, key: string): ChaoxingRole[] 
   });
 }
 
-function resolveRole(app: Record<string, unknown>, chaoxing: Record<string, unknown>): AgentRole {
-  const configured = getString([app], ['role']);
-  if (configured === 'teacher') return 'teacher';
-  void chaoxing;
+/** 教师角色集合（profiles.role / enrollments.role 共用的服务端事实来源） */
+const TEACHER_ROLES = ['teacher', 'content_admin'];
+
+/**
+ * 服务端教师身份事实来源：profiles.role + enrollments.role。
+ * - profiles.role 是应用角色权威（teacher/content_admin 具备教师能力）；
+ * - enrollments.role 是课程/班级授权补充；
+ * - 失败关闭：任一查询失败都返回 'student'，绝不在数据不可得时授予教师权限；
+ * - 不读取 app_metadata.app.role（用户可编辑的 metadata 不能授予教师权限）。
+ * external_identities.raw_roles 仅作学习通原始角色留痕，对 authenticated 已 revoke，不参与运行时判定。
+ */
+async function resolveServerRole(supabase: SupabaseClient, userId: string): Promise<AgentRole> {
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .maybeSingle();
+  if (profileError) {
+    console.error('[auth] 读取 profiles.role 失败:', profileError.message);
+    return 'student';
+  }
+  if (profile && TEACHER_ROLES.includes(profile.role)) return 'teacher';
+
+  const { data: enrollments, error: enrollError } = await supabase
+    .from('enrollments')
+    .select('role')
+    .eq('user_id', userId)
+    .in('role', TEACHER_ROLES)
+    .limit(1);
+  if (enrollError) {
+    console.error('[auth] 读取 enrollments.role 失败:', enrollError.message);
+    return 'student';
+  }
+  if (enrollments && enrollments.length > 0) return 'teacher';
   return 'student';
 }
 
@@ -80,11 +110,10 @@ function isTeacherCapable(appRole: AgentRole): boolean {
   return appRole === 'teacher';
 }
 
-function normalizeUser(user: User): SessionUser {
+function normalizeUser(user: User, serverRole: AgentRole): SessionUser {
   const userMetadata = asRecord(user.user_metadata);
   const appMetadata = asRecord(user.app_metadata);
   const chaoxing = asRecord(appMetadata.chaoxing);
-  const app = asRecord(appMetadata.app);
   // 平台 OAuth 将真实姓名放在 user_metadata.realname、超星身份 cxid 放在 user_metadata.cxid；
   // 旧自研会话把这些塞在 app_metadata.chaoxing。两处都读，平台字段优先，保证向前兼容。
   const openid = getString([userMetadata, chaoxing], ['cxid', 'openid']);
@@ -92,7 +121,7 @@ function normalizeUser(user: User): SessionUser {
   const name = getString([userMetadata, chaoxing], ['loginName', 'name']);
   const displayName = getString([userMetadata, chaoxing], ['realname', 'displayName', 'name']);
 
-  const appRole = resolveRole(app, chaoxing);
+  const appRole = serverRole;
   const teacherCapable = isTeacherCapable(appRole);
   const capabilities: WorkspaceCapabilities = {
     studentWorkspace: true,
@@ -147,7 +176,8 @@ export async function getSessionUser(request: NextRequest): Promise<AuthSession 
     // [TEMP-DIAG] 诊断平台 OAuth 登录后 app_metadata 实际契约（定位教师身份判定来源），验证后移除
     console.error('[auth-diag] app_metadata=', JSON.stringify(data.user.app_metadata ?? null));
     console.error('[auth-diag] user_metadata=', JSON.stringify(data.user.user_metadata ?? null));
-    return { user: normalizeUser(data.user), supabase };
+    const serverRole = await resolveServerRole(supabase, data.user.id);
+    return { user: normalizeUser(data.user, serverRole), supabase };
   } catch {
     return null;
   }
